@@ -2,10 +2,8 @@
 #define dnp3sav6_securitylayer_hpp
 
 #include <boost/asio.hpp>
-#include "applicationlayer.hpp"
 #include "config.hpp"
 #include "exceptions.hpp"
-#include "transportfunction.hpp"
 #include "statistics.hpp"
 
 namespace DNP3SAv6 {
@@ -14,8 +12,6 @@ class SecurityLayer
 public :
 	SecurityLayer(
 		  boost::asio::io_context &io_context
-		, TransportFunction *transport_function
-		, ApplicationLayer *application_layer
 		);
 	~SecurityLayer() = default;
 	
@@ -68,8 +64,8 @@ protected :
 		, boost::asio::steady_timer::duration const &timeout = std::chrono::milliseconds(0)
 		) noexcept;
 	State getState() const noexcept { return state_; }
-	void setState(State state) noexcept;
-	void incrementStatistic(Statistics statistics) noexcept;
+	void setState(State state) noexcept { state_ = state; }
+	void incrementStatistic(Statistics statistics) noexcept { /*TODO*/ }
 
 	void discardAPDU() noexcept;
 	void queueAPDU(boost::asio::const_buffer const &apdu) noexcept;
@@ -82,12 +78,8 @@ protected :
 	void sendAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept;
 
 private :
-
-	void prepareOutgoingSPDU() noexcept;
 	void parseIncomingSPDU() noexcept;
 
-	TransportFunction *transport_function_ = nullptr;
-	ApplicationLayer *application_layer_ = nullptr;
 	State state_ = initial__;
 	boost::asio::const_buffer outgoing_apdu_;
 	boost::asio::const_buffer outgoing_spdu_;

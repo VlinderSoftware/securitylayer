@@ -10,8 +10,6 @@ public :
 	Outstation(
 		  boost::asio::io_context &io_context
 		, Config config
-		, TransportFunction *transport_function
-		, ApplicationLayer *application_layer
 		);
 	~Outstation() = default;
 	

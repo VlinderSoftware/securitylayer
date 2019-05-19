@@ -7,10 +7,10 @@ using namespace boost::asio;
 namespace DNP3SAv6 {
 Master::Master(
 	  boost::asio::io_context &io_context
-	, TransportFunction *transport_function
-	, ApplicationLayer *application_layer
+	, Config config
 	)
-	: SecurityLayer(io_context, transport_function, application_layer)
+	: SecurityLayer(io_context)
+	, config_(config)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/

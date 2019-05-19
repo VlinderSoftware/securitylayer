@@ -7,15 +7,9 @@ using namespace boost::asio;
 namespace DNP3SAv6 {
 SecurityLayer::SecurityLayer(
 	  boost::asio::io_context &io_context
-	, TransportFunction *transport_function
-	, ApplicationLayer *application_layer
 	)
-	: transport_function_(transport_function)
-	, application_layer_(application_layer)
-	, timeout_(io_context)
+	: timeout_(io_context)
 {
-	pre_condition(transport_function);
-	pre_condition(application_layer);
 }
 
 void SecurityLayer::onLinkLost() noexcept
@@ -128,6 +122,9 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 	outgoing_apdu_ = const_buffer(outgoing_apdu_buffer_, apdu.size());
 }
 
+void SecurityLayer::sendAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept
+{
+}
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
 //NEXT

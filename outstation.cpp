@@ -8,10 +8,8 @@ namespace DNP3SAv6 {
 Outstation::Outstation(
 	  boost::asio::io_context &io_context
 	, Config config
-	, TransportFunction *transport_function
-	, ApplicationLayer *application_layer
 	)
-	: SecurityLayer(io_context, transport_function, application_layer)
+	: SecurityLayer(io_context)
 	, config_(config)
 { /* no-op */ }
 

@@ -9,8 +9,7 @@ class Master : public SecurityLayer
 public :
 	Master(
 		  boost::asio::io_context &io_context
-		, TransportFunction *transport_function
-		, ApplicationLayer *application_layer
+		, Config config
 		);
 	~Master() = default;
 	
