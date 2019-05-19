@@ -47,6 +47,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 			}
 			WHEN( "The Master receives it" ) {
 				Master master(ioc, default_config);
+				REQUIRE( master.getState() == Master::initial__ );
+				
 				auto spdu(outstation.getSPDU());
 				master.postSPDU(spdu);
 				THEN( "The Master should be in the EXPECT_SESSION_START_RESPONSE state" ) {
