@@ -1,5 +1,6 @@
 #include "securitylayer.hpp"
 #include "exceptions/contract.hpp"
+#include "messages.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -7,9 +8,12 @@ using namespace boost::asio;
 namespace DNP3SAv6 {
 SecurityLayer::SecurityLayer(
 	  boost::asio::io_context &io_context
+	, Config config
 	)
 	: timeout_(io_context)
+	, config_(config)
 {
+	memset(statistics_, 0, sizeof(statistics_));
 }
 
 void SecurityLayer::onLinkLost() noexcept
@@ -125,9 +129,125 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 void SecurityLayer::sendAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept
 {
 }
+
+void SecurityLayer::send(Messages::RequestSessionInitiation const &rsi) noexcept
+{
+	static_assert(sizeof(outgoing_spdu_buffer_) >= 8, "buffer too small");
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::request_session_initiation__);
+	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	assert(outgoing_spdu_size_ == 8);
+	// NOTE: if we add anything to the structure, it should be copied in here
+	setOutgoingSPDU(
+		  const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
+		, std::chrono::milliseconds(config_.session_start_request_timeout_)
+		);
+	incrementStatistic(Statistics::total_messages_sent__);
+}
+
+void SecurityLayer::send(Messages::SessionStartRequest const &ssr) noexcept
+{
+}
+
+void SecurityLayer::send(Messages::SessionStartResponse const &ssr) noexcept
+{
+}
+
+void SecurityLayer::send(Messages::SetKeys const &sk) noexcept
+{
+}
+
+void SecurityLayer::send(Messages::KeyStatus const &ks) noexcept
+{
+}
+
+void SecurityLayer::send(Messages::Error const &e) noexcept
+{
+
+	static_assert(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(e), "buffer too small");
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::request_session_initiation__);
+	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	assert(outgoing_spdu_size_ == 8);
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &e, sizeof(e));
+	outgoing_spdu_size_ += sizeof(e);
+	assert(outgoing_spdu_size_ == 8 + sizeof(e));
+	setOutgoingSPDU(
+		  const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
+		);
+	incrementStatistic(Statistics::error_messages_sent__);
+	incrementStatistic(Statistics::total_messages_sent__);
+}
+
+void SecurityLayer::incrementStatistic(Statistics statistic) noexcept
+{
+	++statistics_[static_cast< int >(statistic)];
+}
+
+unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
+{
+	return statistics_[static_cast< int >(statistic)];
+}
+
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
-//NEXT
+	if (incoming_spdu_.size() < 8)
+	{
+		send(Messages::Error(Messages::Error::invalid_spdu__));
+	}
+	else
+	{ /* it's at least big enough to be a valid SPDU */ }
+	static const unsigned char preamble__[] = { 0xC0, 0x80, 0x01 };
+	if (memcmp(incoming_spdu_.data(), preamble__, sizeof(preamble__)) != 0)
+	{
+		send(Messages::Error(Messages::Error::invalid_spdu__));
+	}
+	else
+	{ /* preamble is OK */ }
+	uint32_t incoming_seq;
+	memcpy(&incoming_seq, static_cast< unsigned char const * >(incoming_spdu_.data()) + 4/*offset to the sequence number*/, 4/*size of the sequence number*/);
+	switch (static_cast< unsigned char const * >(incoming_spdu_.data())[3/*offset of the function code*/])
+	{
+	case Messages::request_session_initiation__ :
+		rxRequestSessionInitiation(incoming_seq);
+		break;
+	case Messages::session_start_request__ :
+		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
+		// if so, parse into a SessionStartRequest object and call rxSessionStartRequest(incoming_seq, incoming_ssr);
+		break;
+	case Messages::session_start_response__ :
+		// check the SPDU size to see if it's big enough to hold a SessionStartResponse message
+		// if so, parse into a SessionStartResponse object and call rxSessionStartResponse(incoming_seq, incoming_ssr);
+		break;
+	case Messages::set_keys__ :
+		// check the SPDU size to see if it's big enough to hold a SetKeys message
+		// if so, parse into a SetKeys object and call rxSetKeys(incoming_seq, incoming_sk);
+		break;
+	case Messages::key_status__ :
+		// check the SPDU size to see if it's big enough to hold a KeyStatus message
+		// if so, parse into a KeyStatus object and call rxkeyStatus(incoming_seq, incoming_ks);
+		break;
+	case Messages::authenticated_apdu__ :
+		// check the SPDU size to see if it's big enough to hold an AuthenticatedAPDU message
+		// if so, parse into a AuthenticatedAPDU object and call rxAuthenticatedAPDU(incoming_seq, incoming_aa);
+		break;
+	case Messages::error__ :
+		// check the SPDU size to see if it's big enough to hold an Error message
+		// if so, parse into a Error object and call rxError(incoming_seq, incoming_error);
+		break;
+	default :
+		send(Messages::Error(Messages::Error::invalid_spdu__));
+	}
 }
 }
 

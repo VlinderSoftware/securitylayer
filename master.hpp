@@ -26,7 +26,6 @@ private :
 	void sendSessionStartRequest() noexcept;
 
 	unsigned char buffer_[Config::max_spdu_size__];
-	Config config_;
 };
 }
 

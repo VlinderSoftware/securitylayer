@@ -9,8 +9,7 @@ Master::Master(
 	  boost::asio::io_context &io_context
 	, Config config
 	)
-	: SecurityLayer(io_context)
-	, config_(config)
+	: SecurityLayer(io_context, config)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
@@ -46,20 +45,7 @@ Master::Master(
 
 void Master::sendSessionStartRequest() noexcept
 {
-	static_assert(
-		  sizeof(buffer_) >= sizeof(Messages::SessionStartRequest)
-		, "message too larget for SPDU"
-		);
-	Messages::SessionStartRequest message;
-	message.type_ = static_cast< decltype(message.type_) >(Message::session_start_request__);
-	message.seq_ = getSEQ();
-
-	memcpy(buffer_, &message, sizeof(message));
-	setOutgoingSPDU(
-		  const_buffer(buffer_, sizeof(message))
-		, std::chrono::milliseconds(config_.session_start_request_timeout_)
-		);
-	incrementStatistic(Statistics::total_messages_sent__);
+	send(Messages::SessionStartRequest());
 }
 }
 

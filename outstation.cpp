@@ -9,8 +9,7 @@ Outstation::Outstation(
 	  boost::asio::io_context &io_context
 	, Config config
 	)
-	: SecurityLayer(io_context)
-	, config_(config)
+	: SecurityLayer(io_context, config)
 { /* no-op */ }
 
 /*virtual */void Outstation::reset() noexcept/* override*/
@@ -42,20 +41,7 @@ Outstation::Outstation(
 
 void Outstation::sendRequestSessionInitiation() noexcept
 {
-	static_assert(
-		  sizeof(buffer_) >= sizeof(Messages::RequestSessionInitiation)
-		, "message too larget for SPDU"
-		);
-	Messages::RequestSessionInitiation message;
-	message.type_ = static_cast< decltype(message.type_) >(Message::request_session_initiation__);
-	message.seq_ = getSEQ();
-
-	memcpy(buffer_, &message, sizeof(message));
-	setOutgoingSPDU(
-		  const_buffer(buffer_, sizeof(message))
-		, std::chrono::milliseconds(config_.request_session_initiation_timeout_)
-		);
-	incrementStatistic(Statistics::total_messages_sent__);
+	send(Messages::RequestSessionInitiation());
 }
 }
 

@@ -7,11 +7,20 @@
 #include "statistics.hpp"
 
 namespace DNP3SAv6 {
+namespace Messages {
+	struct Error;
+	struct KeyStatus;
+	struct RequestSessionInitiation;
+	struct SessionStartRequest;
+	struct SessionStartResponse;
+	struct SetKeys;
+}
 class SecurityLayer
 {
 public :
 	SecurityLayer(
 		  boost::asio::io_context &io_context
+		, Config config
 		);
 	~SecurityLayer() = default;
 	
@@ -47,7 +56,9 @@ public :
 
 	std::pair< UpdateResult, boost::asio::steady_timer::duration > update() noexcept;
 
-protected :
+	unsigned int getStatistic(Statistics statistic) noexcept;
+
+public : // public API for testing purposes
 	enum State {
 		  initial__
 		, expect_session_start_request__
@@ -57,15 +68,17 @@ protected :
 		, active__
 		};
 
+	State getState() const noexcept { return state_; }
+
+protected :
+
 	virtual void reset() noexcept = 0;
 
 	void setOutgoingSPDU(
 		  boost::asio::const_buffer const &spdu
 		, boost::asio::steady_timer::duration const &timeout = std::chrono::milliseconds(0)
 		) noexcept;
-	State getState() const noexcept { return state_; }
 	void setState(State state) noexcept { state_ = state; }
-	void incrementStatistic(Statistics statistics) noexcept { /*TODO*/ }
 
 	void discardAPDU() noexcept;
 	void queueAPDU(boost::asio::const_buffer const &apdu) noexcept;
@@ -76,6 +89,14 @@ protected :
 	std::uint32_t getSEQ() const noexcept { return seq_; }
 
 	void sendAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept;
+	void send(Messages::RequestSessionInitiation const &rsi) noexcept;
+	void send(Messages::SessionStartRequest const &ssr) noexcept;
+	void send(Messages::SessionStartResponse const &ssr) noexcept;
+	void send(Messages::SetKeys const &sk) noexcept;
+	void send(Messages::KeyStatus const &ks) noexcept;
+	void send(Messages::Error const &e) noexcept;
+
+	void incrementStatistic(Statistics statistics) noexcept;
 
 private :
 	void parseIncomingSPDU() noexcept;
@@ -88,10 +109,16 @@ private :
 
 	unsigned char incoming_spdu_buffer_[Config::max_spdu_size__];
 	unsigned char outgoing_apdu_buffer_[Config::max_apdu_size__];
+	unsigned char outgoing_spdu_buffer_[Config::max_apdu_size__];
+	unsigned int outgoing_spdu_size_;
 
 	boost::asio::steady_timer timeout_;
 
-	std::uint32_t seq_;
+	std::uint32_t seq_ = 0;
+
+	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];
+	
+	Config config_;
 };
 }
 

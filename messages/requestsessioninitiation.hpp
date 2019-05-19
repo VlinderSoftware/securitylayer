@@ -6,8 +6,6 @@
 namespace DNP3SAv6 { namespace Messages {
 struct RequestSessionInitiation
 {
-	std::uint32_t seq_;
-	std::uint16_t type_;
 };
 }}
 
