@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.1)
 project(secureauthentication VERSION 1.0 LANGUAGES CXX)
 enable_testing()
 
+include (cmake/inc/Findsodium.cmake)
+
 add_subdirectory(exceptions)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -14,6 +16,12 @@ include(GNUInstallDirs)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 
+set(LESS_GENERATOR_SRC
+	less.cpp
+	)
+add_executable(less ${LESS_GENERATOR_SRC})
+target_link_libraries(less sodium)
+
 set(LIBLAYER_SRC
 	exceptions.cpp
 	master.cpp
@@ -24,7 +32,7 @@ set(LIBLAYER_SRC
 add_library(secureauthentication SHARED
 	${LIBLAYER_SRC}
 	)
-target_link_libraries(secureauthentication exceptions Boost::system Threads::Threads)
+target_link_libraries(secureauthentication exceptions sodium Boost::system Threads::Threads)
 set_target_properties(secureauthentication PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(secureauthentication PROPERTIES SOVERSION 1)
 set(LAYER_PUBLIC_HEADERS
