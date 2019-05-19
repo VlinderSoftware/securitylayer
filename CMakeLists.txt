@@ -13,6 +13,9 @@ include(GNUInstallDirs)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 
 set(LIBLAYER_SRC
+	exceptions.cpp
+	master.cpp
+	outstation.cpp
 	securitylayer.cpp
 	)
 
@@ -24,6 +27,11 @@ set_target_properties(secureauthentication PROPERTIES VERSION ${PROJECT_VERSION}
 set_target_properties(secureauthentication PROPERTIES SOVERSION 1)
 set(LAYER_PUBLIC_HEADERS
 	applicationlayer.hpp
+	config.hpp
+	exceptions.hpp
+	master.hpp
+	messages.hpp
+	outstation.hpp
 	securitylayer.hpp
 	transportfunction.hpp
 	)
