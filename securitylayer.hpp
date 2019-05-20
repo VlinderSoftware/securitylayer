@@ -71,7 +71,6 @@ public : // public API for testing purposes
 	State getState() const noexcept { return state_; }
 
 protected :
-
 	virtual void reset() noexcept = 0;
 
 	void setOutgoingSPDU(
@@ -87,6 +86,7 @@ protected :
 
 	void incrementSEQ() noexcept { seq_++; }
 	std::uint32_t getSEQ() const noexcept { return seq_; }
+	void setSEQ(std::uint32_t seq) noexcept { seq_ = seq; }
 
 	void sendAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept;
 	void send(Messages::RequestSessionInitiation const &rsi) noexcept;
@@ -97,6 +97,8 @@ protected :
 	void send(Messages::Error const &e) noexcept;
 
 	void incrementStatistic(Statistics statistics) noexcept;
+
+	virtual void rxRequestSessionInitiation(uint32_t incoming_seq) noexcept;
 
 private :
 	void parseIncomingSPDU() noexcept;

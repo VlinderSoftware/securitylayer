@@ -199,6 +199,11 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 	return statistics_[static_cast< int >(statistic)];
 }
 
+/*virtual */void SecurityLayer::rxRequestSessionInitiation(uint32_t incoming_seq) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
+
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
 	if (incoming_spdu_.size() < 8)
@@ -218,30 +223,30 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 	memcpy(&incoming_seq, static_cast< unsigned char const * >(incoming_spdu_.data()) + 4/*offset to the sequence number*/, 4/*size of the sequence number*/);
 	switch (static_cast< unsigned char const * >(incoming_spdu_.data())[3/*offset of the function code*/])
 	{
-	case Messages::request_session_initiation__ :
+	case static_cast< uint8_t >(Message::request_session_initiation__) :
 		rxRequestSessionInitiation(incoming_seq);
 		break;
-	case Messages::session_start_request__ :
+	case static_cast< uint8_t >(Message::session_start_request__) :
 		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
 		// if so, parse into a SessionStartRequest object and call rxSessionStartRequest(incoming_seq, incoming_ssr);
 		break;
-	case Messages::session_start_response__ :
+	case static_cast< uint8_t >(Message::session_start_response__) :
 		// check the SPDU size to see if it's big enough to hold a SessionStartResponse message
 		// if so, parse into a SessionStartResponse object and call rxSessionStartResponse(incoming_seq, incoming_ssr);
 		break;
-	case Messages::set_keys__ :
+	case static_cast< uint8_t >(Message::set_keys__) :
 		// check the SPDU size to see if it's big enough to hold a SetKeys message
 		// if so, parse into a SetKeys object and call rxSetKeys(incoming_seq, incoming_sk);
 		break;
-	case Messages::key_status__ :
+	case static_cast< uint8_t >(Message::key_status__) :
 		// check the SPDU size to see if it's big enough to hold a KeyStatus message
 		// if so, parse into a KeyStatus object and call rxkeyStatus(incoming_seq, incoming_ks);
 		break;
-	case Messages::authenticated_apdu__ :
+	case static_cast< uint8_t >(Message::authenticated_apdu__) :
 		// check the SPDU size to see if it's big enough to hold an AuthenticatedAPDU message
 		// if so, parse into a AuthenticatedAPDU object and call rxAuthenticatedAPDU(incoming_seq, incoming_aa);
 		break;
-	case Messages::error__ :
+	case static_cast< uint8_t >(Message::error__) :
 		// check the SPDU size to see if it's big enough to hold an Error message
 		// if so, parse into a Error object and call rxError(incoming_seq, incoming_error);
 		break;

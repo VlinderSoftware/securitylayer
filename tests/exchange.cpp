@@ -29,7 +29,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				REQUIRE( outstation.pollSPDU() );
 				auto spdu(outstation.getSPDU());
 				REQUIRE( !outstation.pollSPDU() );
-				REQUIRE( spdu.size() >= 8 );
+				REQUIRE( spdu.size() == 8 );
 				unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 				REQUIRE( spdu_bytes[0] == 0xc0 );
 				REQUIRE( spdu_bytes[1] == 0x80 );
@@ -54,6 +54,11 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				THEN( "The Master should be in the EXPECT_SESSION_START_RESPONSE state" ) {
 					REQUIRE( master.getState() == Master::expect_session_start_response__ );
 				}
+				THEN( "The Master should not present anything as an APDU" ) {
+					REQUIRE( !master.pollAPDU() );
+				}
+				//TODO test cases where the Outstation sent its RequestSessionInitation message with sequence numbers 
+				//     other than 1, according to OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
 			}
 		}
 	}

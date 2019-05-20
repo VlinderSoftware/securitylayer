@@ -22,6 +22,8 @@ protected :
 	virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 
+	virtual void rxRequestSessionInitiation(uint32_t incoming_seq) noexcept override;
+
 private :
 	void sendSessionStartRequest() noexcept;
 
