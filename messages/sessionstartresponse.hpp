@@ -1,27 +1,15 @@
-#ifndef dnp3sav6_messages_sessionstartrequest_hpp
-#define dnp3sav6_messages_sessionstartrequest_hpp
+#ifndef dnp3sav6_messages_sessionstartresponse_hpp
+#define dnp3sav6_messages_sessionstartresponse_hpp
 
 #include <cstdint>
 
 namespace DNP3SAv6 { namespace Messages {
-struct SessionStartRequest
+struct SessionStartResponse
 {
     // sequence number is already part of the SPDU header
     // removed master ID from strawman proposal: it's not necessary
     
-    /* The version field is an 8-bit (changed from 16 vs. my strawman proposal to allow
-     * for better alignment) numerical identifier for the current version. For SAv6,
-     * the value is always 6. Future versions of the protocol should keep this value
-     * in the same place (and should use the same function code for this message, 
-     * even if the content changes). */
-    std::uint8_t version_;
-    /* The flags field allows the Master to indicate that it supports other versions
-     * of the protocol. It's an 8-bit field of which bits 7 through 1 are reserved
-     * and shall be 0. Bit 0 is set to 1 if the Master supports higher versions
-     * than what is currently requested, or 0 if not. */
-    std::uint8_t flags_;
-    
-#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+#if !defined(OPTION_MASTER_SETS_KWA_AND_MAL) || defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
     /* Indicates the key-wrap algorithm to be used. SAv6 mandates the use of at least
      * AES-256. The value is one of KeyWrapAlgorithm's values. */
     std::uint8_t key_wrap_algorithm_;
@@ -40,6 +28,10 @@ struct SessionStartRequest
     /* Indicates the number of times the session keys may be used before they need 
      * to be replaced. */
     std::uint16_t session_key_change_count_;
+    /* Contains the length of the challenge data, in bytes, that follows this header.
+     * It should be reasonably small, but large enough to fit its cryptographic 
+     * purpose. Minimal value is 4. */
+    std::uint16_t challenge_data_length_;
 };
 }}
 

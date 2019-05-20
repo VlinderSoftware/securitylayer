@@ -45,11 +45,6 @@ Master::Master(
 
 /*virtual */void Master::rxRequestSessionInitiation(uint32_t incoming_seq) noexcept/* override*/
 {
-	// TO DISCUSS: the sequence number from the Outstation is basically ignored at this point.
-	//             The alternative is that we use the sequence number from the Outstation if 
-	//             it's greater than the sequence number we're using at the moment.
-#define OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
-
 	switch (getState())
 	{
 #ifdef OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
