@@ -152,6 +152,25 @@ void SecurityLayer::send(Messages::RequestSessionInitiation const &rsi) noexcept
 
 void SecurityLayer::send(Messages::SessionStartRequest const &ssr) noexcept
 {
+	static_assert(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(ssr), "buffer too small");
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_start_request__);
+	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	assert(outgoing_spdu_size_ == 8);
+
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &ssr, sizeof(ssr));
+	outgoing_spdu_size_ += sizeof(ssr);
+	assert(outgoing_spdu_size_ == 8 + sizeof(ssr));
+
+	setOutgoingSPDU(
+		  const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
+		);
+	incrementStatistic(Statistics::total_messages_sent__);
 }
 
 void SecurityLayer::send(Messages::SessionStartResponse const &ssr) noexcept
@@ -179,9 +198,11 @@ void SecurityLayer::send(Messages::Error const &e) noexcept
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
 	outgoing_spdu_size_ += sizeof(seq_);
 	assert(outgoing_spdu_size_ == 8);
+	
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &e, sizeof(e));
 	outgoing_spdu_size_ += sizeof(e);
 	assert(outgoing_spdu_size_ == 8 + sizeof(e));
+	
 	setOutgoingSPDU(
 		  const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
 		);

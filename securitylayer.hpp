@@ -100,6 +100,7 @@ protected :
 
 	virtual void rxRequestSessionInitiation(uint32_t incoming_seq) noexcept;
 
+	Config const config_;
 private :
 	void parseIncomingSPDU() noexcept;
 
@@ -120,7 +121,6 @@ private :
 
 	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];
 	
-	Config config_;
 };
 }
 
