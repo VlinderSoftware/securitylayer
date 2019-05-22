@@ -227,22 +227,33 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
-	if (incoming_spdu_.size() < 8)
+	unsigned char const *incoming_spdu_data(static_cast< unsigned char const* >(incoming_spdu_data_));
+	unsigned char const *curr(incomping_spdu_data);
+	unsigned char const *const end(curr + incoming_spdu_.size());
+
+	if (distance(curr, end) < 8)
 	{
 		send(Messages::Error(Messages::Error::invalid_spdu__));
 	}
 	else
 	{ /* it's at least big enough to be a valid SPDU */ }
+
 	static const unsigned char preamble__[] = { 0xC0, 0x80, 0x01 };
-	if (memcmp(incoming_spdu_.data(), preamble__, sizeof(preamble__)) != 0)
+	if (!equal(curr, curr + sizeof(preamble__), preamble__))
 	{
 		send(Messages::Error(Messages::Error::invalid_spdu__));
 	}
 	else
 	{ /* preamble is OK */ }
+	curr += 3;
+
+	unsigned char const incoming_function_code(*curr++);
+
 	uint32_t incoming_seq;
-	memcpy(&incoming_seq, static_cast< unsigned char const * >(incoming_spdu_.data()) + 4/*offset to the sequence number*/, 4/*size of the sequence number*/);
-	switch (static_cast< unsigned char const * >(incoming_spdu_.data())[3/*offset of the function code*/])
+	memcpy(&incoming_seq, curr, 4/*size of the sequence number*/);
+	curr += 4;
+
+	switch (incoming_function_code)
 	{
 	case static_cast< uint8_t >(Message::request_session_initiation__) :
 		rxRequestSessionInitiation(incoming_seq);
@@ -250,6 +261,20 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 	case static_cast< uint8_t >(Message::session_start_request__) :
 		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
 		// if so, parse into a SessionStartRequest object and call rxSessionStartRequest(incoming_seq, incoming_ssr);
+		if (incoming_spdu_.size() ==
+#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+		    18
+#else
+		    16
+#endif
+		   )
+		{
+			SessionStartRequest incoming_ssr;
+
+		}
+		else
+		{
+		}
 		break;
 	case static_cast< uint8_t >(Message::session_start_response__) :
 		// check the SPDU size to see if it's big enough to hold a SessionStartResponse message

@@ -98,6 +98,13 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				}
 				//TODO test cases where the Outstation sent its RequestSessionInitation message with sequence numbers 
 				//     other than 1, according to OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
+				WHEN( "The Outstation receives the Master's response" ) {
+					spdu = master.getSPDU();
+					outstation.postSPDU(spdu);
+					THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
+						REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
+					}
+				}
 			}
 		}
 	}
