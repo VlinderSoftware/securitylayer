@@ -2,6 +2,8 @@
 #define dnp3sav6_outstation_hpp
 
 #include "securitylayer.hpp"
+#include "keywrapalgorithm.hpp"
+#include "macalgorithm.hpp"
 
 namespace DNP3SAv6 {
 class Outstation : public SecurityLayer
@@ -21,6 +23,18 @@ public :
 protected :
 	virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
+
+	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr) noexcept override;
+
+protected :
+	/* Library hooks.
+	 * NOTE: the incoming stuff is not authenticated yet. DO NOT take any descisions based on this incoming data. Only 
+	 *       tell the implementation if you'd be willing, according to your configuration, to accept the proposed 
+	 *       key-wrap algorithm and MAC algorithm. DO NOT presume that these will actually be used for anything, so
+	 *       don't start allocating resources etc. Also don't log everything: that can be used as DOS attacks on your
+	 *       logs. The fewer side-effects the better. */
+	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
+	virtual bool acceptMACAlgorithm(KeyWrapAlgorithm incoming_mal) const noexcept;
 
 private :
 	void sendRequestSessionInitiation() noexcept;

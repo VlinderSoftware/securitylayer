@@ -105,6 +105,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
 					}
 				}
+				//TODO test that a session start request from a broadcast address is ignored
 			}
 		}
 	}

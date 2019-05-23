@@ -8,3 +8,6 @@ TEST_CASE( "Outstation: try to create an instance", "[outstation]" ) {
 	Config config;
 	Outstation outstation(io_context, config);
 }
+
+//TODO add a test with an overloaded Outstation with accept* functions that may return false
+

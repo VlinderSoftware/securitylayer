@@ -8,6 +8,8 @@ struct Error
 {
 	enum ErrorCode : std::uint16_t {
 		  invalid_spdu__ = 1
+		, unsupported_version__ = 2
+		, unexpected_flags__ = 3
 		};
 
 	Error(ErrorCode error)

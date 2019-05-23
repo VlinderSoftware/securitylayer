@@ -99,6 +99,7 @@ protected :
 	void incrementStatistic(Statistics statistics) noexcept;
 
 	virtual void rxRequestSessionInitiation(uint32_t incoming_seq) noexcept;
+	virtual void rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr) noexcept;
 
 	Config const config_;
 private :

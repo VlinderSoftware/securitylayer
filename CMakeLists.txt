@@ -27,6 +27,7 @@ set(LIBLAYER_SRC
 	master.cpp
 	outstation.cpp
 	securitylayer.cpp
+	sessionbuilder.cpp
 	)
 
 add_library(secureauthentication SHARED
@@ -36,14 +37,19 @@ target_link_libraries(secureauthentication exceptions sodium Boost::system Threa
 set_target_properties(secureauthentication PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(secureauthentication PROPERTIES SOVERSION 1)
 set(LAYER_PUBLIC_HEADERS
-	applicationlayer.hpp
 	config.hpp
 	exceptions.hpp
 	master.hpp
 	messages.hpp
+	messages/error.hpp
+	messages/keystatus.hpp
+	messages/requestsessioninitiation.hpp
+	messages/sessionstartrequest.hpp
+	messages/sessionstartresponse.hpp
+	messages/setsessionkeys.hpp
 	outstation.hpp
 	securitylayer.hpp
-	transportfunction.hpp
+	sessionbuilder.hpp
 	)
 #set(LAYER_PUBLIC_DETAILS_HEADERS
 #	)

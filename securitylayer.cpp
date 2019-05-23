@@ -224,11 +224,15 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
 }
+/*virtual */void SecurityLayer::rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
 
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
-	unsigned char const *incoming_spdu_data(static_cast< unsigned char const* >(incoming_spdu_data_));
-	unsigned char const *curr(incomping_spdu_data);
+	unsigned char const *incoming_spdu_data(static_cast< unsigned char const* >(incoming_spdu_.data()));
+	unsigned char const *curr(incoming_spdu_data);
 	unsigned char const *const end(curr + incoming_spdu_.size());
 
 	if (distance(curr, end) < 8)
@@ -269,11 +273,33 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 #endif
 		   )
 		{
-			SessionStartRequest incoming_ssr;
-
+			Messages::SessionStartRequest incoming_ssr;
+			assert(distance(curr, end) == sizeof(incoming_ssr));
+			incoming_ssr.version_ = *curr++;
+			if (incoming_ssr.version_ != 6)
+			{
+				send(Messages::Error(Messages::Error::unsupported_version__));
+				break;
+			}
+			else
+			{ /* all is well as far as the version is concerned */ }
+ 			incoming_ssr.flags_ = *curr++;
+    
+#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+			incoming_ssr.key_wrap_algorithm_ = *curr++;
+			incoming_ssr.mac_algorithm_ = *curr++;
+#endif
+			memcpy(&incoming_ssr.session_key_change_interval_, curr, 4);
+			curr += 4;
+			memcpy(&incoming_ssr.session_key_change_count_, curr, 2);
+			curr += 2;
+			assert(curr == end);
+			rxSessionStartRequest(incoming_seq, incoming_ssr);
 		}
 		else
 		{
+			send(Messages::Error(Messages::Error::invalid_spdu__));
+			break;
 		}
 		break;
 	case static_cast< uint8_t >(Message::session_start_response__) :
