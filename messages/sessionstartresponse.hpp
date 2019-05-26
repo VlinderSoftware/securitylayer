@@ -19,7 +19,7 @@ struct SessionStartResponse
     std::uint8_t mac_algorithm_;
 #endif
     /* Indicates the amount of time, in seconds, the session will be considered valid 
-     * by the Master once the session is established (i.e. as of the moment 
+     * by the Outstation once the session is established (i.e. as of the moment 
      * SetSessionKeys is first sent). This value is informative to the Outstation. 
      * It is recommended that the Outstation use a (slightly) larger value for its own 
      * time-out so as to prevent a clock skew between the two devices from causing 

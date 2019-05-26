@@ -78,7 +78,7 @@ Master::Master(
 		 * can still initiate the session. If it's greater than our own, we can use it, if 
 		 * it's reasonable. We'll call it reasonable if it's less than half the range (i.e. 
 		 * the most significant bit is not set). */
-			static_assert(sizeof(incoming_seq) == 4, "unexpected size for seq");
+		static_assert(sizeof(incoming_seq) == 4, "unexpected size for seq");
 		if ((incoming_seq > getSEQ()) && ((incoming_seq & 0x80000000) == 0))
 		{
 			setSEQ(incoming_seq);
