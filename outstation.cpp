@@ -48,6 +48,7 @@ Outstation::Outstation(
 	KeyWrapAlgorithm suggested_key_wrap_algorithm;
 	MACAlgorithm suggested_mac_algorithm;
 #endif
+	Messages::SessionStartResponse response;
 
 	switch (getState())
 	{
@@ -71,15 +72,34 @@ Outstation::Outstation(
 		}
 #ifdef OPTION_MASTER_SETS_KWA_AND_MAL
 		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_)))
-		{ /* all is well so far */ }
+		{
+#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+			response.key_wrap_algorithm_ = incoming_ssr.key_wrap_algorithm_;
+#endif
+		}
 		else
 		{
 #ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-	KeyWrapAlgorithm suggested_key_wrap_algorithm;
-	MACAlgorithm suggested_mac_algorithm;
+			response.key_wrap_algorithm_ = getPreferredKeyWrapAlgorithm();
 #endif
 
 		}
+		if (acceptMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_)))
+		{
+#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+			response.mac_algorithm_ = incoming_ssr.mac_algorithm_;
+#endif
+		}
+		else
+		{
+#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+			response.mac_algorithm_ = getPreferredMACAlgorithm();
+#endif
+
+		}
+#else
+		response.key_wrap_algorithm_ = getPreferredKeyWrapAlgorithm();
+		response.mac_algorithm_ = getPreferredMACAlgoithm();
 #endif
 		// if so, add them to the session builder, and add the buffer to the session builder for later hashing
 		// otherwise, send back an appropriate error message or, if the values I don't like are only hints, send a response with values I do like.
