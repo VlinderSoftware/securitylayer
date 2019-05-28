@@ -23,6 +23,7 @@ add_executable(less ${LESS_GENERATOR_SRC})
 target_link_libraries(less sodium)
 
 set(LIBLAYER_SRC
+	details/randomnumbergenerator.cpp
 	exceptions.cpp
 	master.cpp
 	outstation.cpp
@@ -33,6 +34,7 @@ set(LIBLAYER_SRC
 add_library(secureauthentication SHARED
 	${LIBLAYER_SRC}
 	)
+target_compile_options(secureauthentication PRIVATE -Wall)
 target_link_libraries(secureauthentication exceptions sodium Boost::system Threads::Threads)
 set_target_properties(secureauthentication PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(secureauthentication PROPERTIES SOVERSION 1)

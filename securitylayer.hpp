@@ -9,6 +9,9 @@
 #include "macalgorithm.hpp"
 
 namespace DNP3SAv6 {
+namespace Details {
+	class IRandomNumberGenerator;
+}
 namespace Messages {
 	struct Error;
 	struct KeyStatus;
@@ -23,6 +26,7 @@ public :
 	SecurityLayer(
 		  boost::asio::io_context &io_context
 		, Config config
+		, Details::IRandomNumberGenerator &random_number_generator
 		);
 	~SecurityLayer() = default;
 	
@@ -95,20 +99,22 @@ protected :
 	std::uint32_t getSEQ() const noexcept { return seq_; }
 	void setSEQ(std::uint32_t seq) noexcept { seq_ = seq; }
 
-	void sendAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept;
-	void send(Messages::RequestSessionInitiation const &rsi) noexcept;
-	void send(Messages::SessionStartRequest const &ssr) noexcept;
-	void send(Messages::SessionStartResponse const &ssr) noexcept;
-	void send(Messages::SetKeys const &sk) noexcept;
-	void send(Messages::KeyStatus const &ks) noexcept;
-	void send(Messages::Error const &e) noexcept;
+	boost::asio::const_buffer formatAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept;
+	boost::asio::const_buffer format(Messages::RequestSessionInitiation const &rsi) noexcept;
+	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
+	boost::asio::const_buffer format(Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
+	boost::asio::const_buffer format(Messages::SetKeys const &sk) noexcept;
+	boost::asio::const_buffer format(Messages::KeyStatus const &ks) noexcept;
+	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
 
 	void incrementStatistic(Statistics statistics) noexcept;
 
-	virtual void rxRequestSessionInitiation(uint32_t incoming_seq) noexcept;
-	virtual void rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr) noexcept;
+	virtual void rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept;
+	virtual void rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept;
 
 	Config const config_;
+	Details::IRandomNumberGenerator &random_number_generator_;
+
 private :
 	void parseIncomingSPDU() noexcept;
 
@@ -128,7 +134,6 @@ private :
 	std::uint32_t seq_ = 0;
 
 	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];
-	
 };
 }
 

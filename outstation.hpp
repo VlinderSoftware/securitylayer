@@ -13,6 +13,7 @@ public :
 	Outstation(
 		  boost::asio::io_context &io_context
 		, Config config
+		, Details::IRandomNumberGenerator &random_number_generator
 		);
 	~Outstation() = default;
 	
@@ -25,7 +26,7 @@ protected :
 	virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 
-	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr) noexcept override;
+	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept override;
 
 protected :
 	/* Library hooks.
@@ -41,6 +42,7 @@ private :
 	void sendRequestSessionInitiation() noexcept;
 
 	unsigned char buffer_[Config::max_spdu_size__];
+	unsigned char nonce_[Config::max_nonce_size__];
 	SessionBuilder session_builder_;
 };
 }

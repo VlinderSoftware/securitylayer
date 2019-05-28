@@ -2,6 +2,8 @@
 #include "messages.hpp"
 #include "config.h"
 
+#include <chrono>
+
 using namespace std;
 using namespace boost::asio;
 
@@ -9,8 +11,9 @@ namespace DNP3SAv6 {
 Master::Master(
 	  boost::asio::io_context &io_context
 	, Config config
+	, Details::IRandomNumberGenerator &random_number_generator
 	)
-	: SecurityLayer(io_context, config)
+	: SecurityLayer(io_context, config, random_number_generator)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
@@ -36,15 +39,21 @@ Master::Master(
 		 * SessionStartResponse messages, not by APDUs. */
 		break;
 	case active__ :
+	{
 		incrementSEQ();
-		sendAuthenticatedAPDU(apdu);
+		const_buffer spdu(formatAuthenticatedAPDU(apdu));
+		setOutgoingSPDU(spdu/* no time-out */);
+		// no state change
+		incrementStatistic(Statistics::total_messages_sent__);
+		incrementStatistic(Statistics::authenticated_apdus_sent__);
 		break;
+	}
 	default :
 		assert(!"Unexpected state");
 	}
 }
 
-/*virtual */void Master::rxRequestSessionInitiation(uint32_t incoming_seq) noexcept/* override*/
+/*virtual */void Master::rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept/* override*/
 {
 	switch (getState())
 	{
@@ -112,7 +121,10 @@ void Master::sendSessionStartRequest() noexcept
 	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
 	ssr.session_key_change_count_ = config_.session_key_change_count_;
 
-	send(ssr);
+	const_buffer const spdu(format(ssr));
+	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
+	// increment stats
+	
 }
 }
 

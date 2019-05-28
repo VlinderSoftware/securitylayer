@@ -10,6 +10,7 @@ public :
 	Master(
 		  boost::asio::io_context &io_context
 		, Config config
+		, Details::IRandomNumberGenerator &random_number_generator
 		);
 	~Master() = default;
 	
@@ -22,7 +23,7 @@ protected :
 	virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 
-	virtual void rxRequestSessionInitiation(uint32_t incoming_seq) noexcept override;
+	virtual void rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept override;
 
 private :
 	void sendSessionStartRequest() noexcept;

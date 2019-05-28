@@ -18,7 +18,7 @@ public :
 	void reset() noexcept;
 
 	void setSessionStartRequest(boost::asio::const_buffer const &spdu);
-	void setSessionStartResponse(boost::asio::const_buffer const &spdu);
+	void setSessionStartResponse(boost::asio::const_buffer const &spdu, boost::asio::const_buffer const &nonce);
 };
 }
 

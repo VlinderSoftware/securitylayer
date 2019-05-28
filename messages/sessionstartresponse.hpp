@@ -33,7 +33,7 @@ struct SessionStartResponse
      * It should be reasonably small, but large enough to fit its cryptographic 
      * purpose. Minimal value is 4. */
     std::uint16_t challenge_data_length_;
-};
+} __attribute__((packed));
 }}
 
 #endif

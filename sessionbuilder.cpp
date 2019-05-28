@@ -13,7 +13,7 @@ void SessionBuilder::reset() noexcept
 void SessionBuilder::setSessionStartRequest(const_buffer const &spdu)
 {
 }
-void SessionBuilder::setSessionStartResponse(const_buffer const &spdu)
+void SessionBuilder::setSessionStartResponse(const_buffer const &spdu, const_buffer const &nonce)
 {
 
 }

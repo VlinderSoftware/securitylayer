@@ -8,6 +8,7 @@ namespace DNP3SAv6 {
 		, discarded_messages__
 		, error_messages_sent__
 		, unexpected_messages__
+		, authenticated_apdus_sent__
 
 		// INSERT NEW ONES ABOVE
 		, statistics_count__
