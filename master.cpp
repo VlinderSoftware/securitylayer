@@ -106,11 +106,11 @@ void Master::sendSessionStartRequest() noexcept
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
 #ifdef OPTION_MASTER_SETS_KWA_AND_MAL
-    	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
-    	ssr.mac_algorithm_ = config_.mac_algorithm_;
+	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
+	ssr.mac_algorithm_ = config_.mac_algorithm_;
 #endif
-    	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
-    	ssr.session_key_change_count_ = config_.session_key_change_count_;
+	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
+	ssr.session_key_change_count_ = config_.session_key_change_count_;
 
 	send(ssr);
 }

@@ -4,6 +4,7 @@
 #include "securitylayer.hpp"
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"
+#include "sessionbuilder.hpp"
 
 namespace DNP3SAv6 {
 class Outstation : public SecurityLayer
@@ -34,13 +35,13 @@ protected :
 	 *       don't start allocating resources etc. Also don't log everything: that can be used as DOS attacks on your
 	 *       logs. The fewer side-effects the better. */
 	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
-	virtual bool acceptMACAlgorithm(KeyWrapAlgorithm incoming_mal) const noexcept;
+	virtual bool acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept;
 
 private :
 	void sendRequestSessionInitiation() noexcept;
 
 	unsigned char buffer_[Config::max_spdu_size__];
-	Config config_;
+	SessionBuilder session_builder_;
 };
 }
 

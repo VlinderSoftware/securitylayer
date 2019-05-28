@@ -1,6 +1,8 @@
 #ifndef dnp3sav6_sessionbuilder_hpp
 #define dnp3sav6_sessionbuilder_hpp
 
+#include <boost/asio.hpp>
+
 namespace DNP3SAv6 {
 class SessionBuilder
 {
@@ -13,11 +15,11 @@ public :
 	SessionBuilder(SessionBuilder const&) = delete;
 	SessionBuilder& operator=(SessionBuilder const&) = delete;
 
-	virtual void reset() noexcept override;
+	void reset() noexcept;
+
+	void setSessionStartRequest(boost::asio::const_buffer const &spdu);
+	void setSessionStartResponse(boost::asio::const_buffer const &spdu);
 };
 }
 
 #endif
-
-
-

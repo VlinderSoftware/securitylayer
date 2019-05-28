@@ -5,6 +5,8 @@
 #include "config.hpp"
 #include "exceptions.hpp"
 #include "statistics.hpp"
+#include "keywrapalgorithm.hpp"
+#include "macalgorithm.hpp"
 
 namespace DNP3SAv6 {
 namespace Messages {
@@ -69,6 +71,11 @@ public : // public API for testing purposes
 		};
 
 	State getState() const noexcept { return state_; }
+
+protected :
+	/* Library hooks. */
+	virtual KeyWrapAlgorithm getPreferredKeyWrapAlgorithm() const noexcept;
+	virtual MACAlgorithm getPreferredMACAlgorithm() const noexcept;
 
 protected :
 	virtual void reset() noexcept = 0;

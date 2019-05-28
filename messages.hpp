@@ -5,6 +5,7 @@
 #include "messages/error.hpp"
 #include "messages/requestsessioninitiation.hpp"
 #include "messages/sessionstartrequest.hpp"
+#include "messages/sessionstartresponse.hpp"
 
 namespace DNP3SAv6 {
 	enum struct Message : std::uint8_t

@@ -90,6 +90,16 @@ const_buffer SecurityLayer::getSPDU() noexcept
 	return retval;
 }
 
+/*virtual */KeyWrapAlgorithm SecurityLayer::getPreferredKeyWrapAlgorithm() const noexcept
+{
+	return KeyWrapAlgorithm::nist_sp800_38f_aes_256__;
+}
+
+/*virtual */MACAlgorithm SecurityLayer::getPreferredMACAlgorithm() const noexcept
+{
+	return MACAlgorithm::hmac_sha_256_truncated_16__;
+}
+
 void SecurityLayer::reset() noexcept
 {
 	discardAPDU();

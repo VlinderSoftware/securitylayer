@@ -70,6 +70,7 @@ Outstation::Outstation(
 			send(Messages::Error(Messages::Error::unexpected_flags__));
 			break;
 		}
+		session_builder_.setSessionStartRequest(incoming_ssr);
 #ifdef OPTION_MASTER_SETS_KWA_AND_MAL
 		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_)))
 		{
@@ -80,9 +81,11 @@ Outstation::Outstation(
 		else
 		{
 #ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-			response.key_wrap_algorithm_ = getPreferredKeyWrapAlgorithm();
+			response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
+#else
+			send(Message::Error(Message::Error::unsupported_keywrap_algorithm__));
+			return;
 #endif
-
 		}
 		if (acceptMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_)))
 		{
@@ -93,16 +96,22 @@ Outstation::Outstation(
 		else
 		{
 #ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-			response.mac_algorithm_ = getPreferredMACAlgorithm();
+			response.mac_algorithm_ = static_cast< uint8_t >(getPreferredMACAlgorithm());
+#else
+			send(Message::Error(Message::Error::unsupported_mac_algorithm__));
+			return;
 #endif
 
 		}
 #else
 		response.key_wrap_algorithm_ = getPreferredKeyWrapAlgorithm();
-		response.mac_algorithm_ = getPreferredMACAlgoithm();
+		response.mac_algorithm_ = getPreferredMACAlgorithm();
 #endif
-		// if so, add them to the session builder, and add the buffer to the session builder for later hashing
-		// otherwise, send back an appropriate error message or, if the values I don't like are only hints, send a response with values I do like.
+		response.session_key_change_interval_ = config_.session_key_change_interval_;
+		response.session_key_change_count_ = config_.session_key_change_count_;
+
+		session_builder_.setSessionStartResponse(incoming_ssr);
+
 	case expect_set_keys__ :
 		//TODO if the sequence number is the same, re-send our response
 		//     if the sequence number is one higher, and values for the KWA and the MAL from the Master are hints, treat them 
@@ -112,12 +121,6 @@ Outstation::Outstation(
 	default :
 		assert(!"unexpected state");
 	}
-//version_ = 6;
-//std::uint8_t flags_ = 0;
-//#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
-//key_wrap_algorithm_ = 2/*NIST SP800-38F AES-256 GCM*/;
-//mac_algorithm_ = 4/* HMAC SHA256 T16*/;
-//#endif
 //session_key_change_interval_ = 60/*one hour*/;
 //session_key_change_count_ = 4096;
 }
@@ -127,7 +130,7 @@ Outstation::Outstation(
 	return true;
 }
 
-/*virtual */bool Outstation::acceptMACAlgorithm(KeyWrapAlgorithm incoming_mal) const noexcept
+/*virtual */bool Outstation::acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept
 {
 	return true;
 }
