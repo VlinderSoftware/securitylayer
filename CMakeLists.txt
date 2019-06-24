@@ -4,6 +4,12 @@ enable_testing()
 
 include (cmake/inc/Findsodium.cmake)
 
+option(SA_COVERAGE "Enable code coverage" OFF)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+if (SA_COVERAGE)
+    include(CodeCoverage)
+endif()
+
 add_subdirectory(exceptions)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -70,3 +76,8 @@ add_executable(test_libsecureauthentication
 	)
 target_link_libraries(test_libsecureauthentication secureauthentication)
 add_test(test_libsecureauthentication test_libsecureauthentication)
+
+if (SA_COVERAGE)
+	append_coverage_compiler_flags()
+	setup_target_for_coverage_lcov(NAME secureauthentication_coverage EXECUTABLE test_libsecureauthentication DEPENDENCIES test_libsecureauthentication)
+endif()
