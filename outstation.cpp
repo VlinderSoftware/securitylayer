@@ -49,8 +49,6 @@ Outstation::Outstation(
 {
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 	static_assert(OPTION_MASTER_SETS_KWA_AND_MAL, "The Master-provided KWA and MAL can only be hints if it actually sets them");
-	//KeyWrapAlgorithm suggested_key_wrap_algorithm;
-	//MACAlgorithm suggested_mac_algorithm;
 #endif
 	Messages::SessionStartResponse response;
 
