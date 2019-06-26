@@ -9,8 +9,9 @@ namespace DNP3SAv6 {
 		  hmac_sha_256_truncated_8__ = 3
 		, hmac_sha_256_truncated_16__ = 4
 		, hmac_sha_256__ = 7
-		, hmac_blake2s_truncated_16__ = 8
-		, hmac_blake2s_truncated__ = 9
+		, hmac_blake2s_truncated_8__ = 8
+		, hmac_blake2s_truncated_16__ = 9
+		, hmac_blake2s__ = 10
 		//TODO add SHA-3-based algorithms
 	};
 }
