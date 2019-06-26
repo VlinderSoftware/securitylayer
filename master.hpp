@@ -29,6 +29,10 @@ private :
 	void sendSessionStartRequest() noexcept;
 
 	unsigned char buffer_[Config::max_spdu_size__];
+#if OPTION_ITERATE_KWA_AND_MAL
+	unsigned int kwa_index_;
+	unsigned int mal_index_;
+#endif
 };
 }
 

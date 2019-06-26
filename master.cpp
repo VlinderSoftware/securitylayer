@@ -1,6 +1,6 @@
+#include "config.h"
 #include "master.hpp"
 #include "messages.hpp"
-#include "config.h"
 
 #include <chrono>
 
@@ -14,10 +14,18 @@ Master::Master(
 	, Details::IRandomNumberGenerator &random_number_generator
 	)
 	: SecurityLayer(io_context, config, random_number_generator)
+#if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
+	, kwa_index_(0)
+	, mal_index_(0)
+#endif
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
 {
+#if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
+	kwa_index_ = 0;
+	mal_index_ = 0;
+#endif
 	SecurityLayer::reset();
 }
 
@@ -115,8 +123,30 @@ void Master::sendSessionStartRequest() noexcept
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
 #if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
+#if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
+	if (kwa_index_ < config_.key_wrap_algorithm_count_)
+	{
+		ssr.key_wrap_algorithm_ = config_.getKeyWrapAlgorithm(kwa_index_);
+	}
+	else
+	{	// we've run out of key-wrap algorithms to suggest
+		//TODO TO DISCUSS: increment a stat for this? Log?
+		return;
+	}
+	if (mal_index_ < config_.mac_algorithm_count_)
+	{
+		ssr.mac_algorithm_ = config_.getMACAlgorithm(mal_index_);
+	}
+	else
+	{	// we've run out of MAC algorithms to suggest
+		//TODO TO DISCUSS: increment a stat for this? Log?
+		return;
+	}
+#else
 	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
+#endif
+	//TODO set the proposed algorithm in the session builder
 #endif
 	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
 	ssr.session_key_change_count_ = config_.session_key_change_count_;

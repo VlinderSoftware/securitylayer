@@ -10,6 +10,14 @@ void SessionBuilder::reset() noexcept
 {
 }
 
+void SessionBuilder::setKeyWrapAlgorithm(KeyWrapAlgorithm key_wrap_algorithm)
+{
+}
+
+void SessionBuilder::setMACAlgorithm(MACAlgorithm mac_algorithm)
+{
+}
+
 void SessionBuilder::setSessionStartRequest(const_buffer const &spdu)
 {
 }
