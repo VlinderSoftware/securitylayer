@@ -31,5 +31,8 @@
 #define OPTION_ITERATE_KWA_AND_MAL 1
 // SUGGESTION: The DNP Authority should be able to set permissible algorithms
 #define OPTION_DNP_AUTHORITY_SETS_PERMISSIBLE_KWA_AND_MAL_ALGORITHMS 1
+// TO DISCUSS: The Master could send an extra Session key, for broadcast messages. If we allow 
+//             this, it un-breaks broadcast for SA, but it also means that the Application Layer 
+//             should be more careful with broadcast messages, as they could in theory come from 
+//             any of the Outstations on the shared network (whatever the Master broadcasts to).
 #define OPTION_INCLUDE_BROADCAST_KEY 1
-
