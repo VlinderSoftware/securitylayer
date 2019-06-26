@@ -207,14 +207,12 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionStartResponse c
 
 boost::asio::const_buffer SecurityLayer::format(Messages::SetKeys const &sk) noexcept
 {
-
-	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
+	return const_buffer();
 }
 
 boost::asio::const_buffer SecurityLayer::format(Messages::KeyStatus const &ks) noexcept
 {
-
-	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
+	return const_buffer();
 }
 
 boost::asio::const_buffer SecurityLayer::format(Messages::Error const &e) noexcept
