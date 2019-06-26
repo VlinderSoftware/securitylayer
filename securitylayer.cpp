@@ -296,13 +296,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 	case static_cast< uint8_t >(Message::session_start_request__) :
 		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
 		// if so, parse into a SessionStartRequest object and call rxSessionStartRequest(incoming_seq, incoming_ssr);
-		if (incoming_spdu_.size() ==
-#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
-		    18
-#else
-		    16
-#endif
-		   )
+		if (incoming_spdu_.size() == sizeof(Messages::SessionStartRequest) + 8/*header size*/)
 		{
 			Messages::SessionStartRequest incoming_ssr;
 			assert(distance(curr, end) == sizeof(incoming_ssr));
