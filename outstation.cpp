@@ -140,7 +140,7 @@ Outstation::Outstation(
 		return;
 	}
 	case expect_set_keys__ :
-		//TODO if the sequence number is the same, re-send our response
+		//TODO if the sequence number is the same, re-send our response -- make sure to use the same nonce
 		//     if the sequence number is one higher, and values for the KWA and the MAL from the Master are hints, treat them 
 		//     otherwise increment appropriate statistics and ignore
 	case active__ :
