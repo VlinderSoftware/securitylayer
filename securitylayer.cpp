@@ -37,7 +37,7 @@ void SecurityLayer::onAPDUTimeout() noexcept
 		break;
 	case expect_session_start_response__ :
 	case expect_set_keys__ :
-	case expect_key_status__ :
+	case expect_session_ack__ :
 		discardAPDU();
 		// no state change
 		break;

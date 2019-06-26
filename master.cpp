@@ -34,7 +34,7 @@ Master::Master(
 		/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
 		 * the APDUs */
 		break;
-	case expect_key_status__ :
+	case expect_session_ack__ :
 		/* no-op: re-sending SetKeys messages is driven by its time-out and receiving
 		 * SessionStartResponse messages, not by APDUs. */
 		break;
@@ -100,7 +100,7 @@ Master::Master(
 		setState(expect_session_start_response__);
 		break;
 #endif
-	case expect_key_status__ :
+	case expect_session_ack__ :
 	case active__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;

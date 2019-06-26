@@ -70,7 +70,7 @@ public : // public API for testing purposes
 		, expect_session_start_request__
 		, expect_session_start_response__
 		, expect_set_keys__
-		, expect_key_status__
+		, expect_session_ack__
 		, active__
 		};
 
