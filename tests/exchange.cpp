@@ -157,8 +157,21 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[15] == 0x00 );
 #endif
 					}
+					WHEN( "The Master receives the SessionStartResponse" ) {
+						auto spdu(outstation.getSPDU());
+						master.postSPDU(spdu);
+						THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
+							REQUIRE( master.getState() == SecurityLayer::expect_session_ack__ );
+						}
+						//TODO check that the Master sends keys
+						//TODO check the statistics
+						//TODO check invalid messages (things that should provoke error returns)
+						//TODO check with the wrong sequence number
+					}
 				}
 				//TODO test that a session start request from a broadcast address is ignored
+				//TODO check statistics
+				//TODO check invalid messages (things that should provoke error returns)
 			}
 		}
 	}

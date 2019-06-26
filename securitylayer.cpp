@@ -253,6 +253,10 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
 }
+/*virtual */void SecurityLayer::rxSessionStartResponse(uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
 
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
@@ -330,13 +334,44 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
-			break;
 		}
 		break;
 	case static_cast< uint8_t >(Message::session_start_response__) :
+	{
+		unsigned int const min_expected_spdu_size(8/*header size*/ + sizeof(Messages::SessionStartResponse) + Config::min_nonce_size__);
+		unsigned int const max_expected_spdu_size(8/*header size*/ + sizeof(Messages::SessionStartResponse) + Config::max_nonce_size__);
+		if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
+		{
+			Messages::SessionStartResponse incoming_ssr;
+			assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_ssr));
+			memcpy(&incoming_ssr, curr, sizeof(incoming_ssr));
+			curr += sizeof(incoming_ssr);
+
+			if (incoming_ssr.challenge_data_length_ != distance(curr, end))
+			{
+				const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+				setOutgoingSPDU(response_spdu);
+				incrementStatistic(Statistics::error_messages_sent__);
+				incrementStatistic(Statistics::total_messages_sent__);
+			}
+			else
+			{
+				const_buffer nonce(curr, distance(curr, end));
+				rxSessionStartResponse(incoming_seq, incoming_ssr, nonce, incoming_spdu_);
+			}
+		}
+		else
+		{
+			const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+		}
+
 		// check the SPDU size to see if it's big enough to hold a SessionStartResponse message
 		// if so, parse into a SessionStartResponse object and call rxSessionStartResponse(incoming_seq, incoming_ssr);
 		break;
+	}
 	case static_cast< uint8_t >(Message::set_keys__) :
 		// check the SPDU size to see if it's big enough to hold a SetKeys message
 		// if so, parse into a SetKeys object and call rxSetKeys(incoming_seq, incoming_sk);

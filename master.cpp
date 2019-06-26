@@ -117,6 +117,42 @@ Master::Master(
 	}
 }
 
+/*virtual */void Master::rxSessionStartResponse(uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept/* override*/
+{
+	switch (getState())
+	{
+	case expect_session_start_response__ :
+		//TODO check sequence number
+
+#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
+		//TODO set the algorithms in the SessionBuilder when we sent the request
+#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+		// check if the proposed algorithms concur.
+#if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
+		// if the proposed algorithms don't concur and we iterate, see if theirs is acceptable. If so, take it, otherwise iterate
+
+#else
+		// if the proposed algorithms don't concur and we don't iterate, see if theirs is acceptable. If so, take it, otherwise fail
+		
+#endif
+#endif
+#else		// if the Outstation provides a set of algorithms, and we don't, take theirs
+		session_builder_.setKeyWrapAlgorithm(incoming_ssr.key_wrap_algorithm_);
+		session_builder_.setMACAlgorithm(incoming_ssr.mac_algorithm_);
+#endif
+		break;
+	case expect_session_ack__ :
+		/* This is probably the response we got previously. Check if it it's identical and, if so, repeat the response. 
+		 * Otherwise, it's an unexpected message. */
+	case initial__ :
+	case active__ :
+		incrementStatistic(Statistics::unexpected_messages__);
+		break;
+	default :
+		assert(!"Unexpected state");
+	}
+}
+
 void Master::sendSessionStartRequest() noexcept
 {
 	Messages::SessionStartRequest ssr;
