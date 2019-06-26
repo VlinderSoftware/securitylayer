@@ -47,7 +47,7 @@ Outstation::Outstation(
 
 /*virtual */void Outstation::rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept/* override*/
 {
-#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 	static_assert(OPTION_MASTER_SETS_KWA_AND_MAL, "The Master-provided KWA and MAL can only be hints if it actually sets them");
 	//KeyWrapAlgorithm suggested_key_wrap_algorithm;
 	//MACAlgorithm suggested_mac_algorithm;
@@ -83,16 +83,16 @@ Outstation::Outstation(
 			break;
 		}
 		session_builder_.setSessionStartRequest(incoming_spdu);
-#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_)))
 		{
-#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.key_wrap_algorithm_ = incoming_ssr.key_wrap_algorithm_;
 #endif
 		}
 		else
 		{
-#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
 #else
 			response_spdu = format(Message::Error(Message::Error::unsupported_keywrap_algorithm__));
@@ -104,13 +104,13 @@ Outstation::Outstation(
 		}
 		if (acceptMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_)))
 		{
-#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.mac_algorithm_ = incoming_ssr.mac_algorithm_;
 #endif
 		}
 		else
 		{
-#ifdef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.mac_algorithm_ = static_cast< uint8_t >(getPreferredMACAlgorithm());
 #else
 			response_spdu = format(Message::Error(Message::Error::unsupported_mac_algorithm__));

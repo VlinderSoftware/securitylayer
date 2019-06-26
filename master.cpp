@@ -57,7 +57,7 @@ Master::Master(
 {
 	switch (getState())
 	{
-#ifdef OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
+#if defined(OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION) && OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
 	case initial__ :
 		incrementSEQ();
 		// fall through
@@ -114,7 +114,7 @@ void Master::sendSessionStartRequest() noexcept
 	Messages::SessionStartRequest ssr;
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
-#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
 #endif

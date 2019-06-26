@@ -22,7 +22,7 @@ struct SessionStartRequest
      * than what is currently requested, or 0 if not. */
     std::uint8_t flags_ = 0;
     
-#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
     /* Indicates the key-wrap algorithm to be used. SAv6 mandates the use of at least
      * AES-256. The value is one of KeyWrapAlgorithm's values. */
     std::uint8_t key_wrap_algorithm_ = 2/*NIST SP800-38F AES-256 GCM*/;
@@ -42,7 +42,7 @@ struct SessionStartRequest
      * to be replaced. */
     std::uint16_t session_key_change_count_ = 4096;
 } __attribute__((packed));
-#ifdef OPTION_MASTER_SETS_KWA_AND_MAL
+#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 static_assert(sizeof(SessionStartRequest) == 10, "unexpected padding for SessionStartRequest");
 #else
 static_assert(sizeof(SessionStartRequest) == 8, "unexpected padding for SessionStartRequest");
