@@ -1,6 +1,8 @@
 #ifndef dnp3sav6_securitylayer_hpp
 #define dnp3sav6_securitylayer_hpp
 
+static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
+
 #include <boost/asio.hpp>
 #include "config.hpp"
 #include "exceptions.hpp"

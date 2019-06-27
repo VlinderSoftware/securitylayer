@@ -1,6 +1,8 @@
 #ifndef dnp3sav6_outstation_hpp
 #define dnp3sav6_outstation_hpp
 
+static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
+
 #include "securitylayer.hpp"
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"

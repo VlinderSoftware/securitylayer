@@ -22,10 +22,11 @@ link_directories(${BOOST_LIBRARYDIR})
 include(GNUInstallDirs)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi -include \"${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp\"")
 endif()
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4061 /wd4100 /wd4191 /wd4242 /wd4266 /wd4355 /wd4365 /wd4464 /wd4514 /wd4548 /wd4571 /wd4574 /wd4619 /wd4625 /wd4626 /wd4668 /wd4710 /wd4820 /wd4826 /wd5026 /wd5027 /wd5031 -D_WIN32_WINNT=0x0601")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32_WINNT=0x0601 /FI\"${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp\"")
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4061 /wd4100 /wd4191 /wd4242 /wd4266 /wd4355 /wd4365 /wd4464 /wd4514 /wd4548 /wd4571 /wd4574 /wd4619 /wd4625 /wd4626 /wd4668 /wd4710 /wd4820 /wd4826 /wd5026 /wd5027 /wd5031 -D_WIN32_WINNT=0x0601")
 endif()
 
 set(LESS_GENERATOR_SRC
@@ -46,11 +47,11 @@ set(LIBLAYER_SRC
 add_library(secureauthentication SHARED
 	${LIBLAYER_SRC}
 	)
-target_compile_options(secureauthentication PRIVATE -Wall)
 target_link_libraries(secureauthentication exceptions sodium Boost::system Boost::date_time Boost::regex Threads::Threads)
 set_target_properties(secureauthentication PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 set_target_properties(secureauthentication PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(secureauthentication PROPERTIES SOVERSION 1)
+
 set(LAYER_PUBLIC_HEADERS
 	config.hpp
 	exceptions.hpp
@@ -63,6 +64,7 @@ set(LAYER_PUBLIC_HEADERS
 	messages/sessionstartresponse.hpp
 	messages/setsessionkeys.hpp
 	outstation.hpp
+	profile.hpp
 	securitylayer.hpp
 	sessionbuilder.hpp
 	)

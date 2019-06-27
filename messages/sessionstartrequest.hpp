@@ -1,7 +1,6 @@
 #ifndef dnp3sav6_messages_sessionstartrequest_hpp
 #define dnp3sav6_messages_sessionstartrequest_hpp
 
-#include "../config.h"
 #include <cstdint>
 
 namespace DNP3SAv6 { namespace Messages {

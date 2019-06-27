@@ -2,7 +2,6 @@
 #define dnp3sav6_messages_error_hpp
 
 #include <cstdint>
-#include "../config.h"
 
 namespace DNP3SAv6 { namespace Messages {
 struct Error

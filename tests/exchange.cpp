@@ -1,9 +1,10 @@
 #include "catch.hpp"
-#include "../config.h"
 #include "../outstation.hpp"
 #include "../master.hpp"
 #include "../details/randomnumbergenerator.hpp"
 #include <sodium.h>
+
+static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
 using namespace std;
 using namespace boost::asio;

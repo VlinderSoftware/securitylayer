@@ -1,3 +1,6 @@
+#ifndef DNP3SAV6_PROFILE_HPP_INCLUDED
+#define DNP3SAV6_PROFILE_HPP_INCLUDED 1
+
 // TO DISCUSS: the sequence number from the Outstation is basically ignored in the
 //             RequestSessionInitiation message. The alternative is that we use the
 //             sequence number from the Outstation if it's greater than the sequence
@@ -36,3 +39,5 @@
 //             should be more careful with broadcast messages, as they could in theory come from 
 //             any of the Outstations on the shared network (whatever the Master broadcasts to).
 #define OPTION_INCLUDE_BROADCAST_KEY 1
+
+#endif
