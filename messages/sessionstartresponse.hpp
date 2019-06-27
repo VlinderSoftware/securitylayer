@@ -5,6 +5,10 @@
 #include <cstdint>
 
 namespace DNP3SAv6 { namespace Messages {
+#ifdef _MSC_VER
+#pragma pack(push)
+#pragma pack(1)
+#endif
 struct SessionStartResponse
 {
     // sequence number is already part of the SPDU header
@@ -33,7 +37,13 @@ struct SessionStartResponse
      * It should be reasonably small, but large enough to fit its cryptographic 
      * purpose. Minimal value is 4. */
     std::uint16_t challenge_data_length_;
-} __attribute__((packed));
+}
+#ifdef _MSC_VER
+#pragma pack(pop)
+#else
+__attribute__((packed))
+#endif
+;
 }}
 
 #endif
