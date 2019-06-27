@@ -28,7 +28,7 @@ public :
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		);
-	~SecurityLayer() = default;
+	virtual ~SecurityLayer() = default;
 	
 	SecurityLayer(SecurityLayer &&other) noexcept = default;
 	SecurityLayer& operator=(SecurityLayer &&other) noexcept = default;

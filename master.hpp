@@ -12,7 +12,7 @@ public :
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		);
-	~Master() = default;
+	virtual ~Master() = default;
 	
 	Master(Master &&other) noexcept = default;
 	Master& operator=(Master &&other) noexcept = default;

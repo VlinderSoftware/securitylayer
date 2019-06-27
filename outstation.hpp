@@ -15,7 +15,7 @@ public :
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		);
-	~Outstation() = default;
+	virtual ~Outstation() = default;
 	
 	Outstation(Outstation &&other) noexcept = default;
 	Outstation& operator=(Outstation &&other) noexcept = default;
