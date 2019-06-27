@@ -18,7 +18,7 @@ namespace DNP3SAv6 {
 	, set_keys__			= 0x04
 	, key_status__			= 0x05
 	, authenticated_apdu__		= 0x06
-	, error__			= 0x10 // must be 0x10 to be able to mimic IIN2.5
+	, error__			= 0x20 // must be 0x10 to be able to mimic IIN2.5
 	};
 }
 
