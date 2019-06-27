@@ -138,8 +138,8 @@ Master::Master(
 #endif
 #endif
 #else		// if the Outstation provides a set of algorithms, and we don't, take theirs
-		session_builder_.setKeyWrapAlgorithm(incoming_ssr.key_wrap_algorithm_);
-		session_builder_.setMACAlgorithm(incoming_ssr.mac_algorithm_);
+		session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_));
+		session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_));
 #endif
 		break;
 	case expect_session_ack__ :

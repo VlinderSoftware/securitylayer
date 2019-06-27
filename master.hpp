@@ -4,6 +4,7 @@
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
 #include "securitylayer.hpp"
+#include "sessionbuilder.hpp"
 
 namespace DNP3SAv6 {
 class Master : public SecurityLayer
@@ -36,6 +37,7 @@ private :
 	unsigned int kwa_index_;
 	unsigned int mal_index_;
 #endif
+	SessionBuilder session_builder_;
 };
 }
 

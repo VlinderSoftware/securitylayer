@@ -10,7 +10,7 @@ struct Error
 		  invalid_spdu__ = 1
 		, unsupported_version__
 		, unexpected_flags__
-#ifndef OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
+#if !defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) || !OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 		, unsupported_mac_algorithm__
 		, unsupported_keywrap_algorithm__
 #endif

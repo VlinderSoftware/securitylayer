@@ -95,7 +95,7 @@ Outstation::Outstation(
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
 #else
-			response_spdu = format(Message::Error(Message::Error::unsupported_keywrap_algorithm__));
+			response_spdu = format(Messages::Error(Messages::Error::unsupported_keywrap_algorithm__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
@@ -113,7 +113,7 @@ Outstation::Outstation(
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.mac_algorithm_ = static_cast< uint8_t >(getPreferredMACAlgorithm());
 #else
-			response_spdu = format(Message::Error(Message::Error::unsupported_mac_algorithm__));
+			response_spdu = format(Messages::Error(Messages::Error::unsupported_mac_algorithm__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
@@ -122,8 +122,8 @@ Outstation::Outstation(
 
 		}
 #else
-		response.key_wrap_algorithm_ = getPreferredKeyWrapAlgorithm();
-		response.mac_algorithm_ = getPreferredMACAlgorithm();
+		response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
+		response.mac_algorithm_ = static_cast< std::uint8_t >(getPreferredMACAlgorithm());
 #endif
 		response.session_key_change_interval_ = config_.session_key_change_interval_;
 		response.session_key_change_count_ = config_.session_key_change_count_;
