@@ -7,9 +7,10 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 namespace DNP3SAv6 {
 	enum struct Errors {
 		  no_error__
+		, failed_to_generate_random_data__
 	};
 	
-//	typedef Exceptions::Exception< std::logic_error, Errors, Errors::busy__ > Busy;
+	typedef Vlinder::Exceptions::Exception< std::runtime_error, Errors, Errors::failed_to_generate_random_data__ > FailedToGenerateRandomData;
 
 	void throwException(Errors error);
 }

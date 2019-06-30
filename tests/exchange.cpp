@@ -2,7 +2,6 @@
 #include "../outstation.hpp"
 #include "../master.hpp"
 #include "../details/randomnumbergenerator.hpp"
-#include <sodium.h>
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -23,8 +22,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 
 		WHEN( "the Application Layer tries to send an APDU" ) {
 			unsigned char apdu_buffer[2048];
-			randombytes_buf(apdu_buffer, sizeof(apdu_buffer)); // NOTE: we really don't care about the contents of the APDU here
-			const_buffer apdu(apdu_buffer, sizeof(apdu_buffer));
+			mutable_buffer apdu(apdu_buffer, sizeof(apdu_buffer));
+			rng.generate(apdu); // NOTE: we really don't care about the contents of the APDU here
 			outstation.postAPDU(apdu);
 			THEN( "The Outstation state will be EXPECT_SESSION_START_REQUEST" ) {
 				REQUIRE( outstation.getState() == Outstation::expect_session_start_request__ );

@@ -1,20 +1,21 @@
-#include <sodium.h>
 #include <iostream>
+#include <openssl/rand.h>
+#include <boost/asio.hpp>
+#include "details/randomnumbergenerator.hpp"
 
 using namespace std;
+using namespace DNP3SAv6;
+using namespace boost::asio;
+
+using Details::RandomNumberGenerator;
 
 int main()
 {
-	if (-1 == sodium_init())
-	{
-		cerr << "Failed to initialize crypto library" << endl;
-		return 1;
-	}
-	else
-	{ /* all is well so far */ }
-
 	unsigned char less[4];
-	randombytes_buf(less, sizeof(less));
+	RandomNumberGenerator rng;
+	mutable_buffer less_buffer(less, sizeof(less));
+	rng.generate(less_buffer);
+
 	cout << "LESS: ";
 	for (unsigned int const less_byte : less)
 	{

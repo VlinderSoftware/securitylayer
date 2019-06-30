@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.1)
 project(secureauthentication VERSION 1.0 LANGUAGES C CXX)
 enable_testing()
 
-include (cmake/inc/Findsodium.cmake)
+include(FindOpenSSL)
+include_directories(OPENSSL_INCLUDE_DIR)
 
 option(SA_COVERAGE "Enable code coverage" OFF)
-option(SA_PROFILES "Try all profiles" OFF)
+option(SA_PROFILES "Try all profiles" ON)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 if (SA_COVERAGE)
@@ -22,12 +23,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${BOOST_LIBRARYDIR})
 
 include(GNUInstallDirs)
-
-set(LESS_GENERATOR_SRC
-	less.cpp
-	)
-add_executable(less ${LESS_GENERATOR_SRC})
-target_link_libraries(less sodium)
 
 set(LAYER_PUBLIC_HEADERS
 	config.hpp
@@ -64,7 +59,7 @@ set(LIBLAYER_SRC
 add_library(secureauthentication SHARED
 	${LIBLAYER_SRC}
 	)
-target_link_libraries(secureauthentication exceptions sodium Boost::system Boost::date_time Boost::regex Threads::Threads)
+target_link_libraries(secureauthentication exceptions OpenSSL::Crypto Boost::system Boost::date_time Boost::regex Threads::Threads)
 set_target_properties(secureauthentication PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 set_target_properties(secureauthentication PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(secureauthentication PROPERTIES SOVERSION 1)
@@ -83,6 +78,18 @@ install(TARGETS secureauthentication
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	)
 #install(FILES ${LAYER_PUBLIC_DETAILS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/details)
+
+set(LESS_GENERATOR_SRC
+	less.cpp
+	)
+add_executable(less ${LESS_GENERATOR_SRC})
+target_link_libraries(less secureauthentication OpenSSL::Crypto)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(less PRIVATE -Wno-psabi -include"${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp")
+endif()
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_options(less PRIVATE -D_WIN32_WINNT=0x0601 /FI"${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp")
+endif()
 
 file(GLOB TEST_LIBLAYER_SOURCES tests/*.cpp)
 add_executable(test_libsecureauthentication
@@ -107,7 +114,7 @@ if (SA_PROFILES)
 		add_library(secureauthentication-${prof} SHARED
 			${LIBLAYER_SRC}
 			)
-		target_link_libraries(secureauthentication-${prof} exceptions sodium Boost::system Boost::date_time Boost::regex Threads::Threads)
+		target_link_libraries(secureauthentication-${prof} exceptions OpenSSL::Crypto Boost::system Boost::date_time Boost::regex Threads::Threads)
 		set_target_properties(secureauthentication-${prof} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 		set_target_properties(secureauthentication-${prof} PROPERTIES VERSION ${PROJECT_VERSION})
 		set_target_properties(secureauthentication-${prof} PROPERTIES SOVERSION 1)
