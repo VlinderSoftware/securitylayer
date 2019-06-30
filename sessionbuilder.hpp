@@ -3,15 +3,16 @@
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
-#include <boost/asio.hpp>
+#include "config.hpp"
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"
+#include <boost/asio.hpp>
 
 namespace DNP3SAv6 {
 class SessionBuilder
 {
 public :
-	SessionBuilder();
+	SessionBuilder(boost::asio::io_context &ioc);
 	~SessionBuilder() = default;
 	
 	SessionBuilder(SessionBuilder &&other) noexcept = default;
@@ -27,6 +28,25 @@ public :
 	// whole messages to calculate a MAC over
 	void setSessionStartRequest(boost::asio::const_buffer const &spdu);
 	void setSessionStartResponse(boost::asio::const_buffer const &spdu, boost::asio::const_buffer const &nonce);
+
+	void setSessionKeyChangeInterval(std::chrono::seconds const &ttl_duration);
+	void sessionKeyChangeCount(unsigned int session_key_change_count);
+
+	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer) const;
+
+private :
+	KeyWrapAlgorithm key_wrap_algorithm_;
+	MACAlgorithm mac_algorithm_;
+
+	unsigned char session_start_request_message_[Config::max_spdu_size__];
+	unsigned int session_start_request_message_size_ = 0;
+	unsigned char session_start_response_message_[Config::max_spdu_size__];
+	unsigned int session_start_response_message_size_ = 0;
+	unsigned char session_start_response_nonce_[Config::max_spdu_size__];
+	unsigned int session_start_response_nonce_size_ = 0;
+
+	boost::asio::steady_timer session_timeout_;
+	unsigned int session_key_change_count_ = 0;
 };
 }
 

@@ -14,6 +14,7 @@ Outstation::Outstation(
 	, Details::IRandomNumberGenerator &random_number_generator
 	)
 	: SecurityLayer(io_context, config, random_number_generator)
+	, session_builder_(io_context)
 { /* no-op */ }
 
 /*virtual */void Outstation::reset() noexcept/* override*/
@@ -153,16 +154,6 @@ Outstation::Outstation(
 //session_key_change_interval_ = 60/*one hour*/;
 //session_key_change_count_ = 4096;
 //send the response_spdu HERE!!
-}
-
-/*virtual */bool Outstation::acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept
-{
-	return true;
-}
-
-/*virtual */bool Outstation::acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept
-{
-	return true;
 }
 
 void Outstation::sendRequestSessionInitiation() noexcept

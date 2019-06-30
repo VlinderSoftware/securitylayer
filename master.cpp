@@ -19,6 +19,7 @@ Master::Master(
 	, kwa_index_(0)
 	, mal_index_(0)
 #endif
+	, session_builder_(io_context)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
@@ -118,13 +119,19 @@ Master::Master(
 	}
 }
 
-/*virtual */void Master::rxSessionStartResponse(uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept/* override*/
+/*virtual */void Master::rxSessionStartResponse(
+	  uint32_t incoming_seq
+	, Messages::SessionStartResponse const &incoming_ssr
+	, boost::asio::const_buffer const &nonce
+	, boost::asio::const_buffer const &spdu
+	) noexcept/* override*/
 {
 	switch (getState())
 	{
 	case expect_session_start_response__ :
+	{
+		session_builder_.setSessionStartResponse(spdu, nonce);
 		//TODO check sequence number
-
 #if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 		//TODO set the algorithms in the SessionBuilder when we sent the request
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
@@ -134,14 +141,29 @@ Master::Master(
 
 #else
 		// if the proposed algorithms don't concur and we don't iterate, see if theirs is acceptable. If so, take it, otherwise fail
-		
 #endif
 #endif
 #else		// if the Outstation provides a set of algorithms, and we don't, take theirs
-		session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_));
-		session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_));
+		KeyWrapAlgorithm incoming_kwa(static_cast<KeyWrapAlgorithm>(incoming_ssr.key_wrap_algorithm_));
+		MACAlgorithm incoming_mal(static_cast<MACAlgorithm>(incoming_ssr.mac_algorithm_));
+		if (acceptKeyWrapAlgorithm(incoming_kwa) && acceptMACAlgorithm(incoming_mal))
+		{
+			session_builder_.setKeyWrapAlgorithm(incoming_kwa);
+			session_builder_.setMACAlgorithm(incoming_mal);
+		}
+		else
+		{
+			//TODO log this: unacceptable algorithm proposed
+			return;
+		}
 #endif
+		session_builder_.setSessionKeyChangeInterval(std::chrono::seconds(incoming_ssr.session_key_change_interval_));
+		session_builder_.sessionKeyChangeCount(incoming_ssr.session_key_change_count_);
+		assert(incoming_ssr.challenge_data_length_ == nonce.size());
+
+		//TODO create the SetKeys message and send it back
 		break;
+	}
 	case expect_session_ack__ :
 		/* This is probably the response we got previously. Check if it it's identical and, if so, repeat the response. 
 		 * Otherwise, it's an unexpected message. */

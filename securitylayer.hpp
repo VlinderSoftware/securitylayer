@@ -78,8 +78,16 @@ public : // public API for testing purposes
 
 	State getState() const noexcept { return state_; }
 
-protected :
-	/* Library hooks. */
+protected:
+	/* Library hooks.
+	 * NOTE: the incoming stuff is not authenticated yet. DO NOT take any descisions based on this incoming data. Only
+	 *       tell the implementation if you'd be willing, according to your configuration, to accept the proposed
+	 *       key-wrap algorithm and MAC algorithm. DO NOT presume that these will actually be used for anything, so
+	 *       don't start allocating resources etc. Also don't log everything: that can be used as DOS attacks on your
+	 *       logs. The fewer side-effects the better. */
+	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
+	virtual bool acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept;
+
 	virtual KeyWrapAlgorithm getPreferredKeyWrapAlgorithm() const noexcept;
 	virtual MACAlgorithm getPreferredMACAlgorithm() const noexcept;
 

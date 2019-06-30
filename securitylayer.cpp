@@ -94,6 +94,16 @@ const_buffer SecurityLayer::getSPDU() noexcept
 	return retval;
 }
 
+/*virtual */bool SecurityLayer::acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept
+{
+	return true;
+}
+
+/*virtual */bool SecurityLayer::acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept
+{
+	return true;
+}
+
 /*virtual */KeyWrapAlgorithm SecurityLayer::getPreferredKeyWrapAlgorithm() const noexcept
 {
 	return KeyWrapAlgorithm::nist_sp800_38f_aes_256__;
@@ -349,17 +359,17 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 			memcpy(&incoming_ssr, curr, sizeof(incoming_ssr));
 			curr += sizeof(incoming_ssr);
 
-			if (incoming_ssr.challenge_data_length_ != distance(curr, end))
+			if (incoming_ssr.challenge_data_length_ == distance(curr, end))
+			{
+				const_buffer nonce(curr, distance(curr, end));
+				rxSessionStartResponse(incoming_seq, incoming_ssr, nonce, incoming_spdu_);
+			}
+			else
 			{
 				const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
 				setOutgoingSPDU(response_spdu);
 				incrementStatistic(Statistics::error_messages_sent__);
 				incrementStatistic(Statistics::total_messages_sent__);
-			}
-			else
-			{
-				const_buffer nonce(curr, distance(curr, end));
-				rxSessionStartResponse(incoming_seq, incoming_ssr, nonce, incoming_spdu_);
 			}
 		}
 		else
