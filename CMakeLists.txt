@@ -29,7 +29,30 @@ set(LESS_GENERATOR_SRC
 add_executable(less ${LESS_GENERATOR_SRC})
 target_link_libraries(less sodium)
 
+set(LAYER_PUBLIC_HEADERS
+	config.hpp
+	exceptions.hpp
+	keywrapalgorithm.hpp
+	macalgorithm.hpp
+	master.hpp
+	messages.hpp
+	messages/error.hpp
+	messages/keystatus.hpp
+	messages/requestsessioninitiation.hpp
+	messages/sessionstartrequest.hpp
+	messages/sessionstartresponse.hpp
+	messages/setsessionkeys.hpp
+	outstation.hpp
+	profile.hpp
+	securitylayer.hpp
+	session.hpp
+	sessionbuilder.hpp
+	statistics.hpp
+	)
+#set(LAYER_PUBLIC_DETAILS_HEADERS
+#	)
 set(LIBLAYER_SRC
+	${LAYER_PUBLIC_HEADERS}
 	details/randomnumbergenerator.cpp
 	exceptions.cpp
 	master.cpp
@@ -52,24 +75,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	target_compile_options(secureauthentication PRIVATE -D_WIN32_WINNT=0x0601 /FI"${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp")
 endif()
 
-set(LAYER_PUBLIC_HEADERS
-	config.hpp
-	exceptions.hpp
-	master.hpp
-	messages.hpp
-	messages/error.hpp
-	messages/keystatus.hpp
-	messages/requestsessioninitiation.hpp
-	messages/sessionstartrequest.hpp
-	messages/sessionstartresponse.hpp
-	messages/setsessionkeys.hpp
-	outstation.hpp
-	profile.hpp
-	securitylayer.hpp
-	sessionbuilder.hpp
-	)
-#set(LAYER_PUBLIC_DETAILS_HEADERS
-#	)
 set_target_properties(secureauthentication PROPERTIES
 	PUBLIC_HEADER "${FRAM_PUBLIC_HEADERS}"
 	)
