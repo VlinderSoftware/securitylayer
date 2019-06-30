@@ -13,7 +13,7 @@ struct SessionStartResponse
     // sequence number is already part of the SPDU header
     // removed master ID from strawman proposal: it's not necessary
     
-#if !defined(OPTION_MASTER_SETS_KWA_AND_MAL) || defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
+#if !defined(OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && !OPTION_MASTER_SETS_KWA_AND_MAL) || defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
     /* Indicates the key-wrap algorithm to be used. SAv6 mandates the use of at least
      * AES-256. The value is one of KeyWrapAlgorithm's values. */
     std::uint8_t key_wrap_algorithm_;

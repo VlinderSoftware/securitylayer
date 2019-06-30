@@ -1,6 +1,8 @@
 #ifndef dnp3sav6_config_hpp
 #define dnp3sav6_config_hpp
 
+#include <cstdint>
+
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
 namespace DNP3SAv6 {

@@ -122,7 +122,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( outstation.pollSPDU() );
 						auto spdu(outstation.getSPDU());
 						REQUIRE( !outstation.pollSPDU() );
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
+#if (!defined(OPTION_MASTER_SETS_KWA_AND_MAL) || !OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL && defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
 						REQUIRE( spdu.size() == 22 );
 #else
 						REQUIRE( spdu.size() == 20 );
@@ -136,7 +136,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[5] == 0x00 );
 						REQUIRE( spdu_bytes[6] == 0x00 );
 						REQUIRE( spdu_bytes[7] == 0x00 );
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
+#if (!defined(OPTION_MASTER_SETS_KWA_AND_MAL) || !OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL && defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
 						REQUIRE( spdu_bytes[8] == 0x02 );
 						REQUIRE( spdu_bytes[9] == 0x04 );
 						REQUIRE( spdu_bytes[10] == 0x3C );
