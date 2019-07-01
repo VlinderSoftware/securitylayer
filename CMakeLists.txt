@@ -49,6 +49,8 @@ set(LAYER_PUBLIC_HEADERS
 set(LIBLAYER_SRC
 	${LAYER_PUBLIC_HEADERS}
 	details/randomnumbergenerator.cpp
+	details/rfc3394aes256keywrap.cpp
+	details/rfc3394aes256keywrap.hpp
 	exceptions.cpp
 	master.cpp
 	outstation.cpp

@@ -8,10 +8,11 @@ namespace DNP3SAv6 {
 	enum struct Errors {
 		  no_error__
 		, failed_to_generate_random_data__
+		, digest_failed__
 	};
 	
 	typedef Vlinder::Exceptions::Exception< std::runtime_error, Errors, Errors::failed_to_generate_random_data__ > FailedToGenerateRandomData;
-
+	typedef Vlinder::Exceptions::Exception< std::runtime_error, Errors, Errors::digest_failed__ > DigestFailed;
 	void throwException(Errors error);
 }
 
