@@ -1,4 +1,4 @@
-#ifndef  dnp3sav6_details_ikeywrap_hpp
+#ifndef dnp3sav6_details_ikeywrap_hpp
 #define dnp3sav6_details_ikeywrap_hpp
 
 #include <boost/asio.hpp>

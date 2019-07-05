@@ -48,10 +48,23 @@ set(LAYER_PUBLIC_HEADERS
 #	)
 set(LIBLAYER_SRC
 	${LAYER_PUBLIC_HEADERS}
+	details/hmac.cpp
+	details/hmac.hpp
+	details/hmacblake2s.cpp
+	details/hmacblake2s.hpp
+	details/hmacsha256.cpp
+	details/hmacsha256.hpp
+	details/hmacsha3256.cpp
+	details/hmacsha3256.hpp
+	details/ihmac.hpp
+	details/ikeywrap.hpp
+	details/irandomnumbergenerator.hpp
 	details/randomnumbergenerator.cpp
 	details/rfc3394aes256keywrap.cpp
 	details/rfc3394aes256keywrap.hpp
 	exceptions.cpp
+	hmac.cpp
+	hmac.hpp
 	master.cpp
 	outstation.cpp
 	securitylayer.cpp
