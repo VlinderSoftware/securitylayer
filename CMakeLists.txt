@@ -60,6 +60,7 @@ set(LIBLAYER_SRC
 	details/ikeywrap.hpp
 	details/irandomnumbergenerator.hpp
 	details/randomnumbergenerator.cpp
+	details/randomnumbergenerator.hpp
 	details/rfc3394aes256keywrap.cpp
 	details/rfc3394aes256keywrap.hpp
 	exceptions.cpp

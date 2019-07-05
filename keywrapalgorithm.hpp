@@ -9,7 +9,7 @@ namespace DNP3SAv6 {
 	enum struct KeyWrapAlgorithm : std::uint8_t
 	{
 		// key wrap as defined by NIST SP800-38F using AES-256 in GCM mode.
-		  nist_sp800_38f_aes_256__ = 2
+		  rfc3394_aes256_key_wrap__ = 2
 	};
 }
 

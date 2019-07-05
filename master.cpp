@@ -19,7 +19,7 @@ Master::Master(
 	, kwa_index_(0)
 	, mal_index_(0)
 #endif
-	, session_builder_(io_context)
+	, session_builder_(io_context, random_number_generator)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
@@ -133,7 +133,6 @@ Master::Master(
 		session_builder_.setSessionStartResponse(spdu, nonce);
 		//TODO check sequence number
 #if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
-		//TODO set the algorithms in the SessionBuilder when we sent the request
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 		// check if the proposed algorithms concur.
 #if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
@@ -158,8 +157,10 @@ Master::Master(
 		}
 #endif
 		session_builder_.setSessionKeyChangeInterval(std::chrono::seconds(incoming_ssr.session_key_change_interval_));
-		session_builder_.sessionKeyChangeCount(incoming_ssr.session_key_change_count_);
+		session_builder_.setSessionKeyChangeCount(incoming_ssr.session_key_change_count_);
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
+
+		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
 
 		//TODO create the SetKeys message and send it back
 		break;
@@ -206,12 +207,15 @@ void Master::sendSessionStartRequest() noexcept
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
 #endif
 	//TODO set the proposed algorithm in the session builder
+	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
+	session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(ssr.mac_algorithm_));
 #endif
 	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
 	ssr.session_key_change_count_ = config_.session_key_change_count_;
 
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
+	session_builder_.setSessionStartRequest(spdu);
 	// increment stats
 	
 }

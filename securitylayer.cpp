@@ -106,7 +106,7 @@ const_buffer SecurityLayer::getSPDU() noexcept
 
 /*virtual */KeyWrapAlgorithm SecurityLayer::getPreferredKeyWrapAlgorithm() const noexcept
 {
-	return KeyWrapAlgorithm::nist_sp800_38f_aes_256__;
+	return KeyWrapAlgorithm::rfc3394_aes256_key_wrap__;
 }
 
 /*virtual */MACAlgorithm SecurityLayer::getPreferredMACAlgorithm() const noexcept

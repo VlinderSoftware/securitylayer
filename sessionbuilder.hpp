@@ -6,13 +6,17 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "config.hpp"
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"
+#include "session.hpp"
 #include <boost/asio.hpp>
 
 namespace DNP3SAv6 {
+namespace Details {
+	class IRandomNumberGenerator;
+}
 class SessionBuilder
 {
 public :
-	SessionBuilder(boost::asio::io_context &ioc);
+	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator);
 	~SessionBuilder() = default;
 	
 	SessionBuilder(SessionBuilder &&other) noexcept = default;
@@ -30,9 +34,9 @@ public :
 	void setSessionStartResponse(boost::asio::const_buffer const &spdu, boost::asio::const_buffer const &nonce);
 
 	void setSessionKeyChangeInterval(std::chrono::seconds const &ttl_duration);
-	void sessionKeyChangeCount(unsigned int session_key_change_count);
+	void setSessionKeyChangeCount(unsigned int session_key_change_count);
 
-	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer) const;
+	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer);
 
 private :
 	KeyWrapAlgorithm key_wrap_algorithm_;
@@ -47,6 +51,9 @@ private :
 
 	boost::asio::steady_timer session_timeout_;
 	unsigned int session_key_change_count_ = 0;
+
+	Session session_;
+	Details::IRandomNumberGenerator &random_number_generator_;
 };
 }
 

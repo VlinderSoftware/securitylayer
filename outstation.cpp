@@ -14,7 +14,7 @@ Outstation::Outstation(
 	, Details::IRandomNumberGenerator &random_number_generator
 	)
 	: SecurityLayer(io_context, config, random_number_generator)
-	, session_builder_(io_context)
+	, session_builder_(io_context, random_number_generator)
 { /* no-op */ }
 
 /*virtual */void Outstation::reset() noexcept/* override*/

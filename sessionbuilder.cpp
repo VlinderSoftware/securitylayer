@@ -1,5 +1,7 @@
 #include "sessionbuilder.hpp"
 #include "exceptions/contract.hpp"
+#include "details/irandomnumbergenerator.hpp"
+#include "hmac.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -7,8 +9,9 @@ using namespace std;
 using namespace boost::asio;
 
 namespace DNP3SAv6 {
-SessionBuilder::SessionBuilder(boost::asio::io_context &ioc)
+SessionBuilder::SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator)
 	: session_timeout_(ioc)
+	, random_number_generator_(random_number_generator)
 {
 }
 
@@ -51,16 +54,26 @@ void SessionBuilder::setSessionKeyChangeInterval(std::chrono::seconds const &ttl
 	session_timeout_.expires_after(ttl_duration);
 }
 
-void SessionBuilder::sessionKeyChangeCount(unsigned int session_key_change_count)
+void SessionBuilder::setSessionKeyChangeCount(unsigned int session_key_change_count)
 {
 	session_key_change_count_ = session_key_change_count;
 }
 
-mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer) const
+mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 {
 	unsigned char *curr(static_cast< unsigned char* >(buffer.data()));
 	unsigned char *const end(curr + buffer.size());
 
+	random_number_generator_.generate(mutable_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)));
+	random_number_generator_.generate(mutable_buffer(session_.monitoring_direction_session_key_, sizeof(session_.monitoring_direction_session_key_)));
+	// calculate the MAC over the first two messages using the control direction session key
+	unsigned char digest_value[32];
+	digest(mutable_buffer(digest_value, sizeof(digest_value)), mac_algorithm_, const_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)), const_buffer(session_start_request_message_, session_start_request_message_size_), const_buffer(session_start_response_message_, session_start_response_message_size_));
+	// encode it all into the mutable buffer
+	// adjust the mutable buffer for space actually used
+	// encrypt it -- we can do this in-place, but remember the output buffer has to be eight octets larger than the input buffer
+
+	return mutable_buffer();
 }
 
 }
