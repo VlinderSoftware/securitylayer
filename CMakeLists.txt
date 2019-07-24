@@ -107,9 +107,13 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	target_compile_options(less PRIVATE -D_WIN32_WINNT=0x0601 /FI"${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp")
 endif()
 
-file(GLOB TEST_LIBLAYER_SOURCES tests/*.cpp)
+file(GLOB TEST_LIBLAYER_SOURCES tests/*.test.cpp)
 add_executable(test_libsecureauthentication
 	${TEST_LIBLAYER_SOURCES}
+	tests/catch.hpp
+	tests/deterministicrandomnumbergenerator.cpp
+	tests/deterministicrandomnumbergenerator.hpp
+	tests/main.cpp
 	)
 target_link_libraries(test_libsecureauthentication secureauthentication)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
