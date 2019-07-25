@@ -1,11 +1,13 @@
 #ifndef DNP3SAV6_PROFILE_HPP_INCLUDED
 #define DNP3SAV6_PROFILE_HPP_INCLUDED 1
 
-// TO DISCUSS: the sequence number from the Outstation is basically ignored in the
+// DISCUSSED:  the sequence number from the Outstation is basically ignored in the
 //             RequestSessionInitiation message. The alternative is that we use the
 //             sequence number from the Outstation if it's greater than the sequence
 //             number the Master is using when the RequestSessionInitiation message
 //             arrives
+//             SATF decided to ignore the outstation sequence number for 
+//             RequestSessionInitiation on 2019-05-24
 #define OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION 1
 // DISCUSSED:  SAv5 has the Outstation determine the key-wrap algorithm and the 
 //             MAC algorithm, whereas my strawman proposal moves that responsibility
@@ -19,7 +21,7 @@
 //             and have the Outstation decide whether it agrees with the hint.
 #define OPTION_MASTER_SETS_KWA_AND_MAL 1	/* This is what the SATF decided on 2019-05-24 */
 #define OPTION_MASTER_KWA_AND_MAL_ARE_HINTS 1	/* This is what the SATF decided on 2019-05-24 */
-// TO DISCUSS: sending the session key status at the end of the key exchange doesn't make
+// DISCUSSED:  sending the session key status at the end of the key exchange doesn't make
 //             much sense: it's always going to be OK. So, what are the cases going to be
 //             that you'd want to get a KeyStatus message from the Outstation? If it's
 //             anything other than OK, there's no way to authenticate the message, so
@@ -39,6 +41,9 @@
 //             should be more careful with broadcast messages, as they could in theory come from 
 //             any of the Outstations on the shared network (whatever the Master broadcasts to).
 #define OPTION_INCLUDE_BROADCAST_KEY 1
+// TO DISCUSS: Broadcast messages could be done using asymmetric keys, as discussed by the SATF
+//             on 2019-06-26.
+#undef OPTION_IMPLEMENT_ASYMMETRIC_BROADCAST
 // REJECTED BY DNP: My initial strawman proposal from 2017 contained an association ID in the 
 //             SessionStartRequest and SessionStartResponse messages. This ID made it into the
 //             IEC TC57 WG15 working document presented by Marco Grechi at the San Francisco 
