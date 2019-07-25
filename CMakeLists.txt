@@ -70,6 +70,8 @@ set(LIBLAYER_SRC
 	outstation.cpp
 	securitylayer.cpp
 	sessionbuilder.cpp
+	wrappedkeydata.cpp
+	wrappedkeydata.hpp
 	)
 
 add_library(secureauthentication SHARED
