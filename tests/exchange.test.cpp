@@ -1,7 +1,7 @@
 #include "catch.hpp"
 #include "../outstation.hpp"
 #include "../master.hpp"
-#include "../details/randomnumbergenerator.hpp"
+#include "deterministicrandomnumbergenerator.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -13,7 +13,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 	GIVEN( "An Outstation stack" ) {
 		io_context ioc;
 		Config default_config;
-		Details::RandomNumberGenerator rng;
+		Tests::DeterministicRandomNumberGenerator rng;
 		Outstation outstation(ioc, default_config, rng);
 
 		THEN( "The Outstation will be in the INITIAL state" ) {
