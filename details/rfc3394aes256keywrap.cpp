@@ -62,8 +62,10 @@ RFC3394AES256KeyWrap::RFC3394AES256KeyWrap()
 		}
 	}
 	memcpy(beg_out, work_buffer, 8);
+
+	out_buffer = mutable_buffer(out_buffer.data(), key_data.size() + 8);
 }
-/*virtual */bool RFC3394AES256KeyWrap::unwrap(mutable_buffer &out_buffer, const_buffer const &key_encrypting_key, const_buffer const &key_data)/* override*/
+/*virtual */bool RFC3394AES256KeyWrap::unwrap(mutable_buffer &out_buffer, const_buffer const &key_encrypting_key, const_buffer const &key_data) const/* override*/
 {
 	pre_condition(key_encrypting_key.size() == (256 / 8));
 	pre_condition(key_data.size() < 0x7FFFFFFF);

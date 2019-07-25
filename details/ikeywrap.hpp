@@ -15,8 +15,8 @@ public :
 	IKeyWrap& operator=(IKeyWrap const&) = delete;
 	IKeyWrap& operator=(IKeyWrap &&) = delete;
 
-	virtual void wrap(boost::asio::mutable_buffer &out, boost::asio::const_buffer const &key_encrypting_key, boost::asio::const_buffer const &key_data) = 0;
-	virtual bool unwrap(boost::asio::mutable_buffer &out, boost::asio::const_buffer const &key_encrypting_key, boost::asio::const_buffer const &key_data) = 0;
+	virtual void wrap(boost::asio::mutable_buffer &out, boost::asio::const_buffer const &key_encrypting_key, boost::asio::const_buffer const &key_data) const = 0;
+	virtual bool unwrap(boost::asio::mutable_buffer &out, boost::asio::const_buffer const &key_encrypting_key, boost::asio::const_buffer const &key_data) const = 0;
 };
 }}
 
