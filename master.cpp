@@ -1,6 +1,5 @@
 #include "master.hpp"
 #include "messages.hpp"
-
 #include <chrono>
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
@@ -45,7 +44,7 @@ Master::Master(
 		 * the APDUs */
 		break;
 	case expect_session_ack__ :
-		/* no-op: re-sending SetKeys messages is driven by its time-out and receiving
+		/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
 		 * SessionStartResponse messages, not by APDUs. */
 		break;
 	case active__ :
@@ -161,8 +160,11 @@ Master::Master(
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
 
 		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
-
-		//TODO create the SetKeys message and send it back
+		Messages::SetSessionKeys set_session_keys;
+		set_session_keys.key_wrap_data_length_ = wrapped_key_data.size();
+		const_buffer const spdu(format(set_session_keys, wrapped_key_data));
+		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
+		setState(expect_session_ack__);
 		break;
 	}
 	case expect_session_ack__ :

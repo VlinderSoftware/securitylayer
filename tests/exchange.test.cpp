@@ -146,6 +146,10 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[15] == 0x10 );
 						REQUIRE( spdu_bytes[16] == 0x04 );
 						REQUIRE( spdu_bytes[17] == 0x00 );
+						REQUIRE( spdu_bytes[18] == 0x79 );
+						REQUIRE( spdu_bytes[19] == 0x28 );
+						REQUIRE( spdu_bytes[20] == 0x11 );
+						REQUIRE( spdu_bytes[21] == 0xc8 );
 #else
 						REQUIRE( spdu_bytes[ 8] == 0x3C );
 						REQUIRE( spdu_bytes[ 9] == 0x00 );
@@ -155,15 +159,42 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[13] == 0x20 );
 						REQUIRE( spdu_bytes[14] == 0x04 );
 						REQUIRE( spdu_bytes[15] == 0x00 );
+						REQUIRE( spdu_bytes[16] == 0x79 );
+						REQUIRE( spdu_bytes[17] == 0x28 );
+						REQUIRE( spdu_bytes[18] == 0x11 );
+						REQUIRE( spdu_bytes[19] == 0xc8 );
 #endif
 					}
 					WHEN( "The Master receives the SessionStartResponse" ) {
 						auto spdu(outstation.getSPDU());
 						master.postSPDU(spdu);
 						THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
-//							REQUIRE( master.getState() == SecurityLayer::expect_session_ack__ );
+							REQUIRE( master.getState() == SecurityLayer::expect_session_ack__ );
 						}
-						//TODO check that the Master sends keys
+						THEN( "The Master will send SetSessionKeys message" ) {
+							auto spdu(master.getSPDU());
+							REQUIRE( spdu.size() == 98 );
+							unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+							REQUIRE( spdu_bytes[0] == 0xc0 );
+							REQUIRE( spdu_bytes[1] == 0x80 );
+							REQUIRE( spdu_bytes[2] == 0x01 );
+							REQUIRE( spdu_bytes[3] == 0x04 );
+							REQUIRE( spdu_bytes[4] == 0x01 );
+							REQUIRE( spdu_bytes[5] == 0x00 );
+							REQUIRE( spdu_bytes[6] == 0x00 );
+							REQUIRE( spdu_bytes[7] == 0x00 );
+							unsigned char const expected[] = {
+							  0x58, 0x00 
+							, 0x58, 0x02, 0x67, 0x64, 0x0b, 0x24, 0xc8, 0x86, 0x59, 0x44, 0xaa, 0x06, 0x4b, 0x28, 0xf0, 0x00
+							, 0xb9, 0xe6, 0x0f, 0x85, 0xbc, 0x0a, 0xe6, 0xbd, 0x3a, 0xe2, 0x43, 0xe7, 0x65, 0x75, 0x06, 0xba
+							, 0xfc, 0x05, 0xbc, 0x56, 0x00, 0x74, 0x50, 0x6f, 0xc5, 0x08, 0x19, 0x6e, 0xa5, 0x10, 0xa0, 0x22
+							, 0xc0, 0x6f, 0xb9, 0x04, 0x1f, 0x96, 0x04, 0x25, 0x8c, 0xf6, 0xd9, 0x15, 0x5d, 0xc4, 0x6e, 0x32
+							, 0x9f, 0x8f, 0x54, 0xd1, 0x57, 0x76, 0xb3, 0x85, 0xe6, 0xcd, 0xa7, 0xb1, 0x0d, 0xec, 0x74, 0xe7
+							, 0x9c, 0x26, 0x6e, 0x87, 0xe0, 0x01, 0x31, 0xec 
+							};
+							static_assert(sizeof(expected) == 90, "unexpected size for expected response");
+							REQUIRE( memcmp(spdu_bytes + 8, expected, sizeof(expected)) == 0 );
+						}
 						//TODO check the statistics
 						//TODO check invalid messages (things that should provoke error returns)
 						//TODO check with the wrong sequence number

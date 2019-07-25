@@ -217,9 +217,29 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionStartResponse c
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(Messages::SetKeys const &sk) noexcept
+const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buffer const &wrapped_key_data) noexcept
 {
-	return const_buffer();
+	pre_condition(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(sk) + wrapped_key_data.size());
+
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::set_keys__);
+	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	assert(outgoing_spdu_size_ == 8);
+
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &sk, sizeof(sk));
+	outgoing_spdu_size_ += sizeof(sk);
+	assert(outgoing_spdu_size_ == 8 + sizeof(sk));
+
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, wrapped_key_data.data(), wrapped_key_data.size());
+	outgoing_spdu_size_ += wrapped_key_data.size();
+	assert(outgoing_spdu_size_ == 8 + sizeof(sk) + wrapped_key_data.size());
+
+	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
 boost::asio::const_buffer SecurityLayer::format(Messages::KeyStatus const &ks) noexcept
@@ -385,7 +405,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 		break;
 	}
 	case static_cast< uint8_t >(Message::set_keys__) :
-		// check the SPDU size to see if it's big enough to hold a SetKeys message
+		// check the SPDU size to see if it's big enough to hold a SetSessionKeys message
 		// if so, parse into a SetKeys object and call rxSetKeys(incoming_seq, incoming_sk);
 		break;
 	case static_cast< uint8_t >(Message::key_status__) :

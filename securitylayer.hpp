@@ -20,7 +20,7 @@ namespace Messages {
 	struct RequestSessionInitiation;
 	struct SessionStartRequest;
 	struct SessionStartResponse;
-	struct SetKeys;
+	struct SetSessionKeys;
 }
 class SecurityLayer
 {
@@ -113,7 +113,7 @@ protected :
 	boost::asio::const_buffer format(Messages::RequestSessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
-	boost::asio::const_buffer format(Messages::SetKeys const &sk) noexcept;
+	boost::asio::const_buffer format(Messages::SetSessionKeys const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
 	boost::asio::const_buffer format(Messages::KeyStatus const &ks) noexcept;
 	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
 
