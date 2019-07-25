@@ -2,6 +2,7 @@
 #include "exceptions/contract.hpp"
 #include "details/irandomnumbergenerator.hpp"
 #include "hmac.hpp"
+#include "wrappedkeydata.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -70,10 +71,16 @@ mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	unsigned char digest_value[32];
 	digest(mutable_buffer(digest_value, sizeof(digest_value)), mac_algorithm_, const_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)), const_buffer(session_start_request_message_, session_start_request_message_size_), const_buffer(session_start_response_message_, session_start_response_message_size_));
 	// encode it all into the mutable buffer
-	// adjust the mutable buffer for space actually used
-	// encrypt it -- we can do this in-place, but remember the output buffer has to be eight octets larger than the input buffer
+	wrap(
+		  buffer
+		, key_wrap_algorithm_
+		, mac_algorithm_
+		, const_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_))
+		, const_buffer(session_.monitoring_direction_session_key_, sizeof(session_.monitoring_direction_session_key_))
+		, const_buffer(digest_value, sizeof(digest_value))
+		);
 
-	return mutable_buffer();
+	return buffer;
 }
 
 }
