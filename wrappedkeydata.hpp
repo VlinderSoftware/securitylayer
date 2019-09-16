@@ -53,6 +53,7 @@ namespace DNP3SAv6 {
 
 	void wrap(
           boost::asio::mutable_buffer &out
+        , boost::asio::const_buffer const &update_key
         , KeyWrapAlgorithm kwa
         , MACAlgorithm mal
         , boost::asio::const_buffer const &control_direction_session_key
