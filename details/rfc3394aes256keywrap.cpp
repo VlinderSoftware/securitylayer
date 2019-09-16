@@ -16,7 +16,11 @@ RFC3394AES256KeyWrap::RFC3394AES256KeyWrap()
 /*virtual */RFC3394AES256KeyWrap::~RFC3394AES256KeyWrap()
 { /* no-op */ }
 
-/*virtual */void RFC3394AES256KeyWrap::wrap(mutable_buffer &out_buffer, const_buffer const &key_encrypting_key, const_buffer const &key_data) const/* override*/
+/*virtual */void RFC3394AES256KeyWrap::wrap(
+      mutable_buffer &out_buffer
+    , const_buffer const &key_encrypting_key
+    , const_buffer const &key_data
+    ) const/* override*/
 {
 	pre_condition(key_encrypting_key.size() == (256 / 8));
 	pre_condition(key_data.size() < 0x7FFFFFFF);
