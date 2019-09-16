@@ -34,18 +34,20 @@ namespace DNP3SAv6 {
 		unsigned char monitoring_direction_session_key_[32];
 		unsigned char mac_value_[8];
 	};
+    static_assert(sizeof(WrappedKeydataT8) == 72, "unexpected padding");
 	struct WrappedKeydataT16
 	{
 		unsigned char control_direction_session_key_[32];
 		unsigned char monitoring_direction_session_key_[32];
 		unsigned char mac_value_[16];
 	};
+    static_assert(sizeof(WrappedKeydataT16) == 80, "unexpected padding");
 	template < KeyWrapAlgorithm kwa, MACAlgorithm mal >
 	struct WrappedKeyData;
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_8__	 >	{ typedef WrappedKeydataT8 type;	};
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_16__	 >	{ typedef WrappedKeydataT16 type;	};
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_8__	 >	{ typedef WrappedKeydataT8 type;	};
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_16__  >	{ typedef WrappedKeydataT16 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_16__ >	{ typedef WrappedKeydataT16 type;	};
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_8__	 >	{ typedef WrappedKeydataT8 type;	};
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_16__	 >	{ typedef WrappedKeydataT16 type;	};
 
