@@ -60,6 +60,16 @@ namespace DNP3SAv6 {
         , boost::asio::const_buffer const &monitoring_direction_session_key
         , boost::asio::const_buffer const &mac_value
         );
+    bool unwrap(
+          boost::asio::mutable_buffer &control_direction_session_key
+        , boost::asio::mutable_buffer &monitoring_direction_session_key
+        , boost::asio::mutable_buffer &mac_value
+        , unsigned int &mac_value_size
+        , boost::asio::const_buffer const& update_key
+        , KeyWrapAlgorithm kwa
+        , MACAlgorithm mal
+        , boost::asio::const_buffer const& incoming_wrapped_key_data
+        );
 }
 
 #endif

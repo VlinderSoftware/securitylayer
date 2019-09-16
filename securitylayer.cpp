@@ -225,7 +225,7 @@ const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buf
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::set_keys__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::set_session_keys__);
 	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
 	outgoing_spdu_size_ += sizeof(seq_);
@@ -288,6 +288,10 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 /*virtual */void SecurityLayer::rxSessionStartResponse(uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
+}
+/*virtual */void SecurityLayer::rxSetSessionKeys(uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept
+{
+    incrementStatistic(Statistics::unexpected_messages__);
 }
 
 void SecurityLayer::parseIncomingSPDU() noexcept
@@ -404,10 +408,40 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 		// if so, parse into a SessionStartResponse object and call rxSessionStartResponse(incoming_seq, incoming_ssr);
 		break;
 	}
-	case static_cast< uint8_t >(Message::set_keys__) :
-		// check the SPDU size to see if it's big enough to hold a SetSessionKeys message
-		// if so, parse into a SetKeys object and call rxSetKeys(incoming_seq, incoming_sk);
-		break;
+	case static_cast< uint8_t >(Message::set_session_keys__) :
+    {
+        // check the SPDU size to see if it's big enough to hold a SetSessionKeys message
+        unsigned int const min_expected_spdu_size(8/*header size*/ + sizeof(Messages::SetSessionKeys));
+        unsigned int const max_expected_spdu_size(8/*header size*/ + sizeof(Messages::SetSessionKeys) + Config::max_key_wrap_data_size__);
+        if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
+        {
+            Messages::SetSessionKeys incoming_ssk;
+            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_ssk));
+            memcpy(&incoming_ssk, curr, sizeof(incoming_ssk));
+            curr += sizeof(incoming_ssk);
+
+            if (incoming_ssk.key_wrap_data_length_ == distance(curr, end))
+            {
+                const_buffer incoming_key_wrap_data(curr, distance(curr, end));
+                rxSetSessionKeys(incoming_seq, incoming_ssk, incoming_key_wrap_data, incoming_spdu_);
+            }
+            else
+            {
+                const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+                setOutgoingSPDU(response_spdu);
+                incrementStatistic(Statistics::error_messages_sent__);
+                incrementStatistic(Statistics::total_messages_sent__);
+            }
+        }
+        else
+        {
+            const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+            setOutgoingSPDU(response_spdu);
+            incrementStatistic(Statistics::error_messages_sent__);
+            incrementStatistic(Statistics::total_messages_sent__);
+        }
+        break;
+    }
 	case static_cast< uint8_t >(Message::key_status__) :
 		// check the SPDU size to see if it's big enough to hold a KeyStatus message
 		// if so, parse into a KeyStatus object and call rxkeyStatus(incoming_seq, incoming_ks);

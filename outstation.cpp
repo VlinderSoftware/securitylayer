@@ -1,6 +1,7 @@
 #include "outstation.hpp"
 #include "messages.hpp"
 #include "details/irandomnumbergenerator.hpp"
+#include "exceptions/contract.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -90,7 +91,8 @@ Outstation::Outstation(
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.key_wrap_algorithm_ = incoming_ssr.key_wrap_algorithm_;
 #endif
-		}
+            session_builder_.setKeyWrapAlgorithm(static_cast<KeyWrapAlgorithm>(incoming_ssr.key_wrap_algorithm_));
+        }
 		else
 		{
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
@@ -108,7 +110,8 @@ Outstation::Outstation(
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.mac_algorithm_ = incoming_ssr.mac_algorithm_;
 #endif
-		}
+            session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_));
+        }
 		else
 		{
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
@@ -120,7 +123,6 @@ Outstation::Outstation(
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
 #endif
-
 		}
 #else
 		response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
@@ -155,6 +157,53 @@ Outstation::Outstation(
 //session_key_change_count_ = 4096;
 //send the response_spdu HERE!!
 }
+
+/*virtual */void Outstation::rxSetSessionKeys(
+      uint32_t incoming_seq
+    , Messages::SetSessionKeys const& incoming_ssk
+    , boost::asio::const_buffer const& incoming_key_wrap_data
+    , boost::asio::const_buffer const& spdu
+    ) noexcept/* override*/
+{
+    pre_condition(incoming_ssk.key_wrap_data_length_ == incoming_key_wrap_data.size());
+
+    const_buffer response_spdu;
+    switch (getState())
+    {
+    case initial__:
+        // fall through
+    case expect_session_start_request__:
+        response_spdu = format(Messages::Error(Messages::Error::unexpected_spdu__));
+        setOutgoingSPDU(response_spdu);
+        incrementStatistic(Statistics::error_messages_sent__);
+        incrementStatistic(Statistics::total_messages_sent__);
+        return;
+    case expect_set_keys__:
+    {
+        // try to unwrap the wrapped key data
+        if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
+        {
+            //TODO preprare a response message
+        }
+        else
+        {
+            response_spdu = format(Messages::Error(Messages::Error::authentication_failure__));
+            setOutgoingSPDU(response_spdu);
+            incrementStatistic(Statistics::error_messages_sent__);
+            incrementStatistic(Statistics::total_messages_sent__);
+        }
+        return;
+    }
+    case active__:
+        //TODO keep our keys, but start a new session key setup
+    default:
+        assert(!"unexpected state");
+    }
+    //session_key_change_interval_ = 60/*one hour*/;
+    //session_key_change_count_ = 4096;
+    //send the response_spdu HERE!!
+}
+
 
 void Outstation::sendRequestSessionInitiation() noexcept
 {

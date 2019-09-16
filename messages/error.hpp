@@ -14,6 +14,8 @@ struct Error
 		, unsupported_mac_algorithm__
 		, unsupported_keywrap_algorithm__
 #endif
+        , unexpected_spdu__
+        , authentication_failure__
 		};
 
 	Error(ErrorCode error)

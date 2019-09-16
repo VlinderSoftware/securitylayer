@@ -8,7 +8,8 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 namespace DNP3SAv6 {
 	enum struct MACAlgorithm : std::uint8_t
 	{
-		  hmac_sha_256_truncated_8__	= 3
+          unknown__                     = 0 // not a valid over-the-wire value
+		, hmac_sha_256_truncated_8__	= 3
 		, hmac_sha_256_truncated_16__	= 4
 		, hmac_sha_3_256_truncated_8__	= 7
 		, hmac_sha_3_256_truncated_16__ = 8

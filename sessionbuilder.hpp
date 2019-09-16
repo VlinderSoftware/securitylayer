@@ -37,10 +37,13 @@ public :
 	void setSessionKeyChangeCount(unsigned int session_key_change_count);
 
 	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer);
+    bool unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data);
+
+    boost::asio::const_buffer getUpdateKey() const;
 
 private :
-	KeyWrapAlgorithm key_wrap_algorithm_;
-	MACAlgorithm mac_algorithm_;
+	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
+	MACAlgorithm mac_algorithm_ = MACAlgorithm::unknown__;
 
 	unsigned char session_start_request_message_[Config::max_spdu_size__];
 	unsigned int session_start_request_message_size_ = 0;

@@ -29,6 +29,7 @@ protected :
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept override;
+    virtual void rxSetSessionKeys(std::uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept override;
 
 private :
 	void sendRequestSessionInitiation() noexcept;

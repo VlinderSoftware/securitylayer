@@ -1,6 +1,7 @@
 #include "master.hpp"
 #include "messages.hpp"
 #include <chrono>
+#include "exceptions/contract.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -161,7 +162,8 @@ Master::Master(
 
 		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
 		Messages::SetSessionKeys set_session_keys;
-		set_session_keys.key_wrap_data_length_ = wrapped_key_data.size();
+        invariant(wrapped_key_data.size() <= numeric_limits< decltype(set_session_keys.key_wrap_data_length_) >::max());
+		set_session_keys.key_wrap_data_length_ = static_cast< decltype(set_session_keys.key_wrap_data_length_) >(wrapped_key_data.size());
 		const_buffer const spdu(format(set_session_keys, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
 		setState(expect_session_ack__);

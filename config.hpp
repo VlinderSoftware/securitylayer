@@ -33,6 +33,7 @@ namespace DNP3SAv6 {
 		std::uint32_t session_key_change_interval_ = 60/*one hour*/;
 		std::uint16_t session_key_change_count_ = 4096;
 		std::uint16_t nonce_size_ = 4;
+        static unsigned int const max_key_wrap_data_size__ = 128; // some reasonable size for key-wrap data (it's currently 88 bytes). Note that a buffer for this is allocated on the stack, so we need this to be small
 
 		static unsigned int const max_apdu_size__ = 4096;
 		static unsigned int const max_spdu_size__ = 4096;

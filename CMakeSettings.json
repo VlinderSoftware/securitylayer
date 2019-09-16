@@ -1,25 +1,20 @@
 ﻿{
   "configurations": [
     {
-      "name": "x64-Debug",
+      "name": "x86-Debug",
       "generator": "Ninja",
       "configurationType": "Debug",
-      "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DBOOST_ROOT=\"C:\\Program Files (x86)\\boost_1_71_0\" -DOPENSSL_ROOT_DIR=\"C:\\Program Files\\OpenSSL-Win64\"",
+      "cmakeCommandArgs": "-DBOOST_ROOT=\"C:\\Program Files (x86)\\boost_1_71_0\"  -DBOOST_LIBRARYDIR=\"C:\\Program Files (x86)\\boost_1_71_0\\lib32-msvc-14.2\" -DBoost_COMPILER=\"-vc142\"",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x86" ],
       "variables": [
         {
-          "name": "Boost_INCLUDE_DIR",
-          "value": "C:/Program Files (x86)/boost_1_71_0",
-          "type": "PATH"
-        },
-        {
-          "name": "Boost_DIR",
-          "value": "C:/Program Files (x86)/boost_1_71_0",
-          "type": "PATH"
+          "name": "SA_PROFILES",
+          "value": "False",
+          "type": "BOOL"
         }
       ]
     }
