@@ -78,7 +78,7 @@ RFC3394AES256KeyWrap::RFC3394AES256KeyWrap()
 	pre_condition(out_buffer.size() == key_data.size() - 8);
 
 	AES_KEY key;
-	if (1 != AES_set_decrypt_key(static_cast< unsigned char const* >(key_encrypting_key.data()), 8 * key_encrypting_key.size(), &key))
+	if (0 != AES_set_decrypt_key(static_cast< unsigned char const* >(key_encrypting_key.data()), 8 * key_encrypting_key.size(), &key))
 	{
 		throw RFC3394AES256KeyWrapFailure("failed to set decrypt key");
 	}
