@@ -55,7 +55,7 @@
 //             autentication. When provided by the Master, it could never be more than a hint 
 //             because the value of the identifier was owned by the Outstation and not 
 //             guaranteed to be constant and/or non-volatile. In any case, it was a numeric value.
-//             In recent (time of writing: June 20190 discussions in the DNP Cybersecurity and Secure 
+//             In recent (time of writing: June 2019 discussions in the DNP Cybersecurity and Secure 
 //             Authentication Task Force, the Master-Outstation Association is uniquely identified 
 //             by a system-wide unique name, but that name does not need to be communicated because, 
 //             over the link, the identifying information as described in TB2019-001 is sufficient.
