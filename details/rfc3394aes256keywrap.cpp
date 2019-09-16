@@ -26,7 +26,7 @@ RFC3394AES256KeyWrap::RFC3394AES256KeyWrap()
 	pre_condition(key_data.size() < 0x7FFFFFFF);
 	pre_condition(key_data.size() >= 16);
 	pre_condition(key_data.size() % 8 == 0);
-	pre_condition(out_buffer.size() >= key_data.size() + 8);
+	pre_condition(out_buffer.size() == key_data.size() + 8);
 
 	AES_KEY key;
 	if (0 != AES_set_encrypt_key(static_cast< unsigned char const* >(key_encrypting_key.data()), 8 * key_encrypting_key.size(), &key))
