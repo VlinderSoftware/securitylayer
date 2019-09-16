@@ -51,7 +51,14 @@ namespace DNP3SAv6 {
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_8__	 >	{ typedef WrappedKeydataT8 type;	};
 	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_16__	 >	{ typedef WrappedKeydataT16 type;	};
 
-	void wrap(boost::asio::mutable_buffer &out, KeyWrapAlgorithm kwa, MACAlgorithm mal, boost::asio::const_buffer const &control_direction_session_key, boost::asio::const_buffer const &monitoring_direction_session_key, boost::asio::const_buffer const &mac_value);
+	void wrap(
+          boost::asio::mutable_buffer &out
+        , KeyWrapAlgorithm kwa
+        , MACAlgorithm mal
+        , boost::asio::const_buffer const &control_direction_session_key
+        , boost::asio::const_buffer const &monitoring_direction_session_key
+        , boost::asio::const_buffer const &mac_value
+        );
 }
 
 #endif
