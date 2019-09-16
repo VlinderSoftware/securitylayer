@@ -39,7 +39,9 @@ void DeterministicRandomNumberGenerator::setSeed(boost::asio::const_buffer const
 {
 	unsigned char *out(static_cast< unsigned char* >(buffer.data()));
 	unsigned char *const end(out + buffer.size());
-	while ((end - out) > avail_)
+    static_assert(sizeof(decltype(avail_)) == sizeof(decltype(end - out)), "unexpected type for difference");
+    invariant(avail_ < static_cast< decltype(avail_) >(numeric_limits< decltype(end - out) >::max()));
+	while ((end - out) > static_cast< decltype(end - out) >(avail_))
 	{
 		memcpy(out, buffer_ + (sizeof(buffer_) - avail_), avail_);
 		out += avail_;
