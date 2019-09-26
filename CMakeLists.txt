@@ -36,8 +36,8 @@ set(LAYER_PUBLIC_HEADERS
 	master.hpp
 	messages.hpp
 	messages/error.hpp
-	messages/keystatus.hpp
 	messages/requestsessioninitiation.hpp
+	messages/sessionconfirmation.hpp
 	messages/sessionstartrequest.hpp
 	messages/sessionstartresponse.hpp
 	messages/setsessionkeys.hpp
@@ -70,6 +70,7 @@ set(LIBLAYER_SRC
 	exceptions.cpp
 	hmac.cpp
 	hmac.hpp
+	macalgorithm.cpp
 	master.cpp
 	outstation.cpp
 	securitylayer.cpp

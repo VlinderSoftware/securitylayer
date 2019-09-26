@@ -16,6 +16,7 @@ namespace DNP3SAv6 {
 		, hmac_blake2s_truncated_8__	= 9
 		, hmac_blake2s_truncated_16__	= 10
 	};
+    unsigned int getMACAlgorithmDigestSize(MACAlgorithm mac_algorithm);
 }
 
 #endif

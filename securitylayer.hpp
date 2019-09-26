@@ -16,8 +16,8 @@ namespace Details {
 }
 namespace Messages {
 	struct Error;
-	struct KeyStatus;
 	struct RequestSessionInitiation;
+	struct SessionConfirmation;
 	struct SessionStartRequest;
 	struct SessionStartResponse;
 	struct SetSessionKeys;
@@ -114,7 +114,7 @@ protected :
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
 	boost::asio::const_buffer format(Messages::SetSessionKeys const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
-	boost::asio::const_buffer format(Messages::KeyStatus const &ks) noexcept;
+	boost::asio::const_buffer format(Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept;
 	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
 
 	void incrementStatistic(Statistics statistics) noexcept;

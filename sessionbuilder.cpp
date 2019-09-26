@@ -3,6 +3,7 @@
 #include "details/irandomnumbergenerator.hpp"
 #include "hmac.hpp"
 #include "wrappedkeydata.hpp"
+#include <openssl/crypto.h>
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -75,7 +76,7 @@ mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	random_number_generator_.generate(mutable_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)));
 	random_number_generator_.generate(mutable_buffer(session_.monitoring_direction_session_key_, sizeof(session_.monitoring_direction_session_key_)));
 	// calculate the MAC over the first two messages using the control direction session key
-	unsigned char digest_value[32];
+	unsigned char digest_value[Config::max_digest_size__];
 	digest(mutable_buffer(digest_value, sizeof(digest_value)), mac_algorithm_, const_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)), const_buffer(session_start_request_message_, session_start_request_message_size_), const_buffer(session_start_response_message_, session_start_response_message_size_));
 	// encode it all into the mutable buffer
 	wrap(
@@ -101,7 +102,7 @@ bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key
     // calculate the MAC over the first two messages using the control direction session key
     unsigned char incoming_control_direction_session_key[sizeof(session_.control_direction_session_key_)];
     unsigned char incoming_monitoring_direction_session_key[sizeof(session_.monitoring_direction_session_key_)];
-    unsigned char incoming_digest_value[32];
+    unsigned char incoming_digest_value[Config::max_digest_size__];
     unsigned int incoming_digest_value_size(0);
 
     if (unwrap(
@@ -118,15 +119,16 @@ bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key
         // the incoming digest value size is determined by the algorithm used, so we don't need to check it at run-time (though we assert to make sure our buffer is big enough here)
         assert(incoming_digest_value_size <= sizeof(incoming_digest_value));
 
-        unsigned char expected_digest_value[32];
+        unsigned char expected_digest_value[Config::max_digest_size__];
         digest(mutable_buffer(expected_digest_value, sizeof(expected_digest_value)), mac_algorithm_, const_buffer(incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key)), const_buffer(session_start_request_message_, session_start_request_message_size_), const_buffer(session_start_response_message_, session_start_response_message_size_));
 
-        if (memcmp(expected_digest_value, incoming_digest_value, incoming_digest_value_size) == 0)
+        if (CRYPTO_memcmp(expected_digest_value, incoming_digest_value, incoming_digest_value_size) == 0)
         {
             static_assert(sizeof(session_.control_direction_session_key_) == sizeof(incoming_control_direction_session_key), "unexpected size mismatch");
             memcpy(session_.control_direction_session_key_, incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key));
             static_assert(sizeof(session_.monitoring_direction_session_key_) == sizeof(incoming_monitoring_direction_session_key), "unexpected size mismatch");
             memcpy(session_.monitoring_direction_session_key_, incoming_monitoring_direction_session_key, sizeof(incoming_monitoring_direction_session_key));
+            memcpy(digest_, expected_digest_value, Config::max_digest_size__);
             return true;
         }
         else
@@ -148,6 +150,22 @@ boost::asio::const_buffer SessionBuilder::getUpdateKey() const
         };
     return const_buffer(update_key__, sizeof(update_key__));
 }
+
+KeyWrapAlgorithm SessionBuilder::getKeyWrapAlgorithm() const
+{
+    return key_wrap_algorithm_;
+}
+
+MACAlgorithm SessionBuilder::getMACAlgorithm() const
+{
+    return mac_algorithm_;
+}
+
+boost::asio::const_buffer SessionBuilder::getDigest() const
+{
+    return boost::asio::const_buffer(digest_, sizeof(digest_));
+}
+
 
 }
 

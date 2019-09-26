@@ -242,9 +242,28 @@ const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buf
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(Messages::KeyStatus const &ks) noexcept
+boost::asio::const_buffer SecurityLayer::format(Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept
 {
-	return const_buffer();
+	pre_condition(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(sc) + sc.mac_length_);
+    pre_condition(sc.mac_length_ <= digest.size());
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_confirmation__);
+	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	assert(outgoing_spdu_size_ == 8);
+	
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &sc, sizeof(sc));
+	outgoing_spdu_size_ += sizeof(sc);
+	assert(outgoing_spdu_size_ == 8 + sizeof(sc));
+
+    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), sc.mac_length_);
+    outgoing_spdu_size_ += sc.mac_length_;
+
+	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
 boost::asio::const_buffer SecurityLayer::format(Messages::Error const &e) noexcept
@@ -442,9 +461,9 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         }
         break;
     }
-	case static_cast< uint8_t >(Message::key_status__) :
-		// check the SPDU size to see if it's big enough to hold a KeyStatus message
-		// if so, parse into a KeyStatus object and call rxkeyStatus(incoming_seq, incoming_ks);
+    case static_cast< uint8_t >(Message::session_confirmation__) :
+		// check the SPDU size to see if it's big enough to hold a SessionConfirmation message
+		// if so, parse into a SessionConfirmation object and call rxSessionConfirmation(incoming_seq, incoming_sc);
 		break;
 	case static_cast< uint8_t >(Message::authenticated_apdu__) :
 		// check the SPDU size to see if it's big enough to hold an AuthenticatedAPDU message

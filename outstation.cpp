@@ -2,6 +2,7 @@
 #include "messages.hpp"
 #include "details/irandomnumbergenerator.hpp"
 #include "exceptions/contract.hpp"
+#include "messages/sessionconfirmation.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -183,10 +184,13 @@ Outstation::Outstation(
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            //TODO preprare a response message
+            response_spdu = format(Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest());
+            setOutgoingSPDU(response_spdu);
+            incrementStatistic(Statistics::total_messages_sent__);
         }
         else
         {
+            // only send detailed error message in maintenance mode. Don't send any message if we're not.
             response_spdu = format(Messages::Error(Messages::Error::authentication_failure__));
             setOutgoingSPDU(response_spdu);
             incrementStatistic(Statistics::error_messages_sent__);

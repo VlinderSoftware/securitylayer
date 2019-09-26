@@ -21,16 +21,6 @@
 //             and have the Outstation decide whether it agrees with the hint.
 #define OPTION_MASTER_SETS_KWA_AND_MAL 1	/* This is what the SATF decided on 2019-05-24 */
 #define OPTION_MASTER_KWA_AND_MAL_ARE_HINTS 1	/* This is what the SATF decided on 2019-05-24 */
-// DISCUSSED:  sending the session key status at the end of the key exchange doesn't make
-//             much sense: it's always going to be OK. So, what are the cases going to be
-//             that you'd want to get a KeyStatus message from the Outstation? If it's
-//             anything other than OK, there's no way to authenticate the message, so
-//             you won't be able to take any decisions based on it if those decisions 
-//             change any state.
-//             At the end of the session key exchange, a SessionKeyChangeConfirmation 
-//             message, which would basically be a MAC of the header calculated with the
-//             monitoring direction session key, should be enough.
-#define OPTION_REMOVE_KEY_STATUS_MESSAGE 1
 // DISCUSSION: As discussed on the 2019-05-24 SATF telecon, the Master can iterate through
 //             available algorithms if the Outstation does not support the suggested algorithms.
 #define OPTION_ITERATE_KWA_AND_MAL 1

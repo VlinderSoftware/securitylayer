@@ -41,6 +41,10 @@ public :
 
     boost::asio::const_buffer getUpdateKey() const;
 
+    KeyWrapAlgorithm getKeyWrapAlgorithm() const;
+    MACAlgorithm getMACAlgorithm() const;
+    boost::asio::const_buffer getDigest() const;
+
 private :
 	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
 	MACAlgorithm mac_algorithm_ = MACAlgorithm::unknown__;
@@ -57,6 +61,8 @@ private :
 
 	Session session_;
 	Details::IRandomNumberGenerator &random_number_generator_;
+
+    unsigned char digest_[Config::max_digest_size__];
 };
 }
 

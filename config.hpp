@@ -39,6 +39,8 @@ namespace DNP3SAv6 {
 		static unsigned int const max_spdu_size__ = 4096;
 		static unsigned int const min_nonce_size__ = 4; // bytes
 		static unsigned int const max_nonce_size__ = 16; // bytes
+
+        static unsigned int const max_digest_size__ = 32; // bytes
 	};
 }
 
