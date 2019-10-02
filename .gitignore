@@ -1,2 +1,7 @@
 *~
 .build
+build
+.vscode
+
+profile-*.hpp
+/.vs
