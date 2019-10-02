@@ -187,6 +187,7 @@ Outstation::Outstation(
             response_spdu = format(Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest());
             setOutgoingSPDU(response_spdu);
             incrementStatistic(Statistics::total_messages_sent__);
+            setState(State::active__);
         }
         else
         {

@@ -52,6 +52,9 @@ public :
 	void onApplicationReset() noexcept;
 	// signal an application layer timeout
 	void onAPDUTimeout() noexcept;
+    // cancel a pending APDU for any reason
+    void cancelPendingAPDU() noexcept;
+
 
 	void postAPDU(boost::asio::const_buffer const &apdu) noexcept;
 	void postSPDU(boost::asio::const_buffer const &spdu) noexcept;
@@ -123,6 +126,7 @@ protected :
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept;
 	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept;
     virtual void rxSetSessionKeys(std::uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept;
+    virtual void rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept;
 
 	Config const config_;
 	Details::IRandomNumberGenerator &random_number_generator_;

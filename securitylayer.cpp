@@ -30,6 +30,10 @@ void SecurityLayer::onApplicationReset() noexcept
 }
 void SecurityLayer::onAPDUTimeout() noexcept
 {
+    cancelPendingAPDU();
+}
+void SecurityLayer::cancelPendingAPDU() noexcept
+{
 	switch (state_)
 	{
 	case initial__ :
@@ -313,6 +317,12 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
     incrementStatistic(Statistics::unexpected_messages__);
 }
 
+/*virtual */void SecurityLayer::rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept
+{
+    incrementStatistic(Statistics::unexpected_messages__);
+}
+
+
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
 	unsigned char const *incoming_spdu_data(static_cast< unsigned char const* >(incoming_spdu_.data()));
@@ -435,7 +445,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
         {
             Messages::SetSessionKeys incoming_ssk;
-            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_ssk));
+            assert(static_cast< size_t >(distance(curr, end)) >= sizeof(incoming_ssk));
             memcpy(&incoming_ssk, curr, sizeof(incoming_ssk));
             curr += sizeof(incoming_ssk);
 
@@ -462,9 +472,38 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         break;
     }
     case static_cast< uint8_t >(Message::session_confirmation__) :
-		// check the SPDU size to see if it's big enough to hold a SessionConfirmation message
-		// if so, parse into a SessionConfirmation object and call rxSessionConfirmation(incoming_seq, incoming_sc);
+    {
+        unsigned int const min_expected_spdu_size(8/*header size*/ + sizeof(Messages::SessionConfirmation));
+        unsigned int const max_expected_spdu_size(8/*header size*/ + sizeof(Messages::SessionConfirmation) + Config::max_digest_size__);
+        if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
+        {
+            Messages::SessionConfirmation incoming_sc;
+            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_sc));
+            memcpy(&incoming_sc, curr, sizeof(incoming_sc));
+            curr += sizeof(incoming_sc);
+
+            if (incoming_sc.mac_length_ == distance(curr, end))
+            {
+                const_buffer incoming_mac(curr, distance(curr, end));
+                rxSessionConfirmation(incoming_seq, incoming_sc, incoming_mac, incoming_spdu_);
+            }
+            else
+            {
+                const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+                setOutgoingSPDU(response_spdu);
+                incrementStatistic(Statistics::error_messages_sent__);
+                incrementStatistic(Statistics::total_messages_sent__);
+            }
+        }
+        else
+        {
+            const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+            setOutgoingSPDU(response_spdu);
+            incrementStatistic(Statistics::error_messages_sent__);
+            incrementStatistic(Statistics::total_messages_sent__);
+        }
 		break;
+    }
 	case static_cast< uint8_t >(Message::authenticated_apdu__) :
 		// check the SPDU size to see if it's big enough to hold an AuthenticatedAPDU message
 		// if so, parse into a AuthenticatedAPDU object and call rxAuthenticatedAPDU(incoming_seq, incoming_aa);
