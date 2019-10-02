@@ -3,7 +3,7 @@ project(secureauthentication VERSION 1.0 LANGUAGES C CXX)
 enable_testing()
 
 include(FindOpenSSL)
-include_directories(OPENSSL_INCLUDE_DIR)
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 option(SA_COVERAGE "Enable code coverage" OFF)
 option(SA_PROFILES "Try all profiles" ON)
