@@ -201,6 +201,72 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                         WHEN( "The Outstation receives the SetSessionKeys message" ) {
                             auto spdu(master.getSPDU());
                             outstation.postSPDU(spdu);
+                            THEN( "The outstation should go to the ACTIVE state" ) {
+        						REQUIRE( outstation.getState() == Outstation::active__ );
+                            }
+                            THEN( "The Outstation will attempt to send a SessionConfirmation message" ) {
+                                REQUIRE( outstation.pollSPDU() );
+				                auto spdu(outstation.getSPDU());
+				                REQUIRE( !outstation.pollSPDU() );
+				                REQUIRE( spdu.size() == 26 );
+				                unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+				                REQUIRE( spdu_bytes[0] == 0xc0 );
+				                REQUIRE( spdu_bytes[1] == 0x80 );
+				                REQUIRE( spdu_bytes[2] == 0x01 );
+				                REQUIRE( spdu_bytes[3] == 0x05 );
+				                REQUIRE( spdu_bytes[4] == 0x01 );
+				                REQUIRE( spdu_bytes[5] == 0x00 );
+				                REQUIRE( spdu_bytes[6] == 0x00 );
+				                REQUIRE( spdu_bytes[7] == 0x00 );
+                                REQUIRE( spdu_bytes[8] == 0x10 );
+                                REQUIRE( spdu_bytes[9] == 0x00 );
+                                REQUIRE( spdu_bytes[10] == 0x80 );
+                                REQUIRE( spdu_bytes[11] == 0x35 );
+                                REQUIRE( spdu_bytes[12] == 0xba );
+                                REQUIRE( spdu_bytes[13] == 0x56 );
+                                REQUIRE( spdu_bytes[14] == 0x11 );
+                                REQUIRE( spdu_bytes[15] == 0x74 );
+                                REQUIRE( spdu_bytes[16] == 0x00 );
+                                REQUIRE( spdu_bytes[17] == 0x1b );
+                                REQUIRE( spdu_bytes[18] == 0xb8 );
+                                REQUIRE( spdu_bytes[19] == 0x18 );
+                                REQUIRE( spdu_bytes[20] == 0x8b );
+                                REQUIRE( spdu_bytes[21] == 0xd3 );
+                                REQUIRE( spdu_bytes[22] == 0x93 );
+                                REQUIRE( spdu_bytes[23] == 0x81 );
+                                REQUIRE( spdu_bytes[24] == 0xf0 );
+                                REQUIRE( spdu_bytes[25] == 0xcc );
+                            }
+                            //TODO check outstation statistics
+                            WHEN( "The Master receives it" ) {
+                                auto spdu(outstation.getSPDU());
+                                master.postSPDU(spdu);
+                                THEN( "The Master should go to the ACTIVE state" ) {
+                                    REQUIRE( master.getState() == SecurityLayer::active__ );
+                                }
+                                THEN( "The Outstation has prepared the authenticated-APDU SPDU" )
+                                {
+                                    REQUIRE( outstation.pollSPDU() ); // for the pending APDU
+                                }
+                                WHEN( "The Outstation canceled the APDU (timeout)" ) {
+                                    outstation.onAPDUTimeout();
+                                    THEN( "No SPDU will be pending" ) {
+                                         REQUIRE( !outstation.pollSPDU() );
+                                    }
+                                }
+                                WHEN( "The Outstation canceled the APDU (application reset)" ) {
+                                    outstation.onApplicationReset();
+                                    THEN( "No SPDU will be pending" ) {
+                                         REQUIRE( !outstation.pollSPDU() );
+                                    }
+                                }
+                                WHEN( "The Outstation canceled the APDU (cancel)" ) {
+                                    outstation.cancelPendingAPDU();
+                                    THEN( "No SPDU will be pending" ) {
+                                         REQUIRE( !outstation.pollSPDU() );
+                                    }
+                                }
+                            }
                         }
 					}
 				}
