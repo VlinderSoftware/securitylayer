@@ -91,6 +91,7 @@ mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 		, const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
 		, getDigest(Direction::control_direction__)
 		);
+    valid_ = true;
 
 	return buffer;
 }
@@ -130,8 +131,10 @@ bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key
         {
             static_assert(sizeof(control_direction_session_key_) == sizeof(incoming_control_direction_session_key), "unexpected size mismatch");
             memcpy(control_direction_session_key_, incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key));
+            control_direction_session_key_size_ = sizeof(incoming_control_direction_session_key);
             static_assert(sizeof(monitoring_direction_session_key_) == sizeof(incoming_monitoring_direction_session_key), "unexpected size mismatch");
             memcpy(monitoring_direction_session_key_, incoming_monitoring_direction_session_key, sizeof(incoming_monitoring_direction_session_key));
+            monitoring_direction_session_key_size_ = sizeof(incoming_monitoring_direction_session_key);
             valid_ = true;
             return true;
         }

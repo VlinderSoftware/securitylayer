@@ -22,6 +22,7 @@ namespace Messages {
 	struct SessionStartRequest;
 	struct SessionStartResponse;
 	struct SetSessionKeys;
+	struct AuthenticatedAPDU;
 }
 class SecurityLayer
 {
@@ -103,6 +104,8 @@ protected :
         , controlling__
     };
 
+    virtual Direction getIncomingDirection() const noexcept = 0;
+
 	virtual void reset() noexcept = 0;
 
 	void setOutgoingSPDU(
@@ -130,18 +133,18 @@ protected :
 
 	void incrementStatistic(Statistics statistics) noexcept;
 
-	virtual void rxRequestSessionInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept;
-	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept;
-	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept;
-    virtual void rxSetSessionKeys(std::uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept;
-    virtual void rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept;
+	virtual void rxRequestSessionInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &incoming_spdu) noexcept;
+    virtual void rxSetSessionKeys(std::uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& incoming_spdu) noexcept;
+    virtual void rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& incoming_spdu) noexcept;
+    virtual void rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::AuthenticatedAPDU const &incoming_aa, boost::asio::const_buffer const &incoming_apdu, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const &incoming_spdu, ptrdiff_t offset_to_mac) noexcept;
+
+    void setSession(Session const &session) noexcept { session_ = session; }
+    Session getSession() const noexcept { return session_; }
 
 	Config const config_;
 	Details::IRandomNumberGenerator &random_number_generator_;
-
-protected :
-    void setSession(Session const &session) noexcept { session_ = session; }
-    Session getSession() const noexcept { return session_; }
 
 private :
 	void parseIncomingSPDU() noexcept;

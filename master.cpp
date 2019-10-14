@@ -222,6 +222,7 @@ Master::Master(
             return;
         }
         setState(State::active__);
+        setSession(session_builder_.getSession());
 
         // if they're the same, go to active state
         break;

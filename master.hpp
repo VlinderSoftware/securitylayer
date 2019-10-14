@@ -23,7 +23,9 @@ public :
 	Master& operator=(Master const&) = delete;
 
 protected :
-	virtual void reset() noexcept override;
+    virtual Direction getIncomingDirection() const noexcept override { return Direction::monitoring__; };
+
+    virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 
 	virtual void rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept override;

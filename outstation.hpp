@@ -25,6 +25,8 @@ public :
 	Outstation& operator=(Outstation const&) = delete;
 
 protected :
+    virtual Direction getIncomingDirection() const noexcept override { return Direction::controlling__; };
+
 	virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 

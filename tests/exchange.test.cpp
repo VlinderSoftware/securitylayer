@@ -244,6 +244,37 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                 {
                                     outstation.update();
                                     REQUIRE( outstation.pollSPDU() ); // for the pending APDU
+				                    auto spdu(outstation.getSPDU());
+				                    REQUIRE( !outstation.pollSPDU() );
+				                    REQUIRE( spdu.size() == 2048+8+2+16 );
+				                    unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+				                    REQUIRE( spdu_bytes[0] == 0xc0 );
+				                    REQUIRE( spdu_bytes[1] == 0x80 );
+				                    REQUIRE( spdu_bytes[2] == 0x01 );
+				                    REQUIRE( spdu_bytes[3] == 0x06 );
+				                    REQUIRE( spdu_bytes[4] == 0x02 );
+				                    REQUIRE( spdu_bytes[5] == 0x00 );
+				                    REQUIRE( spdu_bytes[6] == 0x00 );
+				                    REQUIRE( spdu_bytes[7] == 0x00 );
+    			                    REQUIRE( spdu_bytes[8] == 0x00 );
+    			                    REQUIRE( spdu_bytes[9] == 0x08 );
+                                    REQUIRE( memcmp(apdu.data(), spdu_bytes + 10, apdu.size()) == 0 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  0] == 0xbb );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  1] == 0xb0 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  2] == 0x22 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  3] == 0x93 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  4] == 0x17 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  5] == 0xda );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  6] == 0x8a );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  7] == 0xbc );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  8] == 0x5c );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  9] == 0x93 );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 10] == 0xa7 );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 11] == 0xec );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 12] == 0x28 );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 13] == 0x7c );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 14] == 0xba );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 15] == 0x30 );
                                 }
                                 WHEN( "The Master receives it" ) {
                                     master.postSPDU(spdu);
@@ -266,6 +297,23 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                         outstation.cancelPendingAPDU();
                                         THEN( "No SPDU will be pending" ) {
                                              REQUIRE( !outstation.pollSPDU() );
+                                        }
+                                    }
+                                    WHEN( "The Outstation does send the APDU" ) {
+                                        outstation.update();
+                                        REQUIRE( outstation.pollSPDU() ); // for the pending APDU
+				                        auto spdu(outstation.getSPDU());
+				                        REQUIRE( !outstation.pollSPDU() );
+                                        WHEN( "The Master receives it" ) {
+                                            master.postSPDU(spdu);
+                                            THEN( "The Master will have an APDU ready for consumption" ) {
+                                                REQUIRE( master.pollAPDU() );
+                                            }
+                                            THEN( "The Master can spit out the same APDU we originally sent" ) {
+                                                auto the_apdu(master.getAPDU());
+                                                REQUIRE( the_apdu.size() == apdu.size() );
+                                                REQUIRE( memcmp(the_apdu.data(), apdu.data(), apdu.size()) == 0 );
+                                            }
                                         }
                                     }
                                 }
