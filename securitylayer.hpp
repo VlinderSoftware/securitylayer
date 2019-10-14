@@ -60,7 +60,6 @@ public :
     // cancel a pending APDU for any reason
     void cancelPendingAPDU() noexcept;
 
-
 	void postAPDU(boost::asio::const_buffer const &apdu) noexcept;
 	void postSPDU(boost::asio::const_buffer const &spdu) noexcept;
 
