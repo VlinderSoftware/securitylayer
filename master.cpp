@@ -168,6 +168,7 @@ Master::Master(
 		const_buffer const spdu(format(set_session_keys, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
 		setState(expect_session_confirmation__);
+        incrementStatistic(Statistics::total_messages_sent__);
 		break;
 	}
 	case expect_session_confirmation__ :
@@ -276,8 +277,7 @@ void Master::sendSessionStartRequest() noexcept
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
 	session_builder_.setSessionStartRequest(spdu);
-	//TODO increment stats
-	
+	incrementStatistic(Statistics::total_messages_sent__);
 }
 }
 

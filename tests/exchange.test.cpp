@@ -43,7 +43,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				REQUIRE( spdu_bytes[6] == 0x00 );
 				REQUIRE( spdu_bytes[7] == 0x00 );
 			}
-			THEN( "The TotalMessagesSent statistic should be at one, others zero" ) {
+			THEN( "The outstation statistics should be OK" ) {
 				REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 1 );
 				REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 0 );
 				REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
@@ -61,6 +61,15 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				THEN( "The Master should be in the EXPECT_SESSION_START_RESPONSE state" ) {
 					REQUIRE( master.getState() == Master::expect_session_start_response__ );
 				}
+			    THEN( "The Master statistics should be OK" ) {
+				    REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 1 );
+				    REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 1 );
+				    REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				    REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				    REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				    REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			    }
 				THEN( "The Master should not present anything as an APDU" ) {
 					REQUIRE( !master.pollAPDU() );
 				}
@@ -111,7 +120,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
 						REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
 					}
-			        THEN( "The TotalMessagesSent statistic should be at two (the fact that we didn't fetch it yet is immaterial), total received at one, others zero" ) {
+			        THEN( "The outstation statistics should be OK" ) {
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 1 );
 				        REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
@@ -176,7 +185,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					}
                     WHEN( "The Outstation sends a SessionStartResponse" ) {
                         outstation.getSPDU();
-			            THEN( "The TotalMessagesSent statistic should be at two, total received at one, others zero" ) {
+			            THEN( "The outstation statistics should be OK" ) {
 				            REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
 				            REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 1 );
 				            REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
@@ -192,6 +201,15 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
 							REQUIRE( master.getState() == SecurityLayer::expect_session_confirmation__ );
 						}
+			            THEN( "The Master statistics should be OK" ) {
+				            REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
+				            REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 2 );
+				            REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				            REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				            REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				            REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			            }
 				        THEN( "The Master should not present anything as an APDU" ) {
 					        REQUIRE( !master.pollAPDU() );
 				        }
@@ -231,7 +249,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					        THEN( "The Outstation should not present an APDU" ) {
 						        REQUIRE( !outstation.pollAPDU() );
 					        }
-			                THEN( "The TotalMessagesSent statistic should be at three (the fact that we didn't fetch it yet is immaterial), total received at two, others zero" ) {
+			                THEN( "The outstation statistics should be OK" ) {
 				                REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );
 				                REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 2 );
 				                REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
@@ -312,7 +330,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                    REQUIRE( spdu_bytes[10 + 2048 + 14] == 0xba );
 				                    REQUIRE( spdu_bytes[10 + 2048 + 15] == 0x30 );
                                 }
-			                    THEN( "The TotalMessagesSent statistic should be at three, total received at two, others zero" ) {
+			                    THEN( "The outstation statistics should be OK" ) {
 				                    REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );
 				                    REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 2 );
 				                    REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
@@ -326,6 +344,15 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                     THEN( "The Master should go to the ACTIVE state" ) {
                                         REQUIRE( master.getState() == SecurityLayer::active__ );
                                     }
+			                        THEN( "The Master statistics should be OK" ) {
+				                        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
+				                        REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 3 );
+				                        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				                        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				                        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				                        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			                        }
 				                    THEN( "The Master should not present anything as an APDU" ) {
 					                    REQUIRE( !master.pollAPDU() );
 				                    }
@@ -352,7 +379,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                         REQUIRE( outstation.pollSPDU() ); // for the pending APDU
 				                        auto spdu(outstation.getSPDU());
 				                        REQUIRE( !outstation.pollSPDU() );
-			                            THEN( "The TotalMessagesSent statistic should be at three (the fact that we didn't fetch it yet is immaterial), total received at two, others zero" ) {
+			                            THEN( "The outstation statistics should be OK" ) {
 				                            REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 4 );
 				                            REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 2 );
 				                            REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
