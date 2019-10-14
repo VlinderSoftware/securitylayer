@@ -385,13 +385,25 @@ void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::Au
      *      This means we can receive authenticated APDUs while a new session is being built.
      *      Whether the other side is actually capable of sending them in the current state
      *      is another matter. */
+    if (!getSession().valid())
+    {
+        incrementStatistic(Statistics::unexpected_messages__);
+        return;
+    }
+    else
+    { /* all is well */ }
 
     using Details::SEQValidator;
     switch (seq_validator_.validateSEQ(incoming_seq))
     {
     case SEQValidator::invalid_seq__ :
+        incrementStatistic(Statistics::discarded_messages__);
+        //TODO send an error in this case?
+        return;
     case SEQValidator::old_seq__     :
-        //TODO increment stats?
+        // either a replay attack or a network error. We shouldn't send an error message in either case
+        //TODO log?
+        incrementStatistic(Statistics::discarded_messages__); //TODO unexpected?
         return;
     case SEQValidator::repeat_seq__  :
         //TODO increment stats?
@@ -611,7 +623,6 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     }
 	case static_cast< uint8_t >(Message::authenticated_apdu__) :
     {
-        invariant(getSession().valid());
         unsigned int const min_expected_spdu_size(8/*header size*/ + sizeof(Messages::AuthenticatedAPDU) + 2/*minimal size of an APDU in either direction is two bytes, for the header with no objects*/ + getMACAlgorithmDigestSize(getSession().getMACAlgorithm()));
         unsigned int const max_expected_spdu_size(Config::max_spdu_size__);
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
