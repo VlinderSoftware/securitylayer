@@ -30,7 +30,7 @@
 //             this, it un-breaks broadcast for SA, but it also means that the Application Layer 
 //             should be more careful with broadcast messages, as they could in theory come from 
 //             any of the Outstations on the shared network (whatever the Master broadcasts to).
-#define OPTION_INCLUDE_BROADCAST_KEY 1
+#define OPTION_INCLUDE_BROADCAST_KEY 1 //TODO
 // TO DISCUSS: Broadcast messages could be done using asymmetric keys, as discussed by the SATF
 //             on 2019-06-26.
 #undef OPTION_IMPLEMENT_ASYMMETRIC_BROADCAST

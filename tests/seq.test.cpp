@@ -120,10 +120,76 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
                         REQUIRE( outstation.getState() == Outstation::active__ );
                     }
                 }
-                //TODO test the outstation sending a few unsols
-                //TODO test the master sending a few messages that don't arrive
-                //TODO test messages arriving out-of-order at the outstation (i.e. hold-back-and-replay)
-                //TODO test messages arriving out-of-order at the master (i.e. hold-back-and-replay)
+                WHEN( "The Outstation sends a few unsolicited responses (that don't necessarily arrive at the Master), the sequence number will go up as expected" ) {
+                    for (unsigned int i(0); i < 20; ++i)
+                    {
+                        outstation.postAPDU(const_buffer(response_bytes, sizeof(response_bytes)));
+                        ++expected_seq;
+                        spdu = outstation.getSPDU();
+                        REQUIRE( getSPDUSequenceNumber(spdu) == expected_seq );
+                    }
+                }
+                WHEN( "The Master sends a few messages that don't arrive at the Outstation, the sequence number will go up as expected" ) {
+                    for (unsigned int i(0); i < 20; ++i)
+                    {
+                        master.postAPDU(const_buffer(response_bytes, sizeof(response_bytes)));
+                        ++expected_seq;
+                        spdu = master.getSPDU();
+                        REQUIRE( getSPDUSequenceNumber(spdu) == expected_seq );
+                    }
+                }
+                WHEN( "messages from the Master arrive at the Outstation out-of-order" ) {
+                    master.postAPDU(const_buffer(request_bytes, sizeof(request_bytes)));
+                    spdu = master.getSPDU();
+                    vector< unsigned char > buffer(spdu.size());
+                    memcpy(&buffer[0], spdu.data(), spdu.size());
+                    const_buffer old_spdu(&buffer[0], buffer.size());
+                    master.postAPDU(const_buffer(request_bytes, sizeof(request_bytes)));
+                    spdu = master.getSPDU();
+                    THEN( "The first to arrive is accepted, the second (held back) is discarded" ) {
+                        outstation.postSPDU(spdu);
+				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );
+				        REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 4 );
+				        REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+                        outstation.postSPDU(old_spdu);
+				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );
+				        REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 5 );
+				        REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 1 );
+				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+                    }
+                }
+                WHEN( "messages from the Outstation arrive at the Master out-of-order" ) {
+                    outstation.postAPDU(const_buffer(response_bytes, sizeof(response_bytes)));
+                    spdu = outstation.getSPDU();
+                    vector< unsigned char > buffer(spdu.size());
+                    memcpy(&buffer[0], spdu.data(), spdu.size());
+                    const_buffer old_spdu(&buffer[0], buffer.size());
+                    outstation.postAPDU(const_buffer(response_bytes, sizeof(response_bytes)));
+                    spdu = outstation.getSPDU();
+                    THEN( "The first to arrive is accepted, the second (held back) is discarded" ) {
+                        master.postSPDU(spdu);
+				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 3 );
+				        REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 4 );
+				        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+                        master.postSPDU(old_spdu);
+				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 3 );
+				        REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 5 );
+				        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 1 );
+				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+                    }
+                }
             }
         }
     }
