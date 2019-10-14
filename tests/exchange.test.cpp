@@ -111,7 +111,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( spdu_bytes[15] == 0x10 );
 #endif
 				}
-				//TODO check Master stats
 				//TODO test cases where the Outstation sent its RequestSessionInitation message with sequence numbers 
 				//     other than 1, according to OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
 				WHEN( "The Outstation receives the Master's response" ) {
@@ -237,7 +236,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 							static_assert(sizeof(expected) == 90, "unexpected size for expected response");
 							REQUIRE( memcmp(spdu_bytes + 8, expected, sizeof(expected)) == 0 );
 						}
-						//TODO check the statistics
 						//TODO check invalid messages (things that should provoke error returns)
 						//TODO check with the wrong sequence number
                         WHEN( "The Outstation receives the SetSessionKeys message" ) {
@@ -291,7 +289,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                 REQUIRE( spdu_bytes[24] == 0x0e );
                                 REQUIRE( spdu_bytes[25] == 0x12 );
                             }
-                            //TODO check outstation statistics
                             WHEN( "The Outstation to sends a SessionConfirmation message" ) {
                                 auto spdu(outstation.getSPDU());
                                 THEN( "The Outstation has prepared the authenticated-APDU SPDU" )
@@ -406,7 +403,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					}
 				}
 				//TODO test that a session start request from a broadcast address is ignored
-				//TODO check statistics
 				//TODO check invalid messages (things that should provoke error returns)
 			}
 		}
