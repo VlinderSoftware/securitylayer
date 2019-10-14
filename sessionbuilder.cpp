@@ -177,6 +177,16 @@ boost::asio::const_buffer SessionBuilder::getDigest(Direction direction) const n
     }
 }
 
+std::uint32_t SessionBuilder::getSEQ() const noexcept
+{
+    return seq_;
+}
+
+void SessionBuilder::setSEQ(std::uint32_t seq) noexcept
+{
+    seq_ = seq;
+}
+
 boost::asio::const_buffer SessionBuilder::getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &session_key) const noexcept
 {
     digest(

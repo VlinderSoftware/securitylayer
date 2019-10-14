@@ -66,12 +66,13 @@ Outstation::Outstation(
 		// fall through
 	case expect_session_start_request__ :
 	{
+        session_builder_.setSEQ(incoming_seq);
 		// check the values in the session start request to see if I can live with them
 		if (incoming_ssr.version_ == 6)
 		{ /* OK so far */ }
 		else
 		{
-			response_spdu = format(Messages::Error(Messages::Error::unsupported_version__));
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_version__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
@@ -81,7 +82,7 @@ Outstation::Outstation(
 		{ /* still OK */ }
 		else
 		{
-			response_spdu = format(Messages::Error(Messages::Error::unexpected_flags__));
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unexpected_flags__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
@@ -101,7 +102,7 @@ Outstation::Outstation(
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
 #else
-			response_spdu = format(Messages::Error(Messages::Error::unsupported_keywrap_algorithm__));
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_keywrap_algorithm__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
@@ -120,7 +121,7 @@ Outstation::Outstation(
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 			response.mac_algorithm_ = static_cast< uint8_t >(getPreferredMACAlgorithm());
 #else
-			response_spdu = format(Messages::Error(Messages::Error::unsupported_mac_algorithm__));
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_mac_algorithm__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
@@ -139,7 +140,7 @@ Outstation::Outstation(
 		random_number_generator_.generate(nonce_buffer);
 		response.challenge_data_length_ = config_.nonce_size_;
 
-		response_spdu = format(response, nonce_buffer);
+		response_spdu = format(session_builder_.getSEQ(), response, nonce_buffer);
 		
 		session_builder_.setSessionStartResponse(response_spdu, nonce_buffer);
 		setState(State::expect_set_keys__);
@@ -176,7 +177,7 @@ Outstation::Outstation(
     case initial__:
         // fall through
     case expect_session_start_request__:
-        response_spdu = format(Messages::Error(Messages::Error::unexpected_spdu__));
+        response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unexpected_spdu__));
         setOutgoingSPDU(response_spdu);
         incrementStatistic(Statistics::error_messages_sent__);
         incrementStatistic(Statistics::total_messages_sent__);
@@ -186,7 +187,7 @@ Outstation::Outstation(
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            response_spdu = format(Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+            response_spdu = format(session_builder_.getSEQ(), Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
             setOutgoingSPDU(response_spdu, std::chrono::milliseconds(config_.session_timeout_));
             incrementStatistic(Statistics::total_messages_sent__);
             if (getSession().valid())
@@ -196,13 +197,15 @@ Outstation::Outstation(
             {
                 assert(session_builder_.getSession().valid());
                 setSession(session_builder_.getSession());
+                setSEQ(session_builder_.getSEQ());
+                seq_validator_.setLatestIncomingSEQ(session_builder_.getSEQ());
             }
             setState(State::active__);
         }
         else
         {
             // only send detailed error message in maintenance mode. Don't send any message if we're not.
-            response_spdu = format(Messages::Error(Messages::Error::authentication_failure__));
+            response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::authentication_failure__));
             setOutgoingSPDU(response_spdu);
             incrementStatistic(Statistics::error_messages_sent__);
             incrementStatistic(Statistics::total_messages_sent__);

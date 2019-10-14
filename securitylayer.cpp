@@ -211,6 +211,8 @@ boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direc
 
 boost::asio::const_buffer SecurityLayer::format(Messages::RequestSessionInitiation const &rsi) noexcept
 {
+    invariant(!getSession().valid());
+
 	static_assert(sizeof(outgoing_spdu_buffer_) >= 8, "buffer too small");
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
@@ -246,7 +248,7 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionStartRequest co
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(Messages::SessionStartResponse const &ssr, const_buffer const &nonce) noexcept
+boost::asio::const_buffer SecurityLayer::format(std::uint32_t seq, Messages::SessionStartResponse const &ssr, const_buffer const &nonce) noexcept
 {
 	pre_condition(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(ssr) + nonce.size());
 	
@@ -255,9 +257,9 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionStartResponse c
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_start_response__);
-	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
-	outgoing_spdu_size_ += sizeof(seq_);
+	static_assert(sizeof(seq) == 4, "wrong size (type) for seq");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
+	outgoing_spdu_size_ += sizeof(seq);
 	assert(outgoing_spdu_size_ == 8);
 
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &ssr, sizeof(ssr));
@@ -296,7 +298,7 @@ const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buf
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept
+boost::asio::const_buffer SecurityLayer::format(std::uint32_t seq, Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept
 {
 	pre_condition(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(sc) + sc.mac_length_);
     pre_condition(sc.mac_length_ <= digest.size());
@@ -305,9 +307,9 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionConfirmation co
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_confirmation__);
-	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
-	outgoing_spdu_size_ += sizeof(seq_);
+	static_assert(sizeof(seq) == 4, "wrong size (type) for seq");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
+	outgoing_spdu_size_ += sizeof(seq);
 	assert(outgoing_spdu_size_ == 8);
 	
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &sc, sizeof(sc));
@@ -322,15 +324,20 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionConfirmation co
 
 boost::asio::const_buffer SecurityLayer::format(Messages::Error const &e) noexcept
 {
+	return format(seq_, e);
+}
+
+boost::asio::const_buffer SecurityLayer::format(std::uint32_t seq, Messages::Error const &e) noexcept
+{
 	static_assert(sizeof(outgoing_spdu_buffer_) >= 8 + sizeof(e), "buffer too small");
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::request_session_initiation__);
-	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
-	outgoing_spdu_size_ += sizeof(seq_);
+	static_assert(sizeof(seq) == 4, "wrong size (type) for seq");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
+	outgoing_spdu_size_ += sizeof(seq);
 	assert(outgoing_spdu_size_ == 8);
 	
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &e, sizeof(e));
@@ -374,7 +381,20 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 
 void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::AuthenticatedAPDU const& incoming_aa, boost::asio::const_buffer const& incoming_apdu, boost::asio::const_buffer const& incoming_mac, boost::asio::const_buffer const& incoming_spdu, ptrdiff_t offset_to_mac) noexcept
 {
-    //TODO check sequence number
+    using Details::SEQValidator;
+    switch (seq_validator_.validateSEQ(incoming_seq))
+    {
+    case SEQValidator::invalid_seq__ :
+    case SEQValidator::old_seq__     :
+        //TODO increment stats?
+        return;
+    case SEQValidator::repeat_seq__  :
+        //TODO increment stats?
+        return;
+    case SEQValidator::next_seq__    :
+    case SEQValidator::new_seq__     :
+        break;
+    }
 
     pre_condition(incoming_aa.apdu_length_ == incoming_apdu.size());
     if (incoming_mac.size() != getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
@@ -399,6 +419,7 @@ void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::Au
     else
     { /* all is well */ }
     incoming_apdu_ = incoming_apdu;
+    seq_validator_.setLatestIncomingSEQ(incoming_seq);
 }
 
 

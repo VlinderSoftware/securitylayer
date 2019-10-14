@@ -53,6 +53,9 @@ public :
 
     boost::asio::const_buffer getDigest(Direction direction) const noexcept;
 
+    std::uint32_t getSEQ() const noexcept;
+    void setSEQ(std::uint32_t seq) noexcept;
+
 private :
     boost::asio::const_buffer getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &session_key) const noexcept;
     
@@ -70,6 +73,8 @@ private :
 
     mutable unsigned char control_direction_digest_[Config::max_digest_size__];
     mutable unsigned char monitoring_direction_digest_[Config::max_digest_size__];
+
+    std::uint32_t seq_;
 };
 }
 

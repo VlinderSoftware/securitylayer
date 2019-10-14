@@ -10,6 +10,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"
 #include "session.hpp"
+#include "details/seqvalidator.hpp"
 
 namespace DNP3SAv6 {
 namespace Details {
@@ -126,10 +127,11 @@ protected :
 	boost::asio::const_buffer formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept;
 	boost::asio::const_buffer format(Messages::RequestSessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
-	boost::asio::const_buffer format(Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
 	boost::asio::const_buffer format(Messages::SetSessionKeys const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
-	boost::asio::const_buffer format(Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept;
 	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::Error const &e) noexcept;
 
 	void incrementStatistic(Statistics statistics) noexcept;
 
@@ -145,6 +147,7 @@ protected :
 
 	Config const config_;
 	Details::IRandomNumberGenerator &random_number_generator_;
+    Details::SEQValidator seq_validator_;
 
 private :
 	void parseIncomingSPDU() noexcept;

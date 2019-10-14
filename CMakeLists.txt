@@ -35,6 +35,7 @@ set(LAYER_PUBLIC_HEADERS
 	macalgorithm.hpp
 	master.hpp
 	messages.hpp
+	messages/authenticatedapdu.hpp
 	messages/error.hpp
 	messages/requestsessioninitiation.hpp
 	messages/sessionconfirmation.hpp
@@ -67,6 +68,8 @@ set(LIBLAYER_SRC
 	details/randomnumbergenerator.hpp
 	details/rfc3394aes256keywrap.cpp
 	details/rfc3394aes256keywrap.hpp
+	details/seqvalidator.cpp
+	details/seqvalidator.hpp
 	exceptions.cpp
 	hmac.cpp
 	hmac.hpp

@@ -131,6 +131,12 @@ Master::Master(
 	{
 	case expect_session_start_response__ :
 	{
+        if (incoming_seq != session_builder_.getSEQ())
+        {   //TODO increment statistics
+            return;
+        }
+        else
+        { /* all is well */ }
 		session_builder_.setSessionStartResponse(spdu, nonce);
 		//TODO check sequence number
 #if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
@@ -189,6 +195,12 @@ Master::Master(
 	{
 	case expect_session_confirmation__ :
     {
+        if (incoming_seq != session_builder_.getSEQ())
+        {   //TODO increment statistics
+            return;
+        }
+        else
+        { /* all is well */ }
         if (incoming_sc.mac_length_ != getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm()))
         {
             //TODO increment stat
@@ -276,6 +288,7 @@ void Master::sendSessionStartRequest() noexcept
 
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
+    session_builder_.setSEQ(getSEQ());
 	session_builder_.setSessionStartRequest(spdu);
 	incrementStatistic(Statistics::total_messages_sent__);
 }
