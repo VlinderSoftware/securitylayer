@@ -2,6 +2,7 @@
 #include "messages.hpp"
 #include <chrono>
 #include "exceptions/contract.hpp"
+#include <openssl/crypto.h>
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -44,14 +45,14 @@ Master::Master(
 		/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
 		 * the APDUs */
 		break;
-	case expect_session_ack__ :
+	case expect_session_confirmation__ :
 		/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
 		 * SessionStartResponse messages, not by APDUs. */
 		break;
 	case active__ :
 	{
 		incrementSEQ();
-		const_buffer spdu(formatAuthenticatedAPDU(apdu));
+		const_buffer spdu(formatAuthenticatedAPDU(Direction::controlling__, apdu));
 		setOutgoingSPDU(spdu/* no time-out */);
 		// no state change
 		incrementStatistic(Statistics::total_messages_sent__);
@@ -110,7 +111,7 @@ Master::Master(
 		setState(expect_session_start_response__);
 		break;
 #endif
-	case expect_session_ack__ :
+	case expect_session_confirmation__ :
 	case active__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;
@@ -166,12 +167,66 @@ Master::Master(
 		set_session_keys.key_wrap_data_length_ = static_cast< decltype(set_session_keys.key_wrap_data_length_) >(wrapped_key_data.size());
 		const_buffer const spdu(format(set_session_keys, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
-		setState(expect_session_ack__);
+		setState(expect_session_confirmation__);
 		break;
 	}
-	case expect_session_ack__ :
+	case expect_session_confirmation__ :
 		/* This is probably the response we got previously. Check if it it's identical and, if so, repeat the response. 
 		 * Otherwise, it's an unexpected message. */
+	case initial__ :
+	case active__ :
+		incrementStatistic(Statistics::unexpected_messages__);
+		break;
+	default :
+		assert(!"Unexpected state");
+	}
+}
+
+/*virtual */void Master::rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept/* override*/
+{
+	switch (getState())
+	{
+	case expect_session_confirmation__ :
+    {
+        if (incoming_sc.mac_length_ != getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm()))
+        {
+            //TODO increment stat
+            return;
+        }
+        else
+        { /* OK so far */ }
+        if (incoming_mac.size() != incoming_sc.mac_length_)
+        {
+            //TODO increment stat
+            return;
+        }
+        else
+        { /* OK so far */ }
+        // check whether the incoming MAC size corresponds to the expected MAC size
+        auto expected_mac_size(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm()));
+        if (expected_mac_size != incoming_sc.mac_length_)
+        {   //TODO increment stat
+            //TODO in maintenance mode, message
+            return;
+        }
+        else
+        { /* all is fine so far */ }
+        assert(expected_mac_size == incoming_mac.size());
+        // calculate the MAC with the monitoring-direction session key
+        auto expected_mac(session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+        assert(expected_mac.size() >= expected_mac_size);
+        // compare the MAC received with the one calculated
+        if (CRYPTO_memcmp(incoming_mac.data(), expected_mac.data(), expected_mac_size) != 0)
+        {   //TODO increment stat
+            //TODO in maintenance mode, message
+            return;
+        }
+        setState(State::active__);
+
+        // if they're the same, go to active state
+        break;
+    }
+	case expect_session_start_response__ :
 	case initial__ :
 	case active__ :
 		incrementStatistic(Statistics::unexpected_messages__);
@@ -220,7 +275,7 @@ void Master::sendSessionStartRequest() noexcept
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
 	session_builder_.setSessionStartRequest(spdu);
-	// increment stats
+	//TODO increment stats
 	
 }
 }

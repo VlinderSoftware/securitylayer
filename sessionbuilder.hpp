@@ -13,9 +13,14 @@ namespace DNP3SAv6 {
 namespace Details {
 	class IRandomNumberGenerator;
 }
-class SessionBuilder
+class SessionBuilder : private Session
 {
 public :
+    enum struct Direction {
+          control_direction__
+        , monitoring_direction__
+        };
+
 	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator);
 	~SessionBuilder() = default;
 	
@@ -25,6 +30,8 @@ public :
 	SessionBuilder& operator=(SessionBuilder const&) = delete;
 
 	void reset() noexcept;
+
+    Session getSession() const noexcept;
 
 	void setKeyWrapAlgorithm(KeyWrapAlgorithm key_wrap_algorithm);
 	void setMACAlgorithm(MACAlgorithm mac_algorithm);
@@ -41,14 +48,14 @@ public :
 
     boost::asio::const_buffer getUpdateKey() const;
 
-    KeyWrapAlgorithm getKeyWrapAlgorithm() const;
-    MACAlgorithm getMACAlgorithm() const;
-    boost::asio::const_buffer getDigest() const;
+    using Session::getKeyWrapAlgorithm;
+    using Session::getMACAlgorithm;
+
+    boost::asio::const_buffer getDigest(Direction direction) const noexcept;
 
 private :
-	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
-	MACAlgorithm mac_algorithm_ = MACAlgorithm::unknown__;
-
+    boost::asio::const_buffer getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &session_key) const noexcept;
+    
 	unsigned char session_start_request_message_[Config::max_spdu_size__];
 	unsigned int session_start_request_message_size_ = 0;
 	unsigned char session_start_response_message_[Config::max_spdu_size__];
@@ -59,10 +66,10 @@ private :
 	boost::asio::steady_timer session_timeout_;
 	unsigned int session_key_change_count_ = 0;
 
-	Session session_;
 	Details::IRandomNumberGenerator &random_number_generator_;
 
-    unsigned char digest_[Config::max_digest_size__];
+    mutable unsigned char control_direction_digest_[Config::max_digest_size__];
+    mutable unsigned char monitoring_direction_digest_[Config::max_digest_size__];
 };
 }
 

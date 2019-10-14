@@ -74,6 +74,7 @@ set(LIBLAYER_SRC
 	master.cpp
 	outstation.cpp
 	securitylayer.cpp
+	session.cpp
 	sessionbuilder.cpp
 	wrappedkeydata.cpp
 	wrappedkeydata.hpp

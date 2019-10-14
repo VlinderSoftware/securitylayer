@@ -25,29 +25,29 @@ Outstation::Outstation(
 }
 /*virtual */void Outstation::onPostAPDU(boost::asio::const_buffer const &apdu) noexcept/* override*/
 {
-	//TODO check if there are session keys and, if so, use them to send the APDU along. Otherwise, go through the state
-	//     machine. The state machine maybe setting up new keys, but if we have keys, we might as well use them.
-	boost::asio::const_buffer spdu;
-	switch (getState())
-	{
-	case initial__ :
+    if (getSession().valid())
+    {
 		incrementSEQ();
-	case expect_session_start_request__ :
-		sendRequestSessionInitiation();
-		setState(expect_session_start_request__);
-		break;
-	case expect_set_keys__ :
-		/* no-op: sending SessionStartResponse is drive by its time-out or receiving 
-		 * SessionStartRequest messages, not by APDUs */
-		break;
-	case active__ :
-		incrementSEQ();
-		spdu = formatAuthenticatedAPDU(apdu);
-		//HERE
-		break;
-	default :
-		assert(!"unexpected state");
-	}
+        setOutgoingSPDU(formatAuthenticatedAPDU(Direction::monitoring__, apdu), std::chrono::milliseconds(config_.session_timeout_));
+    }
+    else
+    {
+	    switch (getState())
+	    {
+	    case initial__ :
+		    incrementSEQ();
+	    case expect_session_start_request__ :
+		    sendRequestSessionInitiation();
+		    setState(expect_session_start_request__);
+		    break;
+	    case expect_set_keys__ :
+		    /* no-op: sending SessionStartResponse is drive by its time-out or receiving 
+		     * SessionStartRequest messages, not by APDUs */
+		    break;
+	    default :
+		    assert(!"unexpected state");
+	    }
+    }
 }
 
 /*virtual */void Outstation::rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept/* override*/
@@ -184,9 +184,17 @@ Outstation::Outstation(
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            response_spdu = format(Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest());
-            setOutgoingSPDU(response_spdu);
+            response_spdu = format(Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+            setOutgoingSPDU(response_spdu, std::chrono::milliseconds(config_.session_timeout_));
             incrementStatistic(Statistics::total_messages_sent__);
+            if (getSession().valid())
+            { //TODO if we set up a second (replacement) session, we won't use it until the Master has sent us an authenticated APDU using it, or the old one times out
+            }
+            else
+            {
+                assert(session_builder_.getSession().valid());
+                setSession(session_builder_.getSession());
+            }
             setState(State::active__);
         }
         else

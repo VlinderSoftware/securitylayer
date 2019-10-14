@@ -17,6 +17,7 @@ namespace DNP3SAv6 {
 		unsigned int session_start_request_timeout_ = 5000; // milliseconds
 		unsigned int session_start_response_timeout_ = 5000; // milliseconds
 		unsigned int set_session_keys_timeout_ = 5000; // milliseconds
+        unsigned int session_timeout_ = 300000; // milliseconds
 
 #if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
 		static unsigned int const max_kwa_choices__ = 1;
@@ -41,6 +42,7 @@ namespace DNP3SAv6 {
 		static unsigned int const max_nonce_size__ = 16; // bytes
 
         static unsigned int const max_digest_size__ = 32; // bytes
+        static unsigned int const max_session_key_size__ = 32; // bytes
 	};
 }
 

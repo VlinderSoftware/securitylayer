@@ -19,12 +19,16 @@ SessionBuilder::SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNum
 
 void SessionBuilder::reset() noexcept
 {
-    key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
-    mac_algorithm_ = MACAlgorithm::unknown__;
+    Session::reset();
 	session_start_request_message_size_ = 0;
 	session_start_response_message_size_ = 0;
 	session_start_response_nonce_size_ = 0;
 	session_key_change_count_ = 0;
+}
+
+Session SessionBuilder::getSession() const noexcept
+{
+    return *this;
 }
 
 void SessionBuilder::setKeyWrapAlgorithm(KeyWrapAlgorithm key_wrap_algorithm)
@@ -73,20 +77,19 @@ mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	unsigned char *curr(static_cast< unsigned char* >(buffer.data()));
 	unsigned char *const end(curr + buffer.size());
 
-	random_number_generator_.generate(mutable_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)));
-	random_number_generator_.generate(mutable_buffer(session_.monitoring_direction_session_key_, sizeof(session_.monitoring_direction_session_key_)));
-	// calculate the MAC over the first two messages using the control direction session key
-	unsigned char digest_value[Config::max_digest_size__];
-	digest(mutable_buffer(digest_value, sizeof(digest_value)), mac_algorithm_, const_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_)), const_buffer(session_start_request_message_, session_start_request_message_size_), const_buffer(session_start_response_message_, session_start_response_message_size_));
+	random_number_generator_.generate(mutable_buffer(control_direction_session_key_, sizeof(control_direction_session_key_)));
+    control_direction_session_key_size_ = sizeof(control_direction_session_key_);
+	random_number_generator_.generate(mutable_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_)));
+    monitoring_direction_session_key_size_ = sizeof(monitoring_direction_session_key_);
 	// encode it all into the mutable buffer
 	wrap(
 		  buffer
         , getUpdateKey()
 		, key_wrap_algorithm_
 		, mac_algorithm_
-		, const_buffer(session_.control_direction_session_key_, sizeof(session_.control_direction_session_key_))
-		, const_buffer(session_.monitoring_direction_session_key_, sizeof(session_.monitoring_direction_session_key_))
-		, const_buffer(digest_value, sizeof(digest_value))
+		, const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
+		, const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
+		, getDigest(Direction::control_direction__)
 		);
 
 	return buffer;
@@ -100,8 +103,8 @@ bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key
     pre_condition(incoming_key_wrap_data.size() <= Config::max_key_wrap_data_size__);
 
     // calculate the MAC over the first two messages using the control direction session key
-    unsigned char incoming_control_direction_session_key[sizeof(session_.control_direction_session_key_)];
-    unsigned char incoming_monitoring_direction_session_key[sizeof(session_.monitoring_direction_session_key_)];
+    unsigned char incoming_control_direction_session_key[sizeof(control_direction_session_key_)];
+    unsigned char incoming_monitoring_direction_session_key[sizeof(monitoring_direction_session_key_)];
     unsigned char incoming_digest_value[Config::max_digest_size__];
     unsigned int incoming_digest_value_size(0);
 
@@ -119,16 +122,17 @@ bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key
         // the incoming digest value size is determined by the algorithm used, so we don't need to check it at run-time (though we assert to make sure our buffer is big enough here)
         assert(incoming_digest_value_size <= sizeof(incoming_digest_value));
 
-        unsigned char expected_digest_value[Config::max_digest_size__];
-        digest(mutable_buffer(expected_digest_value, sizeof(expected_digest_value)), mac_algorithm_, const_buffer(incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key)), const_buffer(session_start_request_message_, session_start_request_message_size_), const_buffer(session_start_response_message_, session_start_response_message_size_));
+        unsigned char expected_digest[Config::max_digest_size__];
+        auto expected_digest_value(getDigest(mutable_buffer(expected_digest, sizeof(expected_digest)), const_buffer(incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key))));
 
-        if (CRYPTO_memcmp(expected_digest_value, incoming_digest_value, incoming_digest_value_size) == 0)
+        assert(expected_digest_value.size() >= incoming_digest_value_size);
+        if (CRYPTO_memcmp(expected_digest_value.data(), incoming_digest_value, incoming_digest_value_size) == 0)
         {
-            static_assert(sizeof(session_.control_direction_session_key_) == sizeof(incoming_control_direction_session_key), "unexpected size mismatch");
-            memcpy(session_.control_direction_session_key_, incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key));
-            static_assert(sizeof(session_.monitoring_direction_session_key_) == sizeof(incoming_monitoring_direction_session_key), "unexpected size mismatch");
-            memcpy(session_.monitoring_direction_session_key_, incoming_monitoring_direction_session_key, sizeof(incoming_monitoring_direction_session_key));
-            memcpy(digest_, expected_digest_value, Config::max_digest_size__);
+            static_assert(sizeof(control_direction_session_key_) == sizeof(incoming_control_direction_session_key), "unexpected size mismatch");
+            memcpy(control_direction_session_key_, incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key));
+            static_assert(sizeof(monitoring_direction_session_key_) == sizeof(incoming_monitoring_direction_session_key), "unexpected size mismatch");
+            memcpy(monitoring_direction_session_key_, incoming_monitoring_direction_session_key, sizeof(incoming_monitoring_direction_session_key));
+            valid_ = true;
             return true;
         }
         else
@@ -151,21 +155,36 @@ boost::asio::const_buffer SessionBuilder::getUpdateKey() const
     return const_buffer(update_key__, sizeof(update_key__));
 }
 
-KeyWrapAlgorithm SessionBuilder::getKeyWrapAlgorithm() const
+boost::asio::const_buffer SessionBuilder::getDigest(Direction direction) const noexcept
 {
-    return key_wrap_algorithm_;
+    if (direction == Direction::control_direction__)
+    {
+        return getDigest(
+              mutable_buffer(control_direction_digest_, sizeof(control_direction_digest_))
+            , const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
+            );
+    }
+    else
+    {
+        pre_condition(direction == Direction::monitoring_direction__);
+        return getDigest(
+              mutable_buffer(monitoring_direction_digest_, sizeof(monitoring_direction_digest_))
+            , const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
+            );
+    }
 }
 
-MACAlgorithm SessionBuilder::getMACAlgorithm() const
+boost::asio::const_buffer SessionBuilder::getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &session_key) const noexcept
 {
-    return mac_algorithm_;
+    digest(
+          out_digest
+        , mac_algorithm_
+        , session_key
+        , const_buffer(session_start_request_message_, session_start_request_message_size_)
+        , const_buffer(session_start_response_message_, session_start_response_message_size_)
+        );
+    return out_digest;
 }
-
-boost::asio::const_buffer SessionBuilder::getDigest() const
-{
-    return boost::asio::const_buffer(digest_, sizeof(digest_));
-}
-
 
 }
 

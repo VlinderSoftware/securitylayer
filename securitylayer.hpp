@@ -9,6 +9,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "statistics.hpp"
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"
+#include "session.hpp"
 
 namespace DNP3SAv6 {
 namespace Details {
@@ -44,6 +45,8 @@ public :
 // We also need to know when the link is lost, or when the application is reset.
 	enum UpdateResult {
 		  wait__
+        , spdu_ready__
+        , apdu_ready__
 		};
 
 	// signal link loss (from lower layers)
@@ -75,7 +78,7 @@ public : // public API for testing purposes
 		, expect_session_start_request__
 		, expect_session_start_response__
 		, expect_set_keys__
-		, expect_session_ack__
+		, expect_session_confirmation__
 		, active__
 		};
 
@@ -95,6 +98,11 @@ protected:
 	virtual MACAlgorithm getPreferredMACAlgorithm() const noexcept;
 
 protected :
+    enum struct Direction {
+          monitoring__
+        , controlling__
+    };
+
 	virtual void reset() noexcept = 0;
 
 	void setOutgoingSPDU(
@@ -112,7 +120,7 @@ protected :
 	std::uint32_t getSEQ() const noexcept { return seq_; }
 	void setSEQ(std::uint32_t seq) noexcept { seq_ = seq; }
 
-	boost::asio::const_buffer formatAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept;
+	boost::asio::const_buffer formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept;
 	boost::asio::const_buffer format(Messages::RequestSessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
@@ -130,6 +138,10 @@ protected :
 
 	Config const config_;
 	Details::IRandomNumberGenerator &random_number_generator_;
+
+protected :
+    void setSession(Session const &session) noexcept { session_ = session; }
+    Session getSession() const noexcept { return session_; }
 
 private :
 	void parseIncomingSPDU() noexcept;
@@ -150,6 +162,8 @@ private :
 	std::uint32_t seq_ = 0;
 
 	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];
+
+    Session session_;
 };
 }
 

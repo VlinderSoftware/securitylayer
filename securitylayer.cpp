@@ -1,6 +1,7 @@
 #include "securitylayer.hpp"
 #include "exceptions/contract.hpp"
 #include "messages.hpp"
+#include "hmac.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -37,18 +38,15 @@ void SecurityLayer::cancelPendingAPDU() noexcept
 	switch (state_)
 	{
 	case initial__ :
-		break;
 	case expect_session_start_request__ :
 		reset();
 		break;
 	case expect_session_start_response__ :
 	case expect_set_keys__ :
-	case expect_session_ack__ :
+	case expect_session_confirmation__ :
+	case active__ :
 		discardAPDU();
 		// no state change
-		break;
-	case active__ :
-		// no-op
 		break;
 	}
 }
@@ -96,6 +94,31 @@ const_buffer SecurityLayer::getSPDU() noexcept
 	outgoing_spdu_= const_buffer();
 
 	return retval;
+}
+
+std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> SecurityLayer::update() noexcept
+{
+    if (pollSPDU())
+    {
+        return make_pair(UpdateResult::spdu_ready__, boost::asio::steady_timer::duration(0));
+    }
+    else if (pollAPDU())
+    {
+        return make_pair(UpdateResult::apdu_ready__, boost::asio::steady_timer::duration(0));
+    }
+    if (state_ == State::active__)
+    {
+        if (outgoing_apdu_.size())
+        {
+            onPostAPDU(outgoing_apdu_);
+            return update();
+        }
+        else
+        { /* no APDU to handle */ }
+    }
+    else
+    { /* SA protocol is still driving */ }
+    return make_pair(UpdateResult::wait__, timeout_.expires_from_now());
 }
 
 /*virtual */bool SecurityLayer::acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept
@@ -154,9 +177,31 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 	outgoing_apdu_ = const_buffer(outgoing_apdu_buffer_, apdu.size());
 }
 
-boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(boost::asio::const_buffer const &apdu) noexcept
+boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept
 {
-	return const_buffer();
+    invariant(getSession().valid());
+    pre_condition(apdu.size() <= sizeof(outgoing_spdu_buffer_) - (8/*SPDU header size*/) - getMACAlgorithmDigestSize(session_.getMACAlgorithm()));
+
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::authenticated_apdu__);
+	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	assert(outgoing_spdu_size_ == 8);
+    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, apdu.data(), apdu.size());
+    outgoing_spdu_size_ += apdu.size();
+    digest(
+          mutable_buffer(outgoing_spdu_buffer_  + outgoing_spdu_size_, getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
+        , getSession().getMACAlgorithm()
+        , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
+        , const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
+        );
+    outgoing_spdu_size_ += getMACAlgorithmDigestSize(getSession().getMACAlgorithm());
+
+	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
 boost::asio::const_buffer SecurityLayer::format(Messages::RequestSessionInitiation const &rsi) noexcept
@@ -171,7 +216,7 @@ boost::asio::const_buffer SecurityLayer::format(Messages::RequestSessionInitiati
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
 	outgoing_spdu_size_ += sizeof(seq_);
 	assert(outgoing_spdu_size_ == 8);
-	// // NOTE: if we add anything to the structure, it should be copied in here
+	// NOTE: if we add anything to the structure, it should be copied in here
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
