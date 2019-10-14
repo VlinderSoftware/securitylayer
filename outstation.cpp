@@ -25,6 +25,11 @@ Outstation::Outstation(
 }
 /*virtual */void Outstation::onPostAPDU(boost::asio::const_buffer const &apdu) noexcept/* override*/
 {
+    /* NOTE we don't check the state here: if we have a valid session, we use it.
+     *      This means we can send authenticated APDUs while a new session is being built. 
+     *      The Master may or may not accept those APDUs, according to its own state, but 
+     *      we don't care at this point. If it doesn't accept the APDUs, they'll just time 
+     *      out. */
     if (getSession().valid())
     {
 		incrementSEQ();
@@ -63,7 +68,8 @@ Outstation::Outstation(
 	switch (getState())
 	{
 	case initial__ :
-		// fall through
+	case active__ :
+		session_builder_.reset();
 	case expect_session_start_request__ :
 	{
         session_builder_.setSEQ(incoming_seq);
@@ -152,8 +158,6 @@ Outstation::Outstation(
 		//TODO if the sequence number is the same, re-send our response -- make sure to use the same nonce
 		//     if the sequence number is one higher, and values for the KWA and the MAL from the Master are hints, treat them 
 		//     otherwise increment appropriate statistics and ignore
-	case active__ :
-		//TODO keep our keys, but start a new session key setup
 	default :
 		assert(!"unexpected state");
 	}

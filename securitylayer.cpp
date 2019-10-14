@@ -381,6 +381,11 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 
 void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::AuthenticatedAPDU const& incoming_aa, boost::asio::const_buffer const& incoming_apdu, boost::asio::const_buffer const& incoming_mac, boost::asio::const_buffer const& incoming_spdu, ptrdiff_t offset_to_mac) noexcept
 {
+    /* NOTE we don't check the state here: if we have a valid session, we use it.
+     *      This means we can receive authenticated APDUs while a new session is being built.
+     *      Whether the other side is actually capable of sending them in the current state
+     *      is another matter. */
+
     using Details::SEQValidator;
     switch (seq_validator_.validateSEQ(incoming_seq))
     {
