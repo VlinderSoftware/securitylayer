@@ -99,6 +99,7 @@ protected:
 	virtual MACAlgorithm getPreferredMACAlgorithm() const noexcept;
 
 protected :
+    //TODO unify with the equivalent enum in the session builder 
     enum struct Direction {
           monitoring__
         , controlling__

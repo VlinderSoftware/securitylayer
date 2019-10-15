@@ -150,6 +150,14 @@ void SecurityLayer::reset() noexcept
 	incoming_spdu_ = const_buffer();
 	outgoing_apdu_ = const_buffer();
 	outgoing_spdu_ = const_buffer();
+	seq_ = 0;
+	seq_validator_.reset();
+	//TODO make sure incoming authenticated APDUs don't affect this if we don't have a session 
+	//TODO make sure this is reset if a new session is created (I think it already is)
+	session_.reset();
+	// don't touch statistics
+	//TODO reset the timer
+	
 }
 
 void SecurityLayer::setOutgoingSPDU(
