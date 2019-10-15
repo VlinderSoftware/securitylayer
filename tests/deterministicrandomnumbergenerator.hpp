@@ -23,7 +23,7 @@ public :
 private :
 	AES_KEY key_;
 	unsigned char buffer_[16];
-	unsigned int avail_;
+	ptrdiff_t avail_;
 };
 }}
 

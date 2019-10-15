@@ -4,7 +4,15 @@
 #include "details/hmacblake2s.hpp"
 #include "details/hmacsha256.hpp"
 #include "details/hmacsha3256.hpp"
+#include "exceptions/contract.hpp"
 #include "macalgorithm.hpp"
+#include <algorithm>
+
+#ifdef min
+#undef min
+#endif
+
+using namespace std;
 
 namespace DNP3SAv6 {
 
@@ -25,7 +33,7 @@ namespace DNP3SAv6 {
 		digest_(hmac, additional_buffers...);
 	}
 	template < typename... Buffers >
-	void digest(Details::IHMAC &hmac, boost::asio::mutable_buffer out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
+	void digest(Details::IHMAC &&hmac, boost::asio::mutable_buffer out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
 	{
 		pre_condition(out.data() || !out.size());
 		hmac.setKey(key);
@@ -53,7 +61,6 @@ namespace DNP3SAv6 {
 	template < typename... Buffers >
 	void verify(Details::IHMAC &hmac, boost::asio::const_buffer const &incoming_digest, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
 	{
-		pre_condition(out.data() || !out.size());
 		hmac.setKey(key);
 		digest_(hmac, data, additional_buffers...);
 		return hmac.verify(incoming_digest);

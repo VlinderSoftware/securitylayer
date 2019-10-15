@@ -1,9 +1,11 @@
 #include "catch.hpp"
 #include "../details/rfc3394aes256keywrap.hpp"
 
+#ifdef _MSC_VER
 extern "C" {
 #include <openssl/applink.c>
 }
+#endif
 
 using namespace DNP3SAv6;
 using namespace boost::asio;
@@ -14,11 +16,13 @@ TEST_CASE( "Test vectors for RFC 3394", "[rfc3394]" ) {
 	unsigned char key_data[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
 	unsigned char const expected_ciphertext[] = { 0x64, 0xE8, 0xC3, 0xF9, 0xCE, 0x0F, 0x5B, 0xA2, 0x63, 0xE9, 0x77, 0x79, 0x05, 0x81, 0x8A, 0x2A, 0x93, 0xC8, 0x19, 0x1E, 0x7D, 0x6E, 0x8A, 0xE7 };
 	unsigned char encrypted[sizeof(key_data) + 8];
-	kwa.wrap(mutable_buffer(encrypted, sizeof(encrypted)), const_buffer(kek, sizeof(kek)), const_buffer(key_data, sizeof(key_data)));
-	REQUIRE(memcmp(encrypted, expected_ciphertext, sizeof(encrypted)) == 0);
+	mutable_buffer encrypted_buffer(encrypted, sizeof(encrypted));
+	kwa.wrap(encrypted_buffer, const_buffer(kek, sizeof(kek)), const_buffer(key_data, sizeof(key_data)));
+	REQUIRE( memcmp(encrypted, expected_ciphertext, sizeof(encrypted)) == 0) ;
 	unsigned char decrypted[sizeof(key_data)];
-	REQUIRE(kwa.unwrap(mutable_buffer(decrypted, sizeof(decrypted)), const_buffer(kek, sizeof(kek)), const_buffer(encrypted, sizeof(encrypted))));
-	REQUIRE(memcmp(decrypted, key_data, sizeof(key_data)) == 0);
+	mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
+	REQUIRE( kwa.unwrap(decrypted_buffer, const_buffer(kek, sizeof(kek)), const_buffer(encrypted, sizeof(encrypted))) );
+	REQUIRE( memcmp(decrypted, key_data, sizeof(key_data)) == 0 );
 }
 
 TEST_CASE( "80 bytes of data", "[rfc3394]" ) {
@@ -44,11 +48,13 @@ TEST_CASE( "80 bytes of data", "[rfc3394]" ) {
         , 0x07, 0x5f, 0xc5, 0x8f, 0x41, 0xe9, 0x78, 0x32
         };
 	unsigned char encrypted[sizeof(key_data) + 8];
-	kwa.wrap(mutable_buffer(encrypted, sizeof(encrypted)), const_buffer(kek, sizeof(kek)), const_buffer(key_data, sizeof(key_data)));
-	REQUIRE(memcmp(encrypted, expected_ciphertext, sizeof(encrypted)) == 0);
+	mutable_buffer encrypted_buffer(encrypted, sizeof(encrypted));
+	kwa.wrap(encrypted_buffer, const_buffer(kek, sizeof(kek)), const_buffer(key_data, sizeof(key_data)));
+	REQUIRE( memcmp(encrypted, expected_ciphertext, sizeof(encrypted)) == 0 );
 	unsigned char decrypted[sizeof(key_data)];
-	REQUIRE(kwa.unwrap(mutable_buffer(decrypted, sizeof(decrypted)), const_buffer(kek, sizeof(kek)), const_buffer(encrypted, sizeof(encrypted))));
-	REQUIRE(memcmp(decrypted, key_data, sizeof(key_data)) == 0);
+	mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
+	REQUIRE( kwa.unwrap(decrypted_buffer, const_buffer(kek, sizeof(kek)), const_buffer(encrypted, sizeof(encrypted))) );
+	REQUIRE( memcmp(decrypted, key_data, sizeof(key_data)) == 0 );
 }
 
 TEST_CASE( "80 bytes of data (2)", "[rfc3394]" ) {
@@ -73,10 +79,12 @@ TEST_CASE( "80 bytes of data (2)", "[rfc3394]" ) {
         , 0x62, 0xb8, 0x03, 0xf9, 0xbf, 0x8f, 0x9d, 0xad
         };
 	unsigned char encrypted[sizeof(key_data) + 8];
-	kwa.wrap(mutable_buffer(encrypted, sizeof(encrypted)), const_buffer(kek, sizeof(kek)), const_buffer(key_data, sizeof(key_data)));
-	REQUIRE(memcmp(encrypted, expected_ciphertext, sizeof(encrypted)) == 0);
+	mutable_buffer encrypted_buffer(encrypted, sizeof(encrypted));
+	kwa.wrap(encrypted_buffer, const_buffer(kek, sizeof(kek)), const_buffer(key_data, sizeof(key_data)));
+	REQUIRE( memcmp(encrypted, expected_ciphertext, sizeof(encrypted)) == 0 );
 	unsigned char decrypted[sizeof(key_data)];
-	REQUIRE(kwa.unwrap(mutable_buffer(decrypted, sizeof(decrypted)), const_buffer(kek, sizeof(kek)), const_buffer(encrypted, sizeof(encrypted))));
-	REQUIRE(memcmp(decrypted, key_data, sizeof(key_data)) == 0);
+	mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
+	REQUIRE( kwa.unwrap(decrypted_buffer, const_buffer(kek, sizeof(kek)), const_buffer(encrypted, sizeof(encrypted))) );
+	REQUIRE( memcmp(decrypted, key_data, sizeof(key_data)) == 0 );
 }
 
