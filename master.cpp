@@ -138,7 +138,6 @@ Master::Master(
         else
         { /* all is well */ }
 		session_builder_.setSessionStartResponse(spdu, nonce);
-		//TODO check sequence number
 #if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 #if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
 		// check if the proposed algorithms concur.
@@ -279,7 +278,6 @@ void Master::sendSessionStartRequest() noexcept
 	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
 #endif
-	//TODO set the proposed algorithm in the session builder
 	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
 	session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(ssr.mac_algorithm_));
 #endif

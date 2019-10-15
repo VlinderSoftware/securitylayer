@@ -180,6 +180,8 @@ Outstation::Outstation(
     {
     case initial__:
         // fall through
+    case active__:
+        // fall through
     case expect_session_start_request__:
         response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unexpected_spdu__));
         setOutgoingSPDU(response_spdu);
@@ -216,8 +218,6 @@ Outstation::Outstation(
         }
         return;
     }
-    case active__:
-        //TODO keep our keys, but start a new session key setup
     default:
         assert(!"unexpected state");
     }
