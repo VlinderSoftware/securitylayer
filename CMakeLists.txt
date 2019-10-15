@@ -6,7 +6,7 @@ include(FindOpenSSL)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 option(SA_COVERAGE "Enable code coverage" OFF)
-option(SA_PROFILES "Try all profiles" ON)
+option(SA_PROFILES "Try all profiles" OFF)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 if (SA_COVERAGE)
