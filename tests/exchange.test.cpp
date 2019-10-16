@@ -175,7 +175,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[10] == 0x00 );
 						REQUIRE( spdu_bytes[11] == 0x00 );
 						REQUIRE( spdu_bytes[12] == 0x00 );
-						REQUIRE( spdu_bytes[13] == 0x20 );
+						REQUIRE( spdu_bytes[13] == 0x10 );
 						REQUIRE( spdu_bytes[14] == 0x04 );
 						REQUIRE( spdu_bytes[15] == 0x00 );
 						REQUIRE( spdu_bytes[16] == 0x79 );
@@ -228,13 +228,13 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 							REQUIRE( spdu_bytes[7] == 0x00 );
 							unsigned char const expected[] = {
                               0x58, 0x00
-                            , 0x22, 0x3d, 0x4b, 0xd6, 0x49, 0xd8, 0x47, 0x6b, 0x58, 0x81, 0xa6, 0x59, 0x91, 0xb4, 0xe0, 0xc5
-                            , 0x15, 0x33, 0x7a, 0xc6, 0x5e, 0xbb, 0x57, 0xe2, 0x97, 0x73, 0xb4, 0x27, 0x7b, 0xbf, 0x3f, 0xd6
-                            , 0x87, 0xe5, 0xfd, 0x53, 0x50, 0x56, 0x9a, 0x43, 0x0e, 0x56, 0xf0, 0xdd, 0xd5, 0x57, 0x0f, 0x10
-                            , 0x79, 0x2d, 0x4b, 0x59, 0x13, 0xa2, 0xce, 0x75, 0xe4, 0x1f, 0xad, 0x63, 0xa0, 0x49, 0xff, 0xe1
-                            , 0xb3, 0x8e, 0x7a, 0xfa, 0x5a, 0x01, 0xcf, 0x39, 0xf5, 0xe3, 0xf7, 0xf7, 0xeb, 0xcd, 0xdb, 0x72
-                            , 0x62, 0xb8, 0x03, 0xf9, 0xbf, 0x8f, 0x9d, 0xad
-							};
+                            , 0xc9, 0x0d, 0x55, 0x77, 0x84, 0xb2, 0xea, 0x78, 0xdf, 0x5f, 0xc2, 0xbe, 0x84, 0x7f, 0x5e, 0x3b
+                            , 0xd8, 0x6e, 0x0d, 0x84, 0x90, 0x6f, 0x18, 0xff, 0x97, 0xca, 0x4b, 0xf4, 0xb1, 0xc0, 0x8a, 0x67
+                            , 0x4b, 0x1b, 0xf6, 0x84, 0xf7, 0xee, 0x32, 0xc4, 0xc9, 0xf5, 0x99, 0xd7, 0x10, 0xb1, 0x01, 0x1e
+                            , 0x79, 0x7a, 0x06, 0xf7, 0x2f, 0x1a, 0x19, 0x4f, 0x7c, 0xcc, 0xdb, 0xac, 0x21, 0xed, 0x8e, 0x50
+                            , 0xdb, 0xd2, 0xa4, 0xe5, 0x52, 0xc0, 0xab, 0x30, 0x4d, 0x97, 0xea, 0x4d, 0x4c, 0xd9, 0x63, 0x2c
+                            , 0xdc, 0x47, 0x6c, 0xea, 0x83, 0xdf, 0x1e, 0x7c
+                            };
 							static_assert(sizeof(expected) == 90, "unexpected size for expected response");
 							REQUIRE( memcmp(spdu_bytes + 8, expected, sizeof(expected)) == 0 );
 						}
@@ -274,22 +274,22 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                REQUIRE( spdu_bytes[7] == 0x00 );
                                 REQUIRE( spdu_bytes[8] == 0x10 );
                                 REQUIRE( spdu_bytes[9] == 0x00 );
-                                REQUIRE( spdu_bytes[10] == 0xbc );
-                                REQUIRE( spdu_bytes[11] == 0x1d );
-                                REQUIRE( spdu_bytes[12] == 0x81 );
-                                REQUIRE( spdu_bytes[13] == 0x6a );
-                                REQUIRE( spdu_bytes[14] == 0x73 );
-                                REQUIRE( spdu_bytes[15] == 0xd1 );
-                                REQUIRE( spdu_bytes[16] == 0x1b );
-                                REQUIRE( spdu_bytes[17] == 0xd4 );
-                                REQUIRE( spdu_bytes[18] == 0x6e );
-                                REQUIRE( spdu_bytes[19] == 0xfb );
-                                REQUIRE( spdu_bytes[20] == 0xab );
-                                REQUIRE( spdu_bytes[21] == 0xf9 );
-                                REQUIRE( spdu_bytes[22] == 0xf5 );
-                                REQUIRE( spdu_bytes[23] == 0x78 );
-                                REQUIRE( spdu_bytes[24] == 0x0e );
-                                REQUIRE( spdu_bytes[25] == 0x12 );
+                                REQUIRE( spdu_bytes[10] == 0x71 );
+                                REQUIRE( spdu_bytes[11] == 0xbc );
+                                REQUIRE( spdu_bytes[12] == 0xdd );
+                                REQUIRE( spdu_bytes[13] == 0xb2 );
+                                REQUIRE( spdu_bytes[14] == 0x09 );
+                                REQUIRE( spdu_bytes[15] == 0x1a );
+                                REQUIRE( spdu_bytes[16] == 0x5d );
+                                REQUIRE( spdu_bytes[17] == 0xf2 );
+                                REQUIRE( spdu_bytes[18] == 0xd8 );
+                                REQUIRE( spdu_bytes[19] == 0xf9 );
+                                REQUIRE( spdu_bytes[20] == 0x57 );
+                                REQUIRE( spdu_bytes[21] == 0x16 );
+                                REQUIRE( spdu_bytes[22] == 0xd2 );
+                                REQUIRE( spdu_bytes[23] == 0x35 );
+                                REQUIRE( spdu_bytes[24] == 0xb0 );
+                                REQUIRE( spdu_bytes[25] == 0x1d ); 
                             }
                             WHEN( "The Outstation to sends a SessionConfirmation message" ) {
                                 auto spdu(outstation.getSPDU());
@@ -305,29 +305,29 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                    REQUIRE( spdu_bytes[1] == 0x80 );
 				                    REQUIRE( spdu_bytes[2] == 0x01 );
 				                    REQUIRE( spdu_bytes[3] == 0x06 );
-				                    REQUIRE( spdu_bytes[4] == 0x02 );
+				                    REQUIRE( spdu_bytes[4] == 0x01 );
 				                    REQUIRE( spdu_bytes[5] == 0x00 );
 				                    REQUIRE( spdu_bytes[6] == 0x00 );
 				                    REQUIRE( spdu_bytes[7] == 0x00 );
     			                    REQUIRE( spdu_bytes[8] == 0x00 );
     			                    REQUIRE( spdu_bytes[9] == 0x08 );
                                     REQUIRE( memcmp(apdu.data(), spdu_bytes + 10, apdu.size()) == 0 );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  0] == 0xbb );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  1] == 0xb0 );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  2] == 0x22 );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  3] == 0x93 );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  4] == 0x17 );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  5] == 0xda );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  6] == 0x8a );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  7] == 0xbc );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  8] == 0x5c );
-				                    REQUIRE( spdu_bytes[10 + 2048 +  9] == 0x93 );
-				                    REQUIRE( spdu_bytes[10 + 2048 + 10] == 0xa7 );
-				                    REQUIRE( spdu_bytes[10 + 2048 + 11] == 0xec );
-				                    REQUIRE( spdu_bytes[10 + 2048 + 12] == 0x28 );
-				                    REQUIRE( spdu_bytes[10 + 2048 + 13] == 0x7c );
-				                    REQUIRE( spdu_bytes[10 + 2048 + 14] == 0xba );
-				                    REQUIRE( spdu_bytes[10 + 2048 + 15] == 0x30 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  0] == 0x01 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  1] == 0x66 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  2] == 0x88 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  3] == 0x16 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  4] == 0x47 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  5] == 0x96 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  6] == 0x7f );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  7] == 0x5c );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  8] == 0xe6 );
+				                    REQUIRE( spdu_bytes[10 + 2048 +  9] == 0xcd );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 10] == 0x45 );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 11] == 0xbf );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 12] == 0xdf );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 13] == 0x40 );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 14] == 0xfe );
+				                    REQUIRE( spdu_bytes[10 + 2048 + 15] == 0xf5 );
                                 }
 			                    THEN( "The outstation statistics should be OK" ) {
 				                    REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );

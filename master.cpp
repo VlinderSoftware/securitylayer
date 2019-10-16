@@ -236,6 +236,8 @@ Master::Master(
         }
         setState(State::active__);
         setSession(session_builder_.getSession());
+        setSEQ(0);
+        seq_validator_.reset();
 
         // if they're the same, go to active state
         break;

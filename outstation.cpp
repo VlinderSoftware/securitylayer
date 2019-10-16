@@ -203,8 +203,8 @@ Outstation::Outstation(
             {
                 assert(session_builder_.getSession().valid());
                 setSession(session_builder_.getSession());
-                setSEQ(session_builder_.getSEQ());
-                seq_validator_.setLatestIncomingSEQ(session_builder_.getSEQ());
+                setSEQ(0);
+                seq_validator_.reset();
             }
             setState(State::active__);
         }

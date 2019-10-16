@@ -38,7 +38,7 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
             REQUIRE( master.getState() == Master::active__ );
             REQUIRE( outstation.getState() == Outstation::active__ );
 
-            uint32_t expected_seq(2);
+            uint32_t expected_seq(1);
 
             master.update();
             auto spdu(master.getSPDU());
@@ -88,7 +88,7 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
                         REQUIRE( apdu_carrying_spdu_bytes[ 1] == 0x80 );
                         REQUIRE( apdu_carrying_spdu_bytes[ 2] == 0x01 );
                         REQUIRE( apdu_carrying_spdu_bytes[ 3] == 0x06 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 4] == 0x03 );
+                        REQUIRE( apdu_carrying_spdu_bytes[ 4] == 0x02 );
                         REQUIRE( apdu_carrying_spdu_bytes[ 5] == 0x00 );
                         REQUIRE( apdu_carrying_spdu_bytes[ 6] == 0x00 );
                         REQUIRE( apdu_carrying_spdu_bytes[ 7] == 0x00 );
@@ -98,22 +98,23 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
                         REQUIRE( apdu_carrying_spdu_bytes[11] == 0x81 );
                         REQUIRE( apdu_carrying_spdu_bytes[12] == 0x00 );
                         REQUIRE( apdu_carrying_spdu_bytes[13] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[14] == 0xc3 );
-                        REQUIRE( apdu_carrying_spdu_bytes[15] == 0xfb );
-                        REQUIRE( apdu_carrying_spdu_bytes[16] == 0x76 );
-                        REQUIRE( apdu_carrying_spdu_bytes[17] == 0x94 );
-                        REQUIRE( apdu_carrying_spdu_bytes[18] == 0x75 );
-                        REQUIRE( apdu_carrying_spdu_bytes[19] == 0x05 );
-                        REQUIRE( apdu_carrying_spdu_bytes[20] == 0xfe );
-                        REQUIRE( apdu_carrying_spdu_bytes[21] == 0x85 );
-                        REQUIRE( apdu_carrying_spdu_bytes[22] == 0xdf );
-                        REQUIRE( apdu_carrying_spdu_bytes[23] == 0xa8 );
-                        REQUIRE( apdu_carrying_spdu_bytes[24] == 0xaa );
-                        REQUIRE( apdu_carrying_spdu_bytes[25] == 0xf6 );
-                        REQUIRE( apdu_carrying_spdu_bytes[26] == 0xd2 );
-                        REQUIRE( apdu_carrying_spdu_bytes[27] == 0xed );
-                        REQUIRE( apdu_carrying_spdu_bytes[28] == 0xa1 );
-                        REQUIRE( apdu_carrying_spdu_bytes[29] == 0x15 );
+                        REQUIRE( apdu_carrying_spdu_bytes[14] == 0xcb );
+                        REQUIRE( apdu_carrying_spdu_bytes[15] == 0xe4 );
+                        REQUIRE( apdu_carrying_spdu_bytes[16] == 0x7c );
+                        REQUIRE( apdu_carrying_spdu_bytes[17] == 0xff );
+                        REQUIRE( apdu_carrying_spdu_bytes[18] == 0x9a );
+                        REQUIRE( apdu_carrying_spdu_bytes[19] == 0x56 );
+                        REQUIRE( apdu_carrying_spdu_bytes[20] == 0x4b );
+                        REQUIRE( apdu_carrying_spdu_bytes[21] == 0xf1 );
+                        REQUIRE( apdu_carrying_spdu_bytes[22] == 0xa5 );
+                        REQUIRE( apdu_carrying_spdu_bytes[23] == 0xb7 );
+                        REQUIRE( apdu_carrying_spdu_bytes[24] == 0x50 );
+                        REQUIRE( apdu_carrying_spdu_bytes[25] == 0x8e );
+                        REQUIRE( apdu_carrying_spdu_bytes[26] == 0xd6 );
+                        REQUIRE( apdu_carrying_spdu_bytes[27] == 0xef );
+                        REQUIRE( apdu_carrying_spdu_bytes[28] == 0xd8 );
+                        REQUIRE( apdu_carrying_spdu_bytes[29] == 0xd5 ); 
+
                         outstation.postSPDU(master.getSPDU());
                         master.postSPDU(outstation.getSPDU());
                         REQUIRE( master.getState() == Master::active__ );
