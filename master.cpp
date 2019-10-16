@@ -177,6 +177,7 @@ Master::Master(
 		break;
 	}
 	case expect_session_confirmation__ :
+        //TODO
 		/* This is probably the response we got previously. Check if it it's identical and, if so, repeat the response. 
 		 * Otherwise, it's an unexpected message. */
 	case initial__ :
