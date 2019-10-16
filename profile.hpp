@@ -19,11 +19,24 @@
 //             use one of the SessionStartRequest message flags to indicate 
 //             alternatives are available, so we could have the Master send a "hint" 
 //             and have the Outstation decide whether it agrees with the hint.
-#define OPTION_MASTER_SETS_KWA_AND_MAL 1	/* This is what the SATF decided on 2019-05-24 */
-#define OPTION_MASTER_KWA_AND_MAL_ARE_HINTS 1	/* This is what the SATF decided on 2019-05-24 */
-// DISCUSSION: As discussed on the 2019-05-24 SATF telecon, the Master can iterate through
-//             available algorithms if the Outstation does not support the suggested algorithms.
-#define OPTION_ITERATE_KWA_AND_MAL 1
+//             The SATF decided the Master would provide the KWA and the MAL to the Outstation 
+//             on 2019-05-24.
+//             It was confirmed at the 2019-10-16 sync-up meeting between the SATF and WG15
+//             It was reaffirmed at the SATF meeting at the same date
+#define OPTION_MASTER_SETS_KWA_AND_MAL 1
+// DISCUSSED:  Making the KWA and the MAL provided  by the Master hints allows the Outstation
+//             to decide, as it did in SAv5. With iteration, it also allows the algorithms to
+//             be negotiated. 
+//             This is what the SATF arrived at on 2019-05-24
+//             WG15 disagreed. At the sync-up meeting on 2019-10-16, it was agreed that it is 
+//             at least simpler for the Master to always decide.
+//             At the SATF meeting on 2019-10-16, this was agreed to provided that the DNP 
+//             Device Profile specify which algorithms are supported by the Outstation, and 
+//             the Outstation shall return an error message if it receives a 
+//             SessionStartRequest message that asks for an algorithm that is not supported 
+//             by the Outstation.
+#define OPTION_MASTER_KWA_AND_MAL_ARE_HINTS 0
+#define OPTION_ITERATE_KWA_AND_MAL 0
 // SUGGESTION: The DNP Authority should be able to set permissible algorithms
 #define OPTION_DNP_AUTHORITY_SETS_PERMISSIBLE_KWA_AND_MAL_ALGORITHMS 1
 // TO DISCUSS: The Master could send an extra Session key, for broadcast messages. If we allow 
