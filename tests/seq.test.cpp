@@ -194,3 +194,4 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
         }
     }
 }
+//TODO test that the sequence number can't roll over during the session: a session shall not allow for more than 65535 messages (incoming and outgoing combined)
