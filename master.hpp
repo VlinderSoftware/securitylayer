@@ -22,6 +22,8 @@ public :
 	Master(Master const&) = delete;
 	Master& operator=(Master const&) = delete;
 
+    void startNewSession() noexcept;
+
 protected :
     virtual Direction getIncomingDirection() const noexcept override { return Direction::monitoring__; };
 

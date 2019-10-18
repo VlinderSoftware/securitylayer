@@ -23,6 +23,13 @@ Master::Master(
 	, session_builder_(io_context, random_number_generator)
 { /* no-op */ }
 
+void Master::startNewSession() noexcept
+{
+	incrementSEQ();
+	sendSessionStartRequest();
+	setState(expect_session_start_response__);
+}
+
 /*virtual */void Master::reset() noexcept/* override*/
 {
 #if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
