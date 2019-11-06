@@ -138,30 +138,6 @@ Master::Master(
         else
         { /* all is well */ }
 		session_builder_.setSessionStartResponse(spdu, nonce);
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
-#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-		// check if the proposed algorithms concur.
-#if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
-		// if the proposed algorithms don't concur and we iterate, see if theirs is acceptable. If so, take it, otherwise iterate
-
-#else
-		// if the proposed algorithms don't concur and we don't iterate, see if theirs is acceptable. If so, take it, otherwise fail
-#endif
-#endif
-#else		// if the Outstation provides a set of algorithms, and we don't, take theirs
-		KeyWrapAlgorithm incoming_kwa(static_cast<KeyWrapAlgorithm>(incoming_ssr.key_wrap_algorithm_));
-		MACAlgorithm incoming_mal(static_cast<MACAlgorithm>(incoming_ssr.mac_algorithm_));
-		if (acceptKeyWrapAlgorithm(incoming_kwa) && acceptMACAlgorithm(incoming_mal))
-		{
-			session_builder_.setKeyWrapAlgorithm(incoming_kwa);
-			session_builder_.setMACAlgorithm(incoming_mal);
-		}
-		else
-		{
-			//TODO log this: unacceptable algorithm proposed
-			return;
-		}
-#endif
 		session_builder_.setSessionKeyChangeInterval(std::chrono::seconds(incoming_ssr.session_key_change_interval_));
 		session_builder_.setSessionKeyChangeCount(incoming_ssr.session_key_change_count_);
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
@@ -257,33 +233,10 @@ void Master::sendSessionStartRequest() noexcept
 	Messages::SessionStartRequest ssr;
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
-#if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
-	if (kwa_index_ < config_.key_wrap_algorithm_count_)
-	{
-		ssr.key_wrap_algorithm_ = config_.getKeyWrapAlgorithm(kwa_index_);
-	}
-	else
-	{	// we've run out of key-wrap algorithms to suggest
-		//TODO TO DISCUSS: increment a stat for this? Log?
-		return;
-	}
-	if (mal_index_ < config_.mac_algorithm_count_)
-	{
-		ssr.mac_algorithm_ = config_.getMACAlgorithm(mal_index_);
-	}
-	else
-	{	// we've run out of MAC algorithms to suggest
-		//TODO TO DISCUSS: increment a stat for this? Log?
-		return;
-	}
-#else
 	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
-#endif
 	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
 	session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(ssr.mac_algorithm_));
-#endif
 	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
 	ssr.session_key_change_count_ = config_.session_key_change_count_;
 

@@ -13,17 +13,9 @@ struct SessionStartResponse
     // sequence number is already part of the SPDU header
     // removed master ID from strawman proposal: it's not necessary
     
-#if !defined(OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && !OPTION_MASTER_SETS_KWA_AND_MAL) || defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-    /* Indicates the key-wrap algorithm to be used. SAv6 mandates the use of at least
-     * AES-256. The value is one of KeyWrapAlgorithm's values. */
-    std::uint8_t key_wrap_algorithm_;
-    /* The MAC algorithm to be used. SAv6 mandates the use of at least HMAC SHA-256. 
-     *The value is one of MACAlgorithm's values. */
-    std::uint8_t mac_algorithm_;
-#endif
     /* Indicates the amount of time, in seconds, the session will be considered valid 
      * by the Outstation once the session is established (i.e. as of the moment 
-     * SetSessionKeys is first sent). This value is informative to the Outstation. 
+     * SetSessionKeys is first sent). This value is informative to the Master. 
      * It is recommended that the Outstation use a (slightly) larger value for its own 
      * time-out so as to prevent a clock skew between the two devices from causing 
      * errors during the session.

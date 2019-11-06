@@ -59,9 +59,6 @@ Outstation::Outstation(
 
 /*virtual */void Outstation::rxSessionStartRequest(uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept/* override*/
 {
-#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-	static_assert(OPTION_MASTER_SETS_KWA_AND_MAL, "The Master-provided KWA and MAL can only be hints if it actually sets them");
-#endif
 	Messages::SessionStartResponse response;
 
 	const_buffer response_spdu;
@@ -95,49 +92,30 @@ Outstation::Outstation(
 			break;
 		}
 		session_builder_.setSessionStartRequest(incoming_spdu);
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_)))
 		{
-#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-			response.key_wrap_algorithm_ = incoming_ssr.key_wrap_algorithm_;
-#endif
             session_builder_.setKeyWrapAlgorithm(static_cast<KeyWrapAlgorithm>(incoming_ssr.key_wrap_algorithm_));
         }
 		else
 		{
-#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-			response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
-#else
 			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_keywrap_algorithm__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
-#endif
 		}
 		if (acceptMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_)))
 		{
-#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-			response.mac_algorithm_ = incoming_ssr.mac_algorithm_;
-#endif
             session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_));
         }
 		else
 		{
-#if defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS
-			response.mac_algorithm_ = static_cast< uint8_t >(getPreferredMACAlgorithm());
-#else
 			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_mac_algorithm__));
 			setOutgoingSPDU(response_spdu);
 			incrementStatistic(Statistics::error_messages_sent__);
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
-#endif
 		}
-#else
-		response.key_wrap_algorithm_ = static_cast< std::uint8_t >(getPreferredKeyWrapAlgorithm());
-		response.mac_algorithm_ = static_cast< std::uint8_t >(getPreferredMACAlgorithm());
-#endif
 		response.session_key_change_interval_ = config_.session_key_change_interval_;
 		response.session_key_change_count_ = config_.session_key_change_count_;
 
@@ -194,7 +172,7 @@ Outstation::Outstation(
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
             response_spdu = format(session_builder_.getSEQ(), Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
-            setOutgoingSPDU(response_spdu, std::chrono::milliseconds(config_.session_timeout_));
+            setOutgoingSPDU(response_spdu, std::chrono::seconds(config_.session_key_change_interval_));
             incrementStatistic(Statistics::total_messages_sent__);
             if (getSession().valid())
             { //TODO if we set up a second (replacement) session, we won't use it until the Master has sent us an authenticated APDU using it, or the old one times out

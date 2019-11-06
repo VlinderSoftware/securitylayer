@@ -141,7 +141,7 @@ if (SA_COVERAGE)
 endif()
 
 if (SA_PROFILES)
-	foreach (prof RANGE 0 31)
+	foreach (prof RANGE 0 15)
 		add_library(secureauthentication-${prof} SHARED
 			${LIBLAYER_SRC}
 			)

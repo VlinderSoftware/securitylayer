@@ -15,3 +15,6 @@ TEST_CASE( "Outstation: try to create an instance", "[outstation]" ) {
 
 //TODO add a test with an overloaded Outstation with accept* functions that may return false
 
+SCENARIO( "Outstation receives SessionStartRequest during session", "[outstation-session]" ) {
+    //TODO set up a session, send a SessionStartRequest, let it time out - session should continue to work
+}

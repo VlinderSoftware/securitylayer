@@ -507,10 +507,8 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 			{ /* all is well as far as the version is concerned */ }
  			incoming_ssr.flags_ = *curr++;
     
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 			incoming_ssr.key_wrap_algorithm_ = *curr++;
 			incoming_ssr.mac_algorithm_ = *curr++;
-#endif
 			memcpy(&incoming_ssr.session_key_change_interval_, curr, 4);
 			curr += 4;
 			memcpy(&incoming_ssr.session_key_change_count_, curr, 2);

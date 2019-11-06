@@ -79,11 +79,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( master.pollSPDU() );
 					auto spdu(master.getSPDU());
 					REQUIRE( !master.pollSPDU() );
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 					REQUIRE( spdu.size() == 18 );
-#else
-					REQUIRE( spdu.size() == 16 );
-#endif
 					unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 					REQUIRE( spdu_bytes[0] == 0xc0 );
 					REQUIRE( spdu_bytes[1] == 0x80 );
@@ -95,7 +91,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( spdu_bytes[7] == 0x00 );
 					REQUIRE( spdu_bytes[8] == 0x06 );
 					REQUIRE( spdu_bytes[9] == 0x00 );
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 					REQUIRE( spdu_bytes[10] == 0x02 );
 					REQUIRE( spdu_bytes[11] == 0x04 );
 					REQUIRE( spdu_bytes[12] == 0x3C );
@@ -104,14 +99,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( spdu_bytes[15] == 0x00 );
 					REQUIRE( spdu_bytes[16] == 0x00 );
 					REQUIRE( spdu_bytes[17] == 0x10 );
-#else
-					REQUIRE( spdu_bytes[10] == 0x3C );
-					REQUIRE( spdu_bytes[11] == 0x00 );
-					REQUIRE( spdu_bytes[12] == 0x00 );
-					REQUIRE( spdu_bytes[13] == 0x00 );
-					REQUIRE( spdu_bytes[14] == 0x00 );
-					REQUIRE( spdu_bytes[15] == 0x10 );
-#endif
 				}
 				//TODO test cases where the Outstation sent its RequestSessionInitation message with sequence numbers 
 				//     other than 1, according to OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
@@ -140,11 +127,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( outstation.pollSPDU() );
 						auto spdu(outstation.getSPDU());
 						REQUIRE( !outstation.pollSPDU() );
-#if (!defined(OPTION_MASTER_SETS_KWA_AND_MAL) || !OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL && defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
-						REQUIRE( spdu.size() == 22 );
-#else
 						REQUIRE( spdu.size() == 20 );
-#endif
 						unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 						REQUIRE( spdu_bytes[0] == 0xc0 );
 						REQUIRE( spdu_bytes[1] == 0x80 );
@@ -154,22 +137,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[5] == 0x00 );
 						REQUIRE( spdu_bytes[6] == 0x00 );
 						REQUIRE( spdu_bytes[7] == 0x00 );
-#if (!defined(OPTION_MASTER_SETS_KWA_AND_MAL) || !OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL && defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
-						REQUIRE( spdu_bytes[8] == 0x02 );
-						REQUIRE( spdu_bytes[9] == 0x04 );
-						REQUIRE( spdu_bytes[10] == 0x3C );
-						REQUIRE( spdu_bytes[11] == 0x00 );
-						REQUIRE( spdu_bytes[12] == 0x00 );
-						REQUIRE( spdu_bytes[13] == 0x00 );
-						REQUIRE( spdu_bytes[14] == 0x00 );
-						REQUIRE( spdu_bytes[15] == 0x10 );
-						REQUIRE( spdu_bytes[16] == 0x04 );
-						REQUIRE( spdu_bytes[17] == 0x00 );
-						REQUIRE( spdu_bytes[18] == 0x79 );
-						REQUIRE( spdu_bytes[19] == 0x28 );
-						REQUIRE( spdu_bytes[20] == 0x11 );
-						REQUIRE( spdu_bytes[21] == 0xc8 );
-#else
 						REQUIRE( spdu_bytes[ 8] == 0x3C );
 						REQUIRE( spdu_bytes[ 9] == 0x00 );
 						REQUIRE( spdu_bytes[10] == 0x00 );
@@ -182,7 +149,6 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( spdu_bytes[17] == 0x28 );
 						REQUIRE( spdu_bytes[18] == 0x11 );
 						REQUIRE( spdu_bytes[19] == 0xc8 );
-#endif
 					}
                     WHEN( "The Outstation sends a SessionStartResponse" ) {
                         outstation.getSPDU();
@@ -443,11 +409,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 			REQUIRE( master.pollSPDU() );
 			auto spdu(master.getSPDU());
 			REQUIRE( !master.pollSPDU() );
-#if defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL
 			REQUIRE( spdu.size() == 18 );
-#else
-			REQUIRE( spdu.size() == 16 );
-#endif
 			unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 			REQUIRE( spdu_bytes[0] == 0xc0 );
 			REQUIRE( spdu_bytes[1] == 0x80 );
@@ -487,11 +449,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				    REQUIRE( outstation.pollSPDU() );
 				    auto spdu(outstation.getSPDU());
 				    REQUIRE( !outstation.pollSPDU() );
-    #if (!defined(OPTION_MASTER_SETS_KWA_AND_MAL) || !OPTION_MASTER_SETS_KWA_AND_MAL) || (defined(OPTION_MASTER_SETS_KWA_AND_MAL) && OPTION_MASTER_SETS_KWA_AND_MAL && defined(OPTION_MASTER_KWA_AND_MAL_ARE_HINTS) && OPTION_MASTER_KWA_AND_MAL_ARE_HINTS)
-				    REQUIRE( spdu.size() == 22 );
-    #else
 				    REQUIRE( spdu.size() == 20 );
-    #endif
 				    unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 				    REQUIRE( spdu_bytes[0] == 0xc0 );
 				    REQUIRE( spdu_bytes[1] == 0x80 );
