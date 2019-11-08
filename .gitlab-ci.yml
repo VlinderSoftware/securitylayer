@@ -1,0 +1,25 @@
+image: vlinder/build-image
+
+build:
+  stage: build
+  # instead of calling g++ directly you can also use some build toolkit like make
+  # install the necessary build tools when needed
+  #before_script:
+  #  - apt update && apt -y upgrade && apt -y install cmake libssl-dev libboost-all-dev
+  script:
+    - git submodule update --init
+    - mkdir .build
+    - cd .build && cmake .. && make && make test
+  #artifacts:
+  #  paths:
+  #    - mybinary
+  #    # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
+  #    # cache:
+  #    #   paths:
+  #    #     - "*.o"
+
+# run tests using the binary built before
+#test:
+#  stage: test
+#  script:
+#    - ./test_libsecureauthentication
