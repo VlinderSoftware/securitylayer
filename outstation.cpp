@@ -46,7 +46,7 @@ Outstation::Outstation(
     if (getSession().valid())
     {
 		incrementSEQ();
-        setOutgoingSPDU(formatAuthenticatedAPDU(Direction::monitoring__, apdu), std::chrono::milliseconds(config_.session_timeout_));
+        setOutgoingSPDU(formatAuthenticatedAPDU(Direction::monitoring__, apdu), std::chrono::seconds(config_.session_key_change_interval_));
         incrementStatistic(Statistics::authenticated_apdus_sent__);
         incrementStatistic(Statistics::total_messages_sent__);
     }
