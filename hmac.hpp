@@ -72,7 +72,7 @@ namespace DNP3SAv6 {
 	}
 
 	template < typename... Buffers >
-	void verify(Details::IHMAC &hmac, boost::asio::const_buffer const &incoming_digest, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
+	bool verify(Details::IHMAC &hmac, boost::asio::const_buffer const &incoming_digest, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
 	{
 		hmac.setKey(key);
 		digest_(hmac, data, additional_buffers...);
