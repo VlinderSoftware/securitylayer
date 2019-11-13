@@ -106,8 +106,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( spdu_bytes[9] == 0x00 );
 					REQUIRE( spdu_bytes[10] == 0x02 );
 					REQUIRE( spdu_bytes[11] == 0x04 );
-					REQUIRE( spdu_bytes[12] == 0x3C );
-					REQUIRE( spdu_bytes[13] == 0x00 );
+					REQUIRE( spdu_bytes[12] == 0x10 );
+					REQUIRE( spdu_bytes[13] == 0x0E );
 					REQUIRE( spdu_bytes[14] == 0x00 );
 					REQUIRE( spdu_bytes[15] == 0x00 );
 					REQUIRE( spdu_bytes[16] == 0x00 );
@@ -142,16 +142,16 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						REQUIRE( !outstation.pollSPDU() );
 						REQUIRE( spdu.size() == 20 );
 						unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
-						REQUIRE( spdu_bytes[0] == 0xc0 );
-						REQUIRE( spdu_bytes[1] == 0x80 );
-						REQUIRE( spdu_bytes[2] == 0x01 );
-						REQUIRE( spdu_bytes[3] == 0x03 );
-						REQUIRE( spdu_bytes[4] == 0x01 );
-						REQUIRE( spdu_bytes[5] == 0x00 );
-						REQUIRE( spdu_bytes[6] == 0x00 );
-						REQUIRE( spdu_bytes[7] == 0x00 );
-						REQUIRE( spdu_bytes[ 8] == 0x3C );
-						REQUIRE( spdu_bytes[ 9] == 0x00 );
+						REQUIRE( spdu_bytes[ 0] == 0xc0 );
+						REQUIRE( spdu_bytes[ 1] == 0x80 );
+						REQUIRE( spdu_bytes[ 2] == 0x01 );
+						REQUIRE( spdu_bytes[ 3] == 0x03 );
+						REQUIRE( spdu_bytes[ 4] == 0x01 );
+						REQUIRE( spdu_bytes[ 5] == 0x00 );
+						REQUIRE( spdu_bytes[ 6] == 0x00 );
+						REQUIRE( spdu_bytes[ 7] == 0x00 );
+						REQUIRE( spdu_bytes[ 8] == 0x10 );
+						REQUIRE( spdu_bytes[ 9] == 0x0E );
 						REQUIRE( spdu_bytes[10] == 0x00 );
 						REQUIRE( spdu_bytes[11] == 0x00 );
 						REQUIRE( spdu_bytes[12] == 0x00 );
@@ -207,12 +207,13 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 							REQUIRE( spdu_bytes[7] == 0x00 );
 							unsigned char const expected[] = {
                               0x58, 0x00
-                            , 0xc9, 0x0d, 0x55, 0x77, 0x84, 0xb2, 0xea, 0x78, 0xdf, 0x5f, 0xc2, 0xbe, 0x84, 0x7f, 0x5e, 0x3b
-                            , 0xd8, 0x6e, 0x0d, 0x84, 0x90, 0x6f, 0x18, 0xff, 0x97, 0xca, 0x4b, 0xf4, 0xb1, 0xc0, 0x8a, 0x67
-                            , 0x4b, 0x1b, 0xf6, 0x84, 0xf7, 0xee, 0x32, 0xc4, 0xc9, 0xf5, 0x99, 0xd7, 0x10, 0xb1, 0x01, 0x1e
-                            , 0x79, 0x7a, 0x06, 0xf7, 0x2f, 0x1a, 0x19, 0x4f, 0x7c, 0xcc, 0xdb, 0xac, 0x21, 0xed, 0x8e, 0x50
-                            , 0xdb, 0xd2, 0xa4, 0xe5, 0x52, 0xc0, 0xab, 0x30, 0x4d, 0x97, 0xea, 0x4d, 0x4c, 0xd9, 0x63, 0x2c
-                            , 0xdc, 0x47, 0x6c, 0xea, 0x83, 0xdf, 0x1e, 0x7c
+
+                            , 0x19, 0x9a, 0x80, 0xa4, 0x7d, 0xae, 0x74, 0xd9, 0x4e, 0x6c, 0xc2, 0x67, 0x07, 0x87, 0xcb, 0x0d
+                            , 0xbb, 0xf6, 0x8c, 0x17, 0x19, 0x04, 0x89, 0x4a, 0x6b, 0x70, 0x61, 0xd2, 0xd2, 0xbb, 0x62, 0xcf
+                            , 0x3b, 0xf5, 0x91, 0x13, 0xaf, 0xdd, 0xe8, 0xd9, 0x08, 0x7e, 0xe9, 0x58, 0xda, 0x63, 0x20, 0x88
+                            , 0x91, 0x99, 0xf7, 0xf9, 0x74, 0x1c, 0x8c, 0x1a, 0x16, 0xd9, 0xc9, 0xa1, 0xde, 0x9c, 0xb8, 0x4a
+                            , 0x27, 0x86, 0xc0, 0x98, 0xbf, 0x66, 0x56, 0xaa, 0x24, 0x8e, 0xfd, 0x4a, 0x96, 0xef, 0xbd, 0x24
+                            , 0x95, 0x06, 0x25, 0xb5, 0x0a, 0x0e, 0x31, 0xd3
                             };
 							static_assert(sizeof(expected) == 90, "unexpected size for expected response");
 							REQUIRE( memcmp(spdu_bytes + 8, expected, sizeof(expected)) == 0 );
@@ -253,22 +254,22 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                REQUIRE( spdu_bytes[7] == 0x00 );
                                 REQUIRE( spdu_bytes[8] == 0x10 );
                                 REQUIRE( spdu_bytes[9] == 0x00 );
-                                REQUIRE( spdu_bytes[10] == 0x71 );
-                                REQUIRE( spdu_bytes[11] == 0xbc );
-                                REQUIRE( spdu_bytes[12] == 0xdd );
-                                REQUIRE( spdu_bytes[13] == 0xb2 );
-                                REQUIRE( spdu_bytes[14] == 0x09 );
-                                REQUIRE( spdu_bytes[15] == 0x1a );
-                                REQUIRE( spdu_bytes[16] == 0x5d );
-                                REQUIRE( spdu_bytes[17] == 0xf2 );
-                                REQUIRE( spdu_bytes[18] == 0xd8 );
-                                REQUIRE( spdu_bytes[19] == 0xf9 );
-                                REQUIRE( spdu_bytes[20] == 0x57 );
-                                REQUIRE( spdu_bytes[21] == 0x16 );
+                                REQUIRE( spdu_bytes[10] == 0xdf );
+                                REQUIRE( spdu_bytes[11] == 0x72 );
+                                REQUIRE( spdu_bytes[12] == 0x2e );
+                                REQUIRE( spdu_bytes[13] == 0x8f );
+                                REQUIRE( spdu_bytes[14] == 0xc2 );
+                                REQUIRE( spdu_bytes[15] == 0x87 );
+                                REQUIRE( spdu_bytes[16] == 0x03 );
+                                REQUIRE( spdu_bytes[17] == 0xf8 );
+                                REQUIRE( spdu_bytes[18] == 0x8f );
+                                REQUIRE( spdu_bytes[19] == 0xa8 );
+                                REQUIRE( spdu_bytes[20] == 0xf9 );
+                                REQUIRE( spdu_bytes[21] == 0xd8 );
                                 REQUIRE( spdu_bytes[22] == 0xd2 );
-                                REQUIRE( spdu_bytes[23] == 0x35 );
-                                REQUIRE( spdu_bytes[24] == 0xb0 );
-                                REQUIRE( spdu_bytes[25] == 0x1d ); 
+                                REQUIRE( spdu_bytes[23] == 0xd8 );
+                                REQUIRE( spdu_bytes[24] == 0x89 );
+                                REQUIRE( spdu_bytes[25] == 0x53 ); 
                             }
                             WHEN( "The Outstation to sends a SessionConfirmation message" ) {
                                 auto spdu(outstation.getSPDU());
