@@ -92,7 +92,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( master.pollSPDU() );
 					auto spdu(master.getSPDU());
 					REQUIRE( !master.pollSPDU() );
-					REQUIRE( spdu.size() == 18 );
+					REQUIRE( spdu.size() == 19 );
 					unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 					REQUIRE( spdu_bytes[0] == 0xc0 );
 					REQUIRE( spdu_bytes[1] == 0x80 );
@@ -112,6 +112,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( spdu_bytes[15] == 0x00 );
 					REQUIRE( spdu_bytes[16] == 0x00 );
 					REQUIRE( spdu_bytes[17] == 0x10 );
+					REQUIRE( spdu_bytes[18] == 0x00 );
 				}
 				//TODO test cases where the Outstation sent its RequestSessionInitation message with sequence numbers 
 				//     other than 1, according to OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
@@ -206,15 +207,14 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 							REQUIRE( spdu_bytes[6] == 0x00 );
 							REQUIRE( spdu_bytes[7] == 0x00 );
 							unsigned char const expected[] = {
-                              0x58, 0x00
-
-                            , 0x19, 0x9a, 0x80, 0xa4, 0x7d, 0xae, 0x74, 0xd9, 0x4e, 0x6c, 0xc2, 0x67, 0x07, 0x87, 0xcb, 0x0d
-                            , 0xbb, 0xf6, 0x8c, 0x17, 0x19, 0x04, 0x89, 0x4a, 0x6b, 0x70, 0x61, 0xd2, 0xd2, 0xbb, 0x62, 0xcf
-                            , 0x3b, 0xf5, 0x91, 0x13, 0xaf, 0xdd, 0xe8, 0xd9, 0x08, 0x7e, 0xe9, 0x58, 0xda, 0x63, 0x20, 0x88
-                            , 0x91, 0x99, 0xf7, 0xf9, 0x74, 0x1c, 0x8c, 0x1a, 0x16, 0xd9, 0xc9, 0xa1, 0xde, 0x9c, 0xb8, 0x4a
-                            , 0x27, 0x86, 0xc0, 0x98, 0xbf, 0x66, 0x56, 0xaa, 0x24, 0x8e, 0xfd, 0x4a, 0x96, 0xef, 0xbd, 0x24
-                            , 0x95, 0x06, 0x25, 0xb5, 0x0a, 0x0e, 0x31, 0xd3
-                            };
+                                  0x58, 0x00
+                                , 0xf5, 0x97, 0x0e, 0xf5, 0xd6, 0xf7, 0x34, 0x7f, 0xf1, 0xca, 0xad, 0x88, 0xf1, 0x7b, 0x42, 0x53
+                                , 0xdf, 0x9f, 0x58, 0x2a, 0xb1, 0x13, 0xd9, 0x24, 0xbf, 0x8b, 0x09, 0x74, 0xd0, 0xbd, 0x7d, 0xa4
+                                , 0x9a, 0x49, 0x99, 0xdc, 0xc4, 0x0d, 0xa4, 0xa8, 0xfd, 0x14, 0xd6, 0x58, 0x05, 0x77, 0xed, 0x5a
+                                , 0x55, 0xf7, 0x30, 0x58, 0x65, 0xd1, 0xd6, 0x8a, 0x63, 0xa7, 0xfb, 0x63, 0xf1, 0xf8, 0x77, 0x15
+                                , 0x6d, 0x0b, 0xf6, 0xd2, 0x0f, 0xe4, 0x95, 0x2b, 0xba, 0xc8, 0x6e, 0xb6, 0xb5, 0x21, 0x27, 0xe0
+                                , 0x74, 0xe2, 0xda, 0x91, 0xe3, 0xed, 0xb1, 0x83
+                                };
 							static_assert(sizeof(expected) == 90, "unexpected size for expected response");
 							REQUIRE( memcmp(spdu_bytes + 8, expected, sizeof(expected)) == 0 );
 						}
@@ -252,24 +252,13 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                REQUIRE( spdu_bytes[5] == 0x00 );
 				                REQUIRE( spdu_bytes[6] == 0x00 );
 				                REQUIRE( spdu_bytes[7] == 0x00 );
-                                REQUIRE( spdu_bytes[8] == 0x10 );
-                                REQUIRE( spdu_bytes[9] == 0x00 );
-                                REQUIRE( spdu_bytes[10] == 0xdf );
-                                REQUIRE( spdu_bytes[11] == 0x72 );
-                                REQUIRE( spdu_bytes[12] == 0x2e );
-                                REQUIRE( spdu_bytes[13] == 0x8f );
-                                REQUIRE( spdu_bytes[14] == 0xc2 );
-                                REQUIRE( spdu_bytes[15] == 0x87 );
-                                REQUIRE( spdu_bytes[16] == 0x03 );
-                                REQUIRE( spdu_bytes[17] == 0xf8 );
-                                REQUIRE( spdu_bytes[18] == 0x8f );
-                                REQUIRE( spdu_bytes[19] == 0xa8 );
-                                REQUIRE( spdu_bytes[20] == 0xf9 );
-                                REQUIRE( spdu_bytes[21] == 0xd8 );
-                                REQUIRE( spdu_bytes[22] == 0xd2 );
-                                REQUIRE( spdu_bytes[23] == 0xd8 );
-                                REQUIRE( spdu_bytes[24] == 0x89 );
-                                REQUIRE( spdu_bytes[25] == 0x53 ); 
+
+                                unsigned char const expected[] = {
+                                      0x10, 0x00
+                                    , 0x4d, 0x91, 0x8f, 0xca, 0x22, 0x58, 0x08, 0x6b, 0x60, 0x72, 0x82, 0x3e, 0x67, 0xfd, 0x38, 0x40
+                                    };
+							    static_assert(sizeof(expected) == 18, "unexpected size for expected response");
+							    REQUIRE( memcmp(spdu_bytes + 8, expected, sizeof(expected)) == 0 );
                             }
                             WHEN( "The Outstation to sends a SessionConfirmation message" ) {
                                 auto spdu(outstation.getSPDU());
@@ -423,7 +412,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 			REQUIRE( master.pollSPDU() );
 			auto spdu(master.getSPDU());
 			REQUIRE( !master.pollSPDU() );
-			REQUIRE( spdu.size() == 18 );
+			REQUIRE( spdu.size() == 19 );
 			unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
 			REQUIRE( spdu_bytes[0] == 0xc0 );
 			REQUIRE( spdu_bytes[1] == 0x80 );

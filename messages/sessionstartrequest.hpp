@@ -54,6 +54,8 @@ struct SessionStartRequest
     /* Indicates the number of times the session keys may be used before they need 
      * to be replaced. */
     std::uint16_t session_key_change_count_ = 4096;
+    /* Indicates the algorithm to be used for encryption, if any. */
+    std::uint8_t encryption_algorithm_ = 0;
 }
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -61,7 +63,7 @@ struct SessionStartRequest
 __attribute__((packed))
 #endif
 ;
-static_assert(sizeof(SessionStartRequest) == 10, "unexpected padding for SessionStartRequest");
+static_assert(sizeof(SessionStartRequest) == 11, "unexpected padding for SessionStartRequest");
 }}
 
 #endif

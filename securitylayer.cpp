@@ -526,6 +526,8 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 			curr += 4;
 			memcpy(&incoming_ssr.session_key_change_count_, curr, 2);
 			curr += 2;
+			memcpy(&incoming_ssr.encryption_algorithm_, curr, 1);
+			curr += 1;
 			assert(curr == end);
 			rxSessionStartRequest(incoming_seq, incoming_ssr, incoming_spdu_);
 		}
