@@ -66,6 +66,8 @@ set(LAYER_PUBLIC_HEADERS
 #	)
 set(LIBLAYER_SRC
 	${LAYER_PUBLIC_HEADERS}
+	details/aes256cbcencryption.cpp
+	details/aes256cbcencryption.hpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacblake2s.cpp
@@ -76,6 +78,8 @@ set(LIBLAYER_SRC
 	details/hmacsha3256.hpp
 	details/ihmac.hpp
 	details/ikeywrap.hpp
+	details/nullencryption.cpp
+	details/nullencryption.hpp
 	details/irandomnumbergenerator.hpp
 	details/randomnumbergenerator.cpp
 	details/randomnumbergenerator.hpp
