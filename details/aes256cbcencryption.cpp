@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#include "AES256CBCEncryption.hpp"
+#include "aes256cbcencryption.hpp"
 #include "../exceptions/contract.hpp"
 #include "../exceptions.hpp"
 #include <algorithm>
@@ -146,7 +146,7 @@ namespace DNP3SAv6 { namespace Details {
             remaining = work_buffer_.first_chunk_.size_;
             invariant(distance(cleartext_curr, cleartext_end) >= 0);
             invariant(static_cast< decltype(remaining) >(distance(cleartext_curr, cleartext_end)) >= remaining);
-            size_t const size_to_copy(min(remaining, sizeof(work_buffer_.first_chunk_.data_)));
+            size_t const size_to_copy(min< size_t >(remaining, sizeof(work_buffer_.first_chunk_.data_)));
             copy(work_buffer_.first_chunk_.data_, work_buffer_.first_chunk_.data_ + size_to_copy, cleartext_curr);
             cleartext_curr += size_to_copy;
             remaining -= size_to_copy;
@@ -168,7 +168,7 @@ namespace DNP3SAv6 { namespace Details {
         {
             invariant(distance(cleartext_curr, cleartext_end) >= 0);
             invariant(static_cast< decltype(remaining) >(distance(cleartext_curr, cleartext_end)) >= remaining);
-            size_t const size_to_copy(min(remaining, sizeof(work_buffer_.subsequent_chunks_.data_)));
+            size_t const size_to_copy(min< size_t >(remaining, sizeof(work_buffer_.subsequent_chunks_.data_)));
             copy(work_buffer_.subsequent_chunks_.data_, work_buffer_.subsequent_chunks_.data_ + size_to_copy, cleartext_curr);
             cleartext_curr += size_to_copy;
             remaining -= size_to_copy;
