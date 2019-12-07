@@ -21,16 +21,23 @@ using namespace boost::asio;
 namespace DNP3SAv6 {
 	namespace {
 		template < typename W, typename A >
-		void wrap_(A const &key_wrap_algorithm, boost::asio::mutable_buffer &out, boost::asio::const_buffer const& key_encrypting_key, boost::asio::const_buffer const &control_direction_session_key, boost::asio::const_buffer const &monitoring_direction_session_key, boost::asio::const_buffer const &mac_value)
+		void wrap_(
+              A const &key_wrap_algorithm
+            , boost::asio::mutable_buffer &out
+            , boost::asio::const_buffer const& key_encrypting_key
+            , boost::asio::const_buffer const &control_direction_session_key
+            , boost::asio::const_buffer const &monitoring_direction_session_key
+            , boost::asio::const_buffer const &mac_value
+            )
 		{
-			pre_condition(control_direction_session_key.size() == sizeof(W::control_direction_session_key_));
-			pre_condition(monitoring_direction_session_key.size() == sizeof(W::monitoring_direction_session_key_));
+			pre_condition(control_direction_session_key.size() == sizeof(W::control_direction_authentication_key_));
+			pre_condition(monitoring_direction_session_key.size() == sizeof(W::monitoring_direction_authentication_key_));
 			pre_condition(mac_value.size() >= sizeof(W::mac_value_));
 			pre_condition(out.size() >= A::getWrappedDataSize(sizeof(W)));
 
 			W wrapped_data;
-			memcpy(wrapped_data.control_direction_session_key_, control_direction_session_key.data(), control_direction_session_key.size());
-			memcpy(wrapped_data.monitoring_direction_session_key_, monitoring_direction_session_key.data(), monitoring_direction_session_key.size());
+			memcpy(wrapped_data.control_direction_authentication_key_, control_direction_session_key.data(), control_direction_session_key.size());
+			memcpy(wrapped_data.monitoring_direction_authentication_key_, monitoring_direction_session_key.data(), monitoring_direction_session_key.size());
 			memcpy(wrapped_data.mac_value_, mac_value.data(), sizeof(wrapped_data.mac_value_));
             out = mutable_buffer(out.data(), A::getWrappedDataSize(sizeof(W)));
 
@@ -47,8 +54,8 @@ namespace DNP3SAv6 {
             , boost::asio::const_buffer const &incoming_wrapped_key_data
             )
 		{
-            pre_condition(control_direction_session_key.size() >= sizeof(W::control_direction_session_key_));
-            pre_condition(monitoring_direction_session_key.size() >= sizeof(W::monitoring_direction_session_key_));
+            pre_condition(control_direction_session_key.size() >= sizeof(W::control_direction_authentication_key_));
+            pre_condition(monitoring_direction_session_key.size() >= sizeof(W::monitoring_direction_authentication_key_));
             pre_condition(mac_value.size() >= sizeof(W::mac_value_));
 
             if (sizeof(W) != A::getUnwrappedDataSize(incoming_wrapped_key_data.size()))
@@ -65,10 +72,10 @@ namespace DNP3SAv6 {
                 post_condition(out.size() == sizeof(buffer));
 
     			W *wrapped_data(reinterpret_cast< W* >(buffer));
-                memcpy(control_direction_session_key.data(), wrapped_data->control_direction_session_key_, sizeof(wrapped_data->control_direction_session_key_));
-                control_direction_session_key = mutable_buffer(control_direction_session_key.data(), sizeof(wrapped_data->control_direction_session_key_));
-                memcpy(monitoring_direction_session_key.data(), wrapped_data->monitoring_direction_session_key_, sizeof(wrapped_data->monitoring_direction_session_key_));
-                monitoring_direction_session_key = mutable_buffer(monitoring_direction_session_key.data(), sizeof(wrapped_data->monitoring_direction_session_key_));
+                memcpy(control_direction_session_key.data(), wrapped_data->control_direction_authentication_key_, sizeof(wrapped_data->control_direction_authentication_key_));
+                control_direction_session_key = mutable_buffer(control_direction_session_key.data(), sizeof(wrapped_data->control_direction_authentication_key_));
+                memcpy(monitoring_direction_session_key.data(), wrapped_data->monitoring_direction_authentication_key_, sizeof(wrapped_data->monitoring_direction_authentication_key_));
+                monitoring_direction_session_key = mutable_buffer(monitoring_direction_session_key.data(), sizeof(wrapped_data->monitoring_direction_authentication_key_));
                 memcpy(mac_value.data(), wrapped_data->mac_value_, sizeof(wrapped_data->mac_value_));
                 mac_value = mutable_buffer(mac_value.data(), sizeof(wrapped_data->mac_value_));
 
