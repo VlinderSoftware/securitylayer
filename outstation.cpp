@@ -129,6 +129,18 @@ Outstation::Outstation(
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
 		}
+		if (acceptEncryptionAlgorithm(static_cast< EncryptionAlgorithm >(incoming_ssr.encryption_algorithm_)))
+		{
+            session_builder_.setEncryptionAlgorithm(static_cast< EncryptionAlgorithm >(incoming_ssr.encryption_algorithm_));
+        }
+		else
+		{
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_mac_algorithm__));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+			return;
+		}
 		response.session_key_change_interval_ = config_.session_key_change_interval_;
 		response.session_key_change_count_ = config_.session_key_change_count_;
 

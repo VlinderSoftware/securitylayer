@@ -18,6 +18,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 
 #include "keywrapalgorithm.hpp"
 #include "macalgorithm.hpp"
+#include "encryptionalgorithm.hpp"
 #include "config.hpp"
 #include <boost/asio/buffer.hpp>
 
@@ -38,11 +39,16 @@ public :
 private :
 	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
 	MACAlgorithm mac_algorithm_ = MACAlgorithm::unknown__;
+    EncryptionAlgorithm encryption_algorithm_ = EncryptionAlgorithm::unknown__;
 
-    unsigned char control_direction_session_key_[Config::max_session_key_size__];
-    std::size_t control_direction_session_key_size_ = 0;
-	unsigned char monitoring_direction_session_key_[Config::max_session_key_size__];
-    std::size_t monitoring_direction_session_key_size_ = 0;
+    unsigned char control_direction_authentication_key_[Config::max_session_key_size__];
+    std::size_t control_direction_authentication_key_size_ = 0;
+	unsigned char monitoring_direction_authentication_key_[Config::max_session_key_size__];
+    std::size_t monitoring_direction_authentication_key_size_ = 0;
+    unsigned char control_direction_encryption_key_[Config::max_session_key_size__];
+    std::size_t control_direction_encryption_key_size_ = 0;
+	unsigned char monitoring_direction_encryption_key_[Config::max_session_key_size__];
+    std::size_t monitoring_direction_encryption_key_size_ = 0;
 
     bool valid_ = false;
 

@@ -107,6 +107,7 @@ protected:
 	 *       logs. The fewer side-effects the better. */
 	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
 	virtual bool acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept;
+    virtual bool acceptEncryptionAlgorithm(EncryptionAlgorithm incoming_eal) const noexcept;
 
 	virtual KeyWrapAlgorithm getPreferredKeyWrapAlgorithm() const noexcept;
 	virtual MACAlgorithm getPreferredMACAlgorithm() const noexcept;

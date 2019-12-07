@@ -26,12 +26,12 @@ MACAlgorithm Session::getMACAlgorithm() const noexcept
 
 boost::asio::const_buffer Session::getControlDirectionSessionKey() const noexcept
 {
-    return boost::asio::const_buffer(control_direction_session_key_, control_direction_session_key_size_);
+    return boost::asio::const_buffer(control_direction_authentication_key_, control_direction_authentication_key_size_);
 }
 
 boost::asio::const_buffer Session::getMonitoringDirectionSessionKey() const noexcept
 {
-    return boost::asio::const_buffer(monitoring_direction_session_key_, monitoring_direction_session_key_size_);
+    return boost::asio::const_buffer(monitoring_direction_authentication_key_, monitoring_direction_authentication_key_size_);
 }
 
 bool Session::valid() const noexcept

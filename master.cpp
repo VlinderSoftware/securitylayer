@@ -250,6 +250,7 @@ void Master::sendSessionStartRequest() noexcept
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
 	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
 	session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(ssr.mac_algorithm_));
+	session_builder_.setEncryptionAlgorithm(static_cast< EncryptionAlgorithm >(ssr.encryption_algorithm_));
 	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
 	ssr.session_key_change_count_ = config_.session_key_change_count_;
 

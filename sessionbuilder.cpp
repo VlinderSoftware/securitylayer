@@ -1,3 +1,4 @@
+#include "sessionbuilder.hpp"
 /* Copyright 2019  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -56,6 +57,12 @@ namespace DNP3SAv6 {
 		mac_algorithm_ = mac_algorithm;
 	}
 
+    void SessionBuilder::setEncryptionAlgorithm(EncryptionAlgorithm encryption_algorithm)
+	{
+		pre_condition(encryption_algorithm != EncryptionAlgorithm::unknown__);
+		encryption_algorithm_ = encryption_algorithm;
+	}
+
 	void SessionBuilder::setSessionStartRequest(const_buffer const &spdu)
 	{
 		pre_condition(spdu.size() <= sizeof(session_start_request_message_));
@@ -86,25 +93,29 @@ namespace DNP3SAv6 {
 	{
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
 		pre_condition(mac_algorithm_ != MACAlgorithm::unknown__);
+		pre_condition(encryption_algorithm_ != EncryptionAlgorithm::unknown__);
 
 		unsigned char *curr(static_cast< unsigned char* >(buffer.data()));
 		unsigned char *const end(curr + buffer.size());
 
-		mutable_buffer control_direction_session_key_buffer(control_direction_session_key_, sizeof(control_direction_session_key_));
-		random_number_generator_.generate(control_direction_session_key_buffer);
-		control_direction_session_key_size_ = sizeof(control_direction_session_key_);
+		mutable_buffer control_direction_authentication_key_buffer(control_direction_authentication_key_, sizeof(control_direction_authentication_key_));
+		random_number_generator_.generate(control_direction_authentication_key_buffer);
+		control_direction_authentication_key_size_ = sizeof(control_direction_authentication_key_);
 
-		mutable_buffer monitoring_direction_session_key_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_));
-		random_number_generator_.generate(monitoring_direction_session_key_buffer);
-		monitoring_direction_session_key_size_ = sizeof(monitoring_direction_session_key_);
+		mutable_buffer monitoring_direction_authentication_key_buffer(monitoring_direction_authentication_key_, sizeof(monitoring_direction_authentication_key_));
+		random_number_generator_.generate(monitoring_direction_authentication_key_buffer);
+		monitoring_direction_authentication_key_size_ = sizeof(monitoring_direction_authentication_key_);
 		// encode it all into the mutable buffer
 		wrap(
 			  buffer
 			, getUpdateKey()
 			, key_wrap_algorithm_
 			, mac_algorithm_
-			, const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
-			, const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
+            , encryption_algorithm_
+			, const_buffer(control_direction_authentication_key_, sizeof(control_direction_authentication_key_))
+			, const_buffer(monitoring_direction_authentication_key_, sizeof(monitoring_direction_authentication_key_))
+			, const_buffer(control_direction_encryption_key_, sizeof(control_direction_encryption_key_))
+			, const_buffer(monitoring_direction_encryption_key_, sizeof(monitoring_direction_encryption_key_))
 			, getDigest(Direction::control_direction__)
 			);
 		valid_ = true;
@@ -120,22 +131,29 @@ namespace DNP3SAv6 {
 		pre_condition(incoming_key_wrap_data.size() <= Config::max_key_wrap_data_size__);
 
 		// calculate the MAC over the first two messages using the control direction session key
-		unsigned char incoming_control_direction_session_key[sizeof(control_direction_session_key_)];
-		unsigned char incoming_monitoring_direction_session_key[sizeof(monitoring_direction_session_key_)];
+		unsigned char incoming_control_direction_authentication_key[sizeof(control_direction_authentication_key_)];
+		unsigned char incoming_monitoring_direction_authentication_key[sizeof(monitoring_direction_authentication_key_)];
+		unsigned char incoming_control_direction_encryption_key[sizeof(control_direction_encryption_key_)];
+		unsigned char incoming_monitoring_direction_encryption_key[sizeof(monitoring_direction_encryption_key_)];
 		unsigned char incoming_digest_value[Config::max_digest_size__];
 		unsigned int incoming_digest_value_size(0);
 
-		mutable_buffer incoming_control_direction_session_key_buffer(incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key));
-		mutable_buffer incoming_monitoring_direction_session_key_buffer(incoming_monitoring_direction_session_key, sizeof(incoming_monitoring_direction_session_key));
+		mutable_buffer incoming_control_direction_authentication_key_buffer(incoming_control_direction_authentication_key, sizeof(incoming_control_direction_authentication_key));
+		mutable_buffer incoming_monitoring_direction_authentication_key_buffer(incoming_monitoring_direction_authentication_key, sizeof(incoming_monitoring_direction_authentication_key));
+		mutable_buffer incoming_control_direction_encryption_key_buffer(incoming_control_direction_encryption_key, sizeof(incoming_control_direction_encryption_key));
+		mutable_buffer incoming_monitoring_direction_encryption_key_buffer(incoming_monitoring_direction_encryption_key, sizeof(incoming_monitoring_direction_encryption_key));
 		mutable_buffer incoming_digest_value_buffer(incoming_digest_value, sizeof(incoming_digest_value));
 		if (unwrap(
-			  incoming_control_direction_session_key_buffer
-			, incoming_monitoring_direction_session_key_buffer
+			  incoming_control_direction_authentication_key_buffer
+			, incoming_monitoring_direction_authentication_key_buffer
+			, incoming_control_direction_encryption_key_buffer
+			, incoming_monitoring_direction_encryption_key_buffer
 			, incoming_digest_value_buffer
 			, incoming_digest_value_size
 			, getUpdateKey()
 			, key_wrap_algorithm_
 			, mac_algorithm_
+            , EncryptionAlgorithm::null__
 			, incoming_key_wrap_data
 			))
 		{
@@ -148,8 +166,8 @@ namespace DNP3SAv6 {
 				  getDigest(
 					  expected_digest_buffer
 					, const_buffer(
-						  incoming_control_direction_session_key
-						, sizeof(incoming_control_direction_session_key)
+						  incoming_control_direction_authentication_key
+						, sizeof(incoming_control_direction_authentication_key)
 						)
 					)
 				);
@@ -157,12 +175,18 @@ namespace DNP3SAv6 {
 			assert(expected_digest_value.size() >= incoming_digest_value_size);
 			if (CRYPTO_memcmp(expected_digest_value.data(), incoming_digest_value, incoming_digest_value_size) == 0)
 			{
-				static_assert(sizeof(control_direction_session_key_) == sizeof(incoming_control_direction_session_key), "unexpected size mismatch");
-				memcpy(control_direction_session_key_, incoming_control_direction_session_key, sizeof(incoming_control_direction_session_key));
-				control_direction_session_key_size_ = sizeof(incoming_control_direction_session_key);
-				static_assert(sizeof(monitoring_direction_session_key_) == sizeof(incoming_monitoring_direction_session_key), "unexpected size mismatch");
-				memcpy(monitoring_direction_session_key_, incoming_monitoring_direction_session_key, sizeof(incoming_monitoring_direction_session_key));
-				monitoring_direction_session_key_size_ = sizeof(incoming_monitoring_direction_session_key);
+				static_assert(sizeof(control_direction_authentication_key_) == sizeof(incoming_control_direction_authentication_key), "unexpected size mismatch");
+				memcpy(control_direction_authentication_key_, incoming_control_direction_authentication_key, sizeof(incoming_control_direction_authentication_key));
+				control_direction_authentication_key_size_ = sizeof(incoming_control_direction_authentication_key);
+				static_assert(sizeof(monitoring_direction_authentication_key_) == sizeof(incoming_monitoring_direction_authentication_key), "unexpected size mismatch");
+				memcpy(monitoring_direction_authentication_key_, incoming_monitoring_direction_authentication_key, sizeof(incoming_monitoring_direction_authentication_key));
+				monitoring_direction_authentication_key_size_ = sizeof(incoming_monitoring_direction_authentication_key);
+				static_assert(sizeof(control_direction_encryption_key_) == sizeof(incoming_control_direction_encryption_key), "unexpected size mismatch");
+				memcpy(control_direction_encryption_key_, incoming_control_direction_encryption_key, sizeof(incoming_control_direction_encryption_key));
+				control_direction_encryption_key_size_ = sizeof(incoming_control_direction_encryption_key);
+				static_assert(sizeof(monitoring_direction_encryption_key_) == sizeof(incoming_monitoring_direction_encryption_key), "unexpected size mismatch");
+				memcpy(monitoring_direction_encryption_key_, incoming_monitoring_direction_encryption_key, sizeof(incoming_monitoring_direction_encryption_key));
+				monitoring_direction_encryption_key_size_ = sizeof(incoming_monitoring_direction_encryption_key);
 				valid_ = true;
 				return true;
 			}
@@ -193,7 +217,7 @@ namespace DNP3SAv6 {
 			mutable_buffer control_direction_digest_buffer(control_direction_digest_, sizeof(control_direction_digest_));
 			return getDigest(
 				  control_direction_digest_buffer
-				, const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
+				, const_buffer(control_direction_authentication_key_, sizeof(control_direction_authentication_key_))
 				);
 		}
 		else
@@ -202,7 +226,7 @@ namespace DNP3SAv6 {
 			mutable_buffer monitoring_direction_digest_buffer(monitoring_direction_digest_, sizeof(monitoring_direction_digest_));
 			return getDigest(
 				  monitoring_direction_digest_buffer
-				, const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
+				, const_buffer(monitoring_direction_authentication_key_, sizeof(monitoring_direction_authentication_key_))
 				);
 		}
 	}
@@ -217,12 +241,12 @@ namespace DNP3SAv6 {
 		seq_ = seq;
 	}
 
-	boost::asio::const_buffer SessionBuilder::getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &session_key) const noexcept
+	boost::asio::const_buffer SessionBuilder::getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &authentication_key) const noexcept
 	{
 		digest(
 			  out_digest
 			, mac_algorithm_
-			, session_key
+			, authentication_key
 			, const_buffer(session_start_request_message_, session_start_request_message_size_)
 			, const_buffer(session_start_response_message_, session_start_response_message_size_)
 			);

@@ -1,3 +1,4 @@
+#include "securitylayer.hpp"
 /* Copyright 2019  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -141,6 +142,11 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 }
 
 /*virtual */bool SecurityLayer::acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept
+{
+	return true;
+}
+
+/*virtual */bool SecurityLayer::acceptEncryptionAlgorithm(EncryptionAlgorithm incoming_eal) const noexcept
 {
 	return true;
 }

@@ -23,6 +23,7 @@ namespace DNP3SAv6 {
 	{
           null__                = 0 // no encryption
 		, aes256_cbc__          = 1
+        , unknown__             = 0xff // internal use - indictates not known
 	};
 }
 

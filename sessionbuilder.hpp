@@ -48,6 +48,7 @@ public :
 
 	void setKeyWrapAlgorithm(KeyWrapAlgorithm key_wrap_algorithm);
 	void setMACAlgorithm(MACAlgorithm mac_algorithm);
+    void setEncryptionAlgorithm(EncryptionAlgorithm encryption_algorithm);
 
 	// whole messages to calculate a MAC over
 	void setSessionStartRequest(boost::asio::const_buffer const &spdu);
@@ -70,7 +71,7 @@ public :
     void setSEQ(std::uint32_t seq) noexcept;
 
 private :
-    boost::asio::const_buffer getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &session_key) const noexcept;
+    boost::asio::const_buffer getDigest(boost::asio::mutable_buffer &out_digest, boost::asio::const_buffer const &authentication_key) const noexcept;
     
 	unsigned char session_start_request_message_[Config::max_spdu_size__];
 	unsigned int session_start_request_message_size_ = 0;
