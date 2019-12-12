@@ -18,10 +18,10 @@
 #include "../iencryption.hpp"
 
 namespace DNP3SAv6 { namespace Details { 
-class AES256CBCEncryption : IEncryption
+class AES256CBCEncryption : public IEncryption
 {
 public :
-	AES256CBCEncryption() = default;
+	AES256CBCEncryption(boost::asio::const_buffer const &key, boost::asio::const_buffer const &initial_iv);
 	virtual ~AES256CBCEncryption() = default;
 
 	AES256CBCEncryption(AES256CBCEncryption const&) = delete;
@@ -32,8 +32,8 @@ public :
     virtual void setIV(boost::asio::const_buffer const &iv);
     virtual boost::asio::const_buffer getIV() const;
 
-	virtual boost::asio::mutable_buffer encrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &cleartext) override;
-	virtual boost::asio::mutable_buffer decrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &ciphertext) override;
+	virtual boost::asio::mutable_buffer encrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &cleartext) override;
+	virtual boost::asio::mutable_buffer decrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &ciphertext) override;
 
 private :
     union WorkBuffer
@@ -50,10 +50,11 @@ private :
         unsigned char data_[16];
     };
 
-    void encryptWorkBuffer(boost::asio::const_buffer const &key);
-    void decryptWorkBuffer(boost::asio::const_buffer const &key);
+    void encryptWorkBuffer();
+    void decryptWorkBuffer();
     bool checkPadding(boost::asio::const_buffer const &padding_data, unsigned char expected_padding) const;
 
+    boost::asio::const_buffer key_;
     unsigned char initialization_vector_[16];
     WorkBuffer work_buffer_;
     static_assert(sizeof(work_buffer_) == 16, "Unexpected padding in work buffer");

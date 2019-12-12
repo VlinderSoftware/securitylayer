@@ -31,8 +31,7 @@ TEST_CASE( "Test vectors for AES CBC encryption (1)", "[aes256cbc]" ) {
 	mutable_buffer ciphertext_buffer(ciphertext, sizeof(ciphertext));
 
     {
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
         { // implementation sanity check
             auto returned_iv(encryption.getIV());
             REQUIRE( returned_iv.data() != &initialization_vector );
@@ -40,18 +39,17 @@ TEST_CASE( "Test vectors for AES CBC encryption (1)", "[aes256cbc]" ) {
             REQUIRE( memcmp(returned_iv.data(), initialization_vector, sizeof(initialization_vector)) == 0 );
         }
         { // encrypt and verify ciphertext 
-            auto ciphertext_output(encryption.encrypt(ciphertext_buffer, const_buffer(key, sizeof(key)), const_buffer(plaintext, sizeof(plaintext))));
+            auto ciphertext_output(encryption.encrypt(ciphertext_buffer, const_buffer(plaintext, sizeof(plaintext))));
             REQUIRE( ciphertext_output.data() == ciphertext_buffer.data() );
             REQUIRE( ciphertext_output.size() == ciphertext_buffer.size() );
             REQUIRE( memcmp(ciphertext, expected_ciphertext, sizeof(ciphertext)) == 0) ;
         }
     }
     { // decrypt and verify cleartext
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
 	    unsigned char decrypted[sizeof(ciphertext)];
 	    mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
-        auto decrypt_output(encryption.decrypt(decrypted_buffer, const_buffer(key, sizeof(key)), ciphertext_buffer));
+        auto decrypt_output(encryption.decrypt(decrypted_buffer, ciphertext_buffer));
         REQUIRE( decrypt_output.data() == decrypted_buffer.data() );
         REQUIRE( decrypt_output.size() == sizeof(plaintext) );
         REQUIRE( memcmp(decrypted, plaintext, sizeof(plaintext)) == 0) ;
@@ -70,22 +68,20 @@ TEST_CASE( "Test vectors for AES CBC encryption (2)", "[aes256cbc]" ) {
 	mutable_buffer ciphertext_buffer(ciphertext, sizeof(ciphertext));
 
     {
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
         { // encrypt and verify ciphertext 
-            auto ciphertext_output(encryption.encrypt(ciphertext_buffer, const_buffer(key, sizeof(key)), const_buffer(plaintext, sizeof(plaintext))));
+            auto ciphertext_output(encryption.encrypt(ciphertext_buffer, const_buffer(plaintext, sizeof(plaintext))));
             REQUIRE( ciphertext_output.data() == ciphertext_buffer.data() );
             REQUIRE( ciphertext_output.size() == sizeof(expected_ciphertext) );
             REQUIRE( memcmp(ciphertext, expected_ciphertext, sizeof(expected_ciphertext)) == 0) ;
         }
     }
     { // decrypt and verify cleartext
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
 	    unsigned char decrypted[sizeof(ciphertext)];
 	    mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
         ciphertext_buffer = mutable_buffer(ciphertext, 16);
-        auto decrypt_output(encryption.decrypt(decrypted_buffer, const_buffer(key, sizeof(key)), ciphertext_buffer));
+        auto decrypt_output(encryption.decrypt(decrypted_buffer, ciphertext_buffer));
         REQUIRE( decrypt_output.data() == decrypted_buffer.data() );
         REQUIRE( decrypt_output.size() == sizeof(plaintext) );
         REQUIRE( memcmp(decrypted, plaintext, sizeof(plaintext)) == 0) ;
@@ -105,21 +101,19 @@ TEST_CASE( "Test vectors for AES CBC encryption (3): trailing junk", "[aes256cbc
 	Tests::DeterministicRandomNumberGenerator rng;
     rng.generate(ciphertext_buffer);
     {
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
         { // encrypt and verify ciphertext 
-            auto ciphertext_output(encryption.encrypt(ciphertext_buffer, const_buffer(key, sizeof(key)), const_buffer(plaintext, sizeof(plaintext))));
+            auto ciphertext_output(encryption.encrypt(ciphertext_buffer, const_buffer(plaintext, sizeof(plaintext))));
             REQUIRE( ciphertext_output.data() == ciphertext_buffer.data() );
             REQUIRE( ciphertext_output.size() == sizeof(expected_ciphertext) );
             REQUIRE( memcmp(ciphertext, expected_ciphertext, sizeof(expected_ciphertext)) == 0) ;
         }
     }
     { // decrypt and verify there is no cleartext
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
 	    unsigned char decrypted[sizeof(ciphertext)];
 	    mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
-        auto decrypt_output(encryption.decrypt(decrypted_buffer, const_buffer(key, sizeof(key)), ciphertext_buffer));
+        auto decrypt_output(encryption.decrypt(decrypted_buffer, ciphertext_buffer));
         REQUIRE( decrypt_output.size() == 0 );
     }
 }
@@ -133,11 +127,10 @@ TEST_CASE( "Test vectors for AES CBC encryption (4): non-modulo-sixteen input le
 	Tests::DeterministicRandomNumberGenerator rng;
     rng.generate(ciphertext_buffer);
     { // decrypt and verify there is no cleartext
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
 	    unsigned char decrypted[sizeof(ciphertext) + (16 - (sizeof(ciphertext) % 16))];
 	    mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
-        auto decrypt_output(encryption.decrypt(decrypted_buffer, const_buffer(key, sizeof(key)), ciphertext_buffer));
+        auto decrypt_output(encryption.decrypt(decrypted_buffer, ciphertext_buffer));
         REQUIRE( decrypt_output.size() == 0 );
     }
 }
@@ -151,11 +144,10 @@ TEST_CASE( "Test vectors for AES CBC encryption (4): pure junk", "[aes256cbc]" )
 	Tests::DeterministicRandomNumberGenerator rng;
     rng.generate(ciphertext_buffer);
     { // decrypt and verify there is no cleartext
-	    Details::AES256CBCEncryption encryption;
-        encryption.setIV(const_buffer(initialization_vector, sizeof(initialization_vector)));
+	    Details::AES256CBCEncryption encryption(const_buffer(key, sizeof(key)), const_buffer(initialization_vector, sizeof(initialization_vector)));
 	    unsigned char decrypted[sizeof(ciphertext) + (16 - (sizeof(ciphertext) % 16))];
 	    mutable_buffer decrypted_buffer(decrypted, sizeof(decrypted));
-        auto decrypt_output(encryption.decrypt(decrypted_buffer, const_buffer(key, sizeof(key)), ciphertext_buffer));
+        auto decrypt_output(encryption.decrypt(decrypted_buffer, ciphertext_buffer));
         REQUIRE( decrypt_output.size() == 0 );
     }
 }

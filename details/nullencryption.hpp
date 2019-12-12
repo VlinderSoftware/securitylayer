@@ -15,9 +15,10 @@
 #define dnp3sav6_details_nullencryption_hpp
 
 #include <boost/asio.hpp>
+#include "../iencryption.hpp"
 
 namespace DNP3SAv6 { namespace Details { 
-class NullEncryption
+class NullEncryption : public IEncryption
 {
 public :
 	NullEncryption() = default;
@@ -31,8 +32,8 @@ public :
     virtual void setIV(boost::asio::const_buffer const &iv);
     virtual boost::asio::const_buffer getIV() const;
 
-	virtual boost::asio::mutable_buffer encrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &cleartext);
-	virtual boost::asio::mutable_buffer decrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &ciphertext);
+	virtual boost::asio::mutable_buffer encrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &cleartext);
+	virtual boost::asio::mutable_buffer decrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &ciphertext);
 };
 }}
 

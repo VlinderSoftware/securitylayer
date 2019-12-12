@@ -164,9 +164,6 @@ Outstation::Outstation(
 	default :
 		assert(!"unexpected state");
 	}
-//session_key_change_interval_ = 60/*one hour*/;
-//session_key_change_count_ = 4096;
-//send the response_spdu HERE!!
 }
 
 /*virtual */void Outstation::rxSetSessionKeys(

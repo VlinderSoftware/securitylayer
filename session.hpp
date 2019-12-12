@@ -21,17 +21,30 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "encryptionalgorithm.hpp"
 #include "config.hpp"
 #include <boost/asio/buffer.hpp>
+#include <memory>
 
 namespace DNP3SAv6 { 
 class SessionBuilder;
+class IEncryption;
 class Session
 {
 public :
+    Session() = default;
+    ~Session() = default;
+
+    Session(Session const&) = default;
+    Session& operator=(Session const&) = default;
+    Session(Session &&) = default;
+    Session& operator=(Session &&) = default;
+
     KeyWrapAlgorithm getKeyWrapAlgorithm() const noexcept;
     MACAlgorithm getMACAlgorithm() const noexcept;
 
     boost::asio::const_buffer getControlDirectionSessionKey() const noexcept;
     boost::asio::const_buffer getMonitoringDirectionSessionKey() const noexcept;
+
+    std::shared_ptr< IEncryption > getControlDirectionEncryption() const noexcept { return control_direction_encryption_; }
+    std::shared_ptr< IEncryption > getMonitoringDirectionEncryption() const noexcept { return monitoring_direction_encryption_; }
 
     bool valid() const noexcept;
     void reset() noexcept;
@@ -49,6 +62,8 @@ private :
     std::size_t control_direction_encryption_key_size_ = 0;
 	unsigned char monitoring_direction_encryption_key_[Config::max_session_key_size__];
     std::size_t monitoring_direction_encryption_key_size_ = 0;
+    std::shared_ptr< IEncryption > control_direction_encryption_;
+    std::shared_ptr< IEncryption > monitoring_direction_encryption_;
 
     bool valid_ = false;
 

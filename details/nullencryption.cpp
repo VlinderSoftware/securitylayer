@@ -26,16 +26,14 @@ namespace DNP3SAv6 { namespace Details {
     throw std::logic_error("This should not be called");
 }
 
-/*virtual */mutable_buffer NullEncryption::encrypt(mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &cleartext)
+/*virtual */mutable_buffer NullEncryption::encrypt(mutable_buffer const &out, boost::asio::const_buffer const &cleartext)
 {
-    pre_condition(key.size() == 0);
     pre_condition(out.size() >= cleartext.size());
     memcpy(out.data(), cleartext.data(), cleartext.size());
     return mutable_buffer(out.data(), cleartext.size());
 }
-/*virtual */mutable_buffer NullEncryption::decrypt(mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &ciphertext)
+/*virtual */mutable_buffer NullEncryption::decrypt(mutable_buffer const &out, boost::asio::const_buffer const &ciphertext)
 {
-    pre_condition(key.size() == 0);
     pre_condition(out.size() >= ciphertext.size());
     memcpy(out.data(), ciphertext.data(), ciphertext.size());
     return mutable_buffer(out.data(), ciphertext.size());

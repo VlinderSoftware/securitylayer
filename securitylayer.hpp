@@ -174,8 +174,9 @@ private :
 
 	unsigned char incoming_spdu_buffer_[Config::max_spdu_size__];
 	unsigned char outgoing_apdu_buffer_[Config::max_apdu_size__];
-	unsigned char outgoing_spdu_buffer_[Config::max_apdu_size__];
+	unsigned char outgoing_spdu_buffer_[Config::max_spdu_size__];
 	unsigned int outgoing_spdu_size_;
+	unsigned char work_buffer_[Config::work_buffer_size__];
 
 	boost::asio::steady_timer timeout_;
 

@@ -18,6 +18,8 @@
 #include "hmac.hpp"
 #include "wrappedkeydata.hpp"
 #include <openssl/crypto.h>
+#include "details/nullencryption.hpp"
+#include "details/aes256cbcencryption.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -105,6 +107,23 @@ namespace DNP3SAv6 {
 		mutable_buffer monitoring_direction_authentication_key_buffer(monitoring_direction_authentication_key_, sizeof(monitoring_direction_authentication_key_));
 		random_number_generator_.generate(monitoring_direction_authentication_key_buffer);
 		monitoring_direction_authentication_key_size_ = sizeof(monitoring_direction_authentication_key_);
+
+		mutable_buffer control_direction_encryption_key_buffer(control_direction_encryption_key_, sizeof(control_direction_encryption_key_));
+		mutable_buffer monitoring_direction_encryption_key_buffer(monitoring_direction_encryption_key_, sizeof(monitoring_direction_encryption_key_));
+        if (EncryptionAlgorithm::null__ != encryption_algorithm_)
+        {
+		    random_number_generator_.generate(control_direction_encryption_key_buffer);
+		    control_direction_encryption_key_size_ = sizeof(control_direction_encryption_key_);
+
+		    random_number_generator_.generate(monitoring_direction_encryption_key_buffer);
+		    monitoring_direction_encryption_key_size_ = sizeof(monitoring_direction_encryption_key_);
+        }
+        else
+        { /* no need to generate encryption keys: they'll be ignored */
+            control_direction_encryption_key_size_ = 0;
+            monitoring_direction_encryption_key_size_ = 0;
+        }
+
 		// encode it all into the mutable buffer
 		wrap(
 			  buffer
@@ -127,6 +146,7 @@ namespace DNP3SAv6 {
 	{
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
 		pre_condition(mac_algorithm_ != MACAlgorithm::unknown__);
+		pre_condition(encryption_algorithm_ != EncryptionAlgorithm::unknown__);
 
 		pre_condition(incoming_key_wrap_data.size() <= Config::max_key_wrap_data_size__);
 
@@ -153,7 +173,7 @@ namespace DNP3SAv6 {
 			, getUpdateKey()
 			, key_wrap_algorithm_
 			, mac_algorithm_
-            , EncryptionAlgorithm::null__
+            , encryption_algorithm_
 			, incoming_key_wrap_data
 			))
 		{
@@ -187,6 +207,26 @@ namespace DNP3SAv6 {
 				static_assert(sizeof(monitoring_direction_encryption_key_) == sizeof(incoming_monitoring_direction_encryption_key), "unexpected size mismatch");
 				memcpy(monitoring_direction_encryption_key_, incoming_monitoring_direction_encryption_key, sizeof(incoming_monitoring_direction_encryption_key));
 				monitoring_direction_encryption_key_size_ = sizeof(incoming_monitoring_direction_encryption_key);
+
+                switch (encryption_algorithm_)
+                {
+                case EncryptionAlgorithm::null__ :
+                    control_direction_encryption_ = make_shared< Details::NullEncryption >();
+                    monitoring_direction_encryption_ = make_shared< Details::NullEncryption >();
+                    break;
+                case EncryptionAlgorithm::aes256_cbc__ :
+                    /* At this point in the code I don't know which direction I'm in, but I do know that whatever direction 
+                     * I'm not in will get their IV overwritten by the incoming SPDU, so I need not worry about the IV being 
+                     * reused for I use the same for both. I do not want to waste entropy, so I'll use the same IV to 
+                     * initialize both objects, and pass it to both constructors. */
+                    unsigned char initial_iv[16];
+                    mutable_buffer initial_iv_buffer(initial_iv, sizeof(initial_iv));
+                    random_number_generator_.generate(initial_iv_buffer);
+                    control_direction_encryption_ = make_shared< Details::AES256CBCEncryption >(const_buffer(control_direction_encryption_key_, monitoring_direction_encryption_key_size_), initial_iv_buffer);
+                    monitoring_direction_encryption_ = make_shared< Details::AES256CBCEncryption >(const_buffer(monitoring_direction_encryption_key_, monitoring_direction_encryption_key_size_), initial_iv_buffer);
+                    break;
+                }
+
 				valid_ = true;
 				return true;
 			}

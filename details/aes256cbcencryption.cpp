@@ -22,6 +22,12 @@ using namespace std;
 using namespace boost::asio;
 
 namespace DNP3SAv6 { namespace Details { 
+AES256CBCEncryption::AES256CBCEncryption(boost::asio::const_buffer const &key, boost::asio::const_buffer const &initial_iv)
+    : key_(key)
+{
+    pre_condition(key.size() == 32);
+    setIV(initial_iv);
+}
 /*virtual */void AES256CBCEncryption::setIV(const_buffer const &iv)
 {
     pre_condition(iv.size() == sizeof(initialization_vector_));
@@ -31,7 +37,7 @@ namespace DNP3SAv6 { namespace Details {
 {
     return const_buffer(initialization_vector_, sizeof(initialization_vector_));
 }
-/*virtual */mutable_buffer AES256CBCEncryption::encrypt(mutable_buffer const &out, const_buffer const &key, const_buffer const &cleartext)
+/*virtual */mutable_buffer AES256CBCEncryption::encrypt(mutable_buffer const &out, const_buffer const &cleartext)
 {
     pre_condition(cleartext.size() < std::numeric_limits< decltype(work_buffer_.first_chunk_.size_) >::max());
     pre_condition(out.size() >= (((cleartext.size() + 2/* for the header */) + 15) % 16));
@@ -82,7 +88,7 @@ namespace DNP3SAv6 { namespace Details {
         else
         { /* no padding needed */ }
 
-        encryptWorkBuffer(key);
+        encryptWorkBuffer();
 
         invariant(distance(ciphertext_curr, ciphertext_end) >= sizeof(work_buffer_.data_));
         ciphertext_curr = copy(begin(work_buffer_.data_), end(work_buffer_.data_), ciphertext_curr);
@@ -91,7 +97,7 @@ namespace DNP3SAv6 { namespace Details {
 
     return mutable_buffer(ciphertext_begin, distance(ciphertext_begin, ciphertext_curr));
 }
-/*virtual */mutable_buffer AES256CBCEncryption::decrypt(mutable_buffer const &out, const_buffer const &key, const_buffer const &ciphertext)
+/*virtual */mutable_buffer AES256CBCEncryption::decrypt(mutable_buffer const &out, const_buffer const &ciphertext)
 {
     if (ciphertext.size() % 16 != 0)
     {
@@ -125,7 +131,7 @@ namespace DNP3SAv6 { namespace Details {
             copy(ciphertext_curr, ciphertext_curr + size_to_copy, work_buffer_.data_);
             ciphertext_curr += size_to_copy;
         }
-        decryptWorkBuffer(key);
+        decryptWorkBuffer();
         if (first)
         {
             if (work_buffer_.first_chunk_.size_ > maximum_possible_cleartext_size)
@@ -136,6 +142,20 @@ namespace DNP3SAv6 { namespace Details {
             else
             { /* no-op */ }
             if (work_buffer_.first_chunk_.size_ > out.size())
+            {
+                //TODO statistics, logs, etc.
+                return mutable_buffer();
+            }
+            else
+            { /* no-op */ }
+            if (work_buffer_.first_chunk_.size_ > (ciphertext.size() - 2/* header size */))
+            {
+                //TODO statistics, logs, etc.
+                return mutable_buffer();
+            }
+            else
+            { /* no-op */ }
+            if (work_buffer_.first_chunk_.size_ < (ciphertext.size() - 2/* header size */ - 16/* block size */))
             {
                 //TODO statistics, logs, etc.
                 return mutable_buffer();
@@ -189,11 +209,11 @@ namespace DNP3SAv6 { namespace Details {
 
     return mutable_buffer(cleartext_begin, distance(cleartext_begin, cleartext_curr));
 }
-void AES256CBCEncryption::encryptWorkBuffer(const_buffer const &key)
+void AES256CBCEncryption::encryptWorkBuffer()
 {
-    pre_condition(key.size() == 32);
+    invariant(key_.size() == 32);
 	AES_KEY aes_key;
-	if (0 != AES_set_encrypt_key(static_cast< unsigned char const* >(key.data()), 8 * key.size(), &aes_key))
+	if (0 != AES_set_encrypt_key(static_cast< unsigned char const* >(key_.data()), 8 * key_.size(), &aes_key))
 	{
 		throw EncryptionFailure("failed to set encrypt key");
 	}
@@ -209,11 +229,11 @@ void AES256CBCEncryption::encryptWorkBuffer(const_buffer const &key)
     copy(begin(work_buffer_.data_), end(work_buffer_.data_), begin(initialization_vector_));
 }
 
-void AES256CBCEncryption::decryptWorkBuffer(const_buffer const &key)
+void AES256CBCEncryption::decryptWorkBuffer()
 {
-    pre_condition(key.size() == 32);
+    invariant(key_.size() == 32);
 	AES_KEY aes_key;
-	if (0 != AES_set_decrypt_key(static_cast< unsigned char const* >(key.data()), 8 * key.size(), &aes_key))
+	if (0 != AES_set_decrypt_key(static_cast< unsigned char const* >(key_.data()), 8 * key_.size(), &aes_key))
 	{
 		throw EncryptionFailure("failed to set encrypt key");
 	}

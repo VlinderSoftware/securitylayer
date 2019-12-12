@@ -616,3 +616,241 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 	    }
     }
 }
+
+/* We'll only check message headers byte-by-byte here to allow for slightly cleaner code */
+SCENARIO( "Master sends an initial poll, uses encryption" "[master-init-encryption]") {
+	GIVEN( "A Master that needs to send an APDU" ) {
+		io_context ioc;
+		Config configuration;
+        configuration.encryption_algorithm_ = static_cast< std::uint8_t >(EncryptionAlgorithm::aes256_cbc__);
+		Tests::DeterministicRandomNumberGenerator rng;
+		Master master(ioc, configuration, rng);
+		REQUIRE( master.getState() == Master::initial__ );
+		unsigned char apdu_buffer[2048];
+		mutable_buffer apdu(apdu_buffer, sizeof(apdu_buffer));
+		rng.generate(apdu); // NOTE: we really don't care about the contents of the APDU here
+				
+		master.postAPDU(apdu);
+		THEN( "The Master go to in the EXPECT_SESSION_START_RESPONSE state" ) {
+			REQUIRE( master.getState() == Master::expect_session_start_response__ );
+		}
+		THEN( "The Master statistics should be OK" ) {
+			REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 1 );
+			REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 0 );
+			REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+			REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+			REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+			REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+			static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+		}
+		THEN( "The Master should not present anything as an APDU" ) {
+			REQUIRE( !master.pollAPDU() );
+		}
+		THEN( "The Master should send a SessionStartRequest" ) {
+			REQUIRE( master.pollSPDU() );
+			auto spdu(master.getSPDU());
+			REQUIRE( !master.pollSPDU() );
+			REQUIRE( spdu.size() == 19 );
+			unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+			REQUIRE( spdu_bytes[0] == 0xc0 );
+			REQUIRE( spdu_bytes[1] == 0x80 );
+			REQUIRE( spdu_bytes[2] == 0x01 );
+			REQUIRE( spdu_bytes[3] == 0x02 );
+			REQUIRE( spdu_bytes[4] == 0x01 );
+			REQUIRE( spdu_bytes[5] == 0x00 );
+			REQUIRE( spdu_bytes[6] == 0x00 );
+			REQUIRE( spdu_bytes[7] == 0x00 );
+		}
+        GIVEN( "A newly booted Outstation" ) {
+            Outstation outstation(ioc, configuration, rng);
+            REQUIRE( outstation.getState() == Outstation::initial__ );
+
+		    WHEN( "The Outstation receives the Master's request" ) {
+			    auto spdu(master.getSPDU());
+			    outstation.postSPDU(spdu);
+			    THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
+				    REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
+			    }
+			    THEN( "The outstation statistics should be OK" ) {
+				    REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 1 );
+				    REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 1 );
+				    REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
+				    REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				    REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				    REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			    }
+			    THEN( "The Outstation should not present an APDU" ) {
+				    REQUIRE( !outstation.pollAPDU() );
+			    }
+			    THEN( "The Outstation should present an SPDU" ) {
+				    REQUIRE( outstation.pollSPDU() );
+			    }
+			    THEN( "The Outstation should send back a SessionStartResponse" ) {
+				    REQUIRE( outstation.pollSPDU() );
+				    auto spdu(outstation.getSPDU());
+				    REQUIRE( !outstation.pollSPDU() );
+				    REQUIRE( spdu.size() == 20 );
+				    unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+				    REQUIRE( spdu_bytes[0] == 0xc0 );
+				    REQUIRE( spdu_bytes[1] == 0x80 );
+				    REQUIRE( spdu_bytes[2] == 0x01 );
+				    REQUIRE( spdu_bytes[3] == 0x03 );
+				    REQUIRE( spdu_bytes[4] == 0x01 );
+				    REQUIRE( spdu_bytes[5] == 0x00 );
+				    REQUIRE( spdu_bytes[6] == 0x00 );
+				    REQUIRE( spdu_bytes[7] == 0x00 );
+			    }
+                WHEN( "The Outstation sends a SessionStartResponse" ) {
+                    outstation.getSPDU();
+			        THEN( "The outstation statistics should be OK" ) {
+				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 1 );
+				        REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 1 );
+				        REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				        REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			        }
+                }
+			    WHEN( "The Master receives the SessionStartResponse" ) {
+				    auto spdu(outstation.getSPDU());
+				    master.postSPDU(spdu);
+				    THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
+					    REQUIRE( master.getState() == SecurityLayer::expect_session_confirmation__ );
+				    }
+			        THEN( "The Master statistics should be OK" ) {
+				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
+				        REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 1 );
+				        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			        }
+				    THEN( "The Master should not present anything as an APDU" ) {
+					    REQUIRE( !master.pollAPDU() );
+				    }
+				    THEN( "The Master will send SetSessionKeys message" ) {
+					    auto spdu(master.getSPDU());
+					    REQUIRE( spdu.size() == 162 );
+					    unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+					    REQUIRE( spdu_bytes[0] == 0xc0 );
+					    REQUIRE( spdu_bytes[1] == 0x80 );
+					    REQUIRE( spdu_bytes[2] == 0x01 );
+					    REQUIRE( spdu_bytes[3] == 0x04 );
+					    REQUIRE( spdu_bytes[4] == 0x01 );
+					    REQUIRE( spdu_bytes[5] == 0x00 );
+					    REQUIRE( spdu_bytes[6] == 0x00 );
+					    REQUIRE( spdu_bytes[7] == 0x00 );
+				    }
+				    //TODO check invalid messages (things that should provoke error returns)
+				    //TODO check with the wrong sequence number
+                    WHEN( "The Outstation receives the SetSessionKeys message" ) {
+                        auto spdu(master.getSPDU());
+                        outstation.postSPDU(spdu);
+                        THEN( "The outstation should go to the ACTIVE state" ) {
+        				    REQUIRE( outstation.getState() == Outstation::active__ );
+                        }
+					    THEN( "The Outstation should not present an APDU" ) {
+						    REQUIRE( !outstation.pollAPDU() );
+					    }
+			            THEN( "The outstation statistics should be OK" ) {
+				            REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
+				            REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 2 );
+				            REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
+				            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				            REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			            }
+                        THEN( "The Outstation will attempt to send a SessionConfirmation message" ) {
+                            REQUIRE( outstation.pollSPDU() );
+				            auto spdu(outstation.getSPDU());
+				            REQUIRE( !outstation.pollSPDU() );
+				            REQUIRE( spdu.size() == 26 );
+				            unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
+				            REQUIRE( spdu_bytes[0] == 0xc0 );
+				            REQUIRE( spdu_bytes[1] == 0x80 );
+				            REQUIRE( spdu_bytes[2] == 0x01 );
+				            REQUIRE( spdu_bytes[3] == 0x05 );
+				            REQUIRE( spdu_bytes[4] == 0x01 );
+				            REQUIRE( spdu_bytes[5] == 0x00 );
+				            REQUIRE( spdu_bytes[6] == 0x00 );
+				            REQUIRE( spdu_bytes[7] == 0x00 );
+                        }
+                        WHEN( "The Outstation to sends a SessionConfirmation message" ) {
+                            auto spdu(outstation.getSPDU());
+			                THEN( "The outstation statistics should be OK" ) {
+				                REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
+				                REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 2 );
+				                REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
+				                REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				                REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				                REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			                }
+                            WHEN( "The Master receives it" ) {
+                                master.postSPDU(spdu);
+                                THEN( "The Master should go to the ACTIVE state" ) {
+                                    REQUIRE( master.getState() == SecurityLayer::active__ );
+                                }
+			                    THEN( "The Master statistics should be OK" ) {
+				                    REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
+				                    REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 2 );
+				                    REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				                    REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				                    REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				                    REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			                    }
+				                THEN( "The Master should not present anything as an APDU" ) {
+					                REQUIRE( !master.pollAPDU() );
+				                }
+                                THEN( "The Master is ready to send the APDU" ) {
+                                    master.update();
+                                    REQUIRE( master.pollSPDU() );
+                                }
+                                WHEN( "the Master sends the APDU" ) {
+                                    master.update();
+                                    REQUIRE( master.pollSPDU() );
+                                    spdu = master.getSPDU();
+                                    REQUIRE( !master.pollSPDU() );
+			                        THEN( "The Master statistics should be OK" ) {
+				                        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 3 );
+				                        REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 2 );
+				                        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
+				                        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
+				                        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+				                        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			                        }
+                                    WHEN( "the outstation receives it" ) {
+                                        outstation.postSPDU(spdu);
+                                        THEN( "the Outstation will present the APDU" ) {
+                                            REQUIRE( outstation.pollAPDU() );
+                                            auto the_apdu(outstation.getAPDU());
+                                            REQUIRE( the_apdu.size() == apdu.size() );
+                                            REQUIRE( memcmp(apdu.data(), the_apdu.data(), apdu.size()) == 0 );
+                                        }
+			                            THEN( "The outstation statistics should be OK" ) {
+				                            REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
+				                            REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 3 );
+				                            REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
+				                            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
+				                            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+				                            REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
+				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			                            }
+                                    }
+                                }
+                            }
+                        }
+                    }
+			    }
+		    }
+		    //TODO test that a session start request from a broadcast address is ignored
+		    //TODO check invalid messages (things that should provoke error returns)
+	    }
+    }
+}

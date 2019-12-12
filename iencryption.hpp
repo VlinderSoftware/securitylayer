@@ -16,7 +16,7 @@
 
 #include <boost/asio.hpp>
 
-namespace DNP3SAv6 { namespace Details { 
+namespace DNP3SAv6 { 
 class IEncryption
 {
 public :
@@ -31,9 +31,9 @@ public :
     virtual void setIV(boost::asio::const_buffer const &iv) = 0;
     virtual boost::asio::const_buffer getIV() const = 0;
 
-	virtual boost::asio::mutable_buffer encrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &cleartext) = 0;
-	virtual boost::asio::mutable_buffer decrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &key, boost::asio::const_buffer const &ciphertext) = 0;
+	virtual boost::asio::mutable_buffer encrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &cleartext) = 0;
+	virtual boost::asio::mutable_buffer decrypt(boost::asio::mutable_buffer const &out, boost::asio::const_buffer const &ciphertext) = 0;
 };
-}}
+}
 
 #endif

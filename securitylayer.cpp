@@ -17,6 +17,7 @@
 #include <openssl/crypto.h>
 #include "messages.hpp"
 #include "hmac.hpp"
+#include "iencryption.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -208,7 +209,7 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept
 {
     invariant(getSession().valid());
-    pre_condition(apdu.size() <= sizeof(outgoing_spdu_buffer_) - (8/*SPDU header size*/) - sizeof(Messages::AuthenticatedAPDU) - getMACAlgorithmDigestSize(session_.getMACAlgorithm()));
+    pre_condition(apdu.size() <= sizeof(outgoing_spdu_buffer_) - (8/*SPDU header size*/) - sizeof(Messages::AuthenticatedAPDU) - getMACAlgorithmDigestSize(session_.getMACAlgorithm()) - (31 /* maximum overhead of encryption */));
 
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
@@ -219,19 +220,29 @@ boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direc
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
 	outgoing_spdu_size_ += sizeof(seq_);
 	assert(outgoing_spdu_size_ == 8);
-    pre_condition(apdu.size() < numeric_limits< decltype(Messages::AuthenticatedAPDU::apdu_length_) >::max());
-    Messages::AuthenticatedAPDU authenticated_apdu(static_cast< decltype(Messages::AuthenticatedAPDU::apdu_length_) >(apdu.size()));
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &authenticated_apdu, sizeof(authenticated_apdu));
-    outgoing_spdu_size_ += sizeof(authenticated_apdu);
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, apdu.data(), apdu.size());
-    outgoing_spdu_size_ += apdu.size();
-    digest(
-          mutable_buffer(outgoing_spdu_buffer_  + outgoing_spdu_size_, getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
-        , getSession().getMACAlgorithm()
-        , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
-        , const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
-        );
-    outgoing_spdu_size_ += getMACAlgorithmDigestSize(getSession().getMACAlgorithm());
+
+    shared_ptr< IEncryption > encryption(direction == Direction::controlling__ ? session_.getControlDirectionEncryption() : session_.getMonitoringDirectionEncryption());
+    const_buffer initialization_vector(encryption->getIV());
+    unsigned char const *const initialization_vector_begin(static_cast< unsigned char const * >(initialization_vector.data()));
+    unsigned char const *const initialization_vector_end(initialization_vector_begin + initialization_vector.size());
+    copy(initialization_vector_begin, initialization_vector_end, outgoing_spdu_buffer_ + outgoing_spdu_size_);
+    outgoing_spdu_size_ += distance(initialization_vector_begin, initialization_vector_end);
+
+    { //HERE!! put this stuff in the work buffer, then encrypt into the outgoing spdu buffer
+        pre_condition(apdu.size() < numeric_limits< decltype(Messages::AuthenticatedAPDU::apdu_length_) >::max());
+        Messages::AuthenticatedAPDU authenticated_apdu(static_cast< decltype(Messages::AuthenticatedAPDU::apdu_length_) >(apdu.size()));
+        memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &authenticated_apdu, sizeof(authenticated_apdu));
+        outgoing_spdu_size_ += sizeof(authenticated_apdu);
+        memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, apdu.data(), apdu.size());
+        outgoing_spdu_size_ += apdu.size();
+        digest(
+              mutable_buffer(outgoing_spdu_buffer_  + outgoing_spdu_size_, getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
+            , getSession().getMACAlgorithm()
+            , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
+            , const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
+            );
+        outgoing_spdu_size_ += getMACAlgorithmDigestSize(getSession().getMACAlgorithm());
+    }
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }

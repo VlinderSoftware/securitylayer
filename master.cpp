@@ -248,6 +248,7 @@ void Master::sendSessionStartRequest() noexcept
 	assert(ssr.flags_ == 0);
 	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
 	ssr.mac_algorithm_ = config_.mac_algorithm_;
+    ssr.encryption_algorithm_ = config_.encryption_algorithm_;
 	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
 	session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(ssr.mac_algorithm_));
 	session_builder_.setEncryptionAlgorithm(static_cast< EncryptionAlgorithm >(ssr.encryption_algorithm_));
