@@ -19,7 +19,7 @@ KeyWrapAlgorithm Session::getKeyWrapAlgorithm() const noexcept
     return key_wrap_algorithm_;
 }
 
-MACAlgorithm Session::getMACAlgorithm() const noexcept
+AEADAlgorithm Session::getMACAlgorithm() const noexcept
 {
     return mac_algorithm_;
 }

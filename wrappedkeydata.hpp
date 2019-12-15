@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <boost/asio.hpp>
 #include "keywrapalgorithm.hpp"
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 
 namespace DNP3SAv6 {
 	/* There are a few variable-length fields in this struct as defined by the WG15 working document. IEEE 1815-2012 
@@ -55,20 +55,20 @@ namespace DNP3SAv6 {
 		unsigned char mac_value_[16];
 	};
     static_assert(sizeof(WrappedKeyDataT16) == 80, "unexpected padding");
-	template < KeyWrapAlgorithm kwa, MACAlgorithm mal >
+	template < KeyWrapAlgorithm kwa, AEADAlgorithm mal >
 	struct WrappedKeyData;
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_8__	 >	{ typedef WrappedKeyDataT8 type;	};
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_16__	 >	{ typedef WrappedKeyDataT16 type;	};
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_8__	 >	{ typedef WrappedKeyDataT8 type;	};
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_16__ >	{ typedef WrappedKeyDataT16 type;	};
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_8__	 >	{ typedef WrappedKeyDataT8 type;	};
-	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_16__	 >	{ typedef WrappedKeyDataT16 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__	 >	{ typedef WrappedKeyDataT8 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__	 >	{ typedef WrappedKeyDataT16 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_8__	 >	{ typedef WrappedKeyDataT8 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_16__ >	{ typedef WrappedKeyDataT16 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_8__	 >	{ typedef WrappedKeyDataT8 type;	};
+	template < > struct WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_16__	 >	{ typedef WrappedKeyDataT16 type;	};
 
 	void wrap(
           boost::asio::mutable_buffer &out
         , boost::asio::const_buffer const &update_key
         , KeyWrapAlgorithm kwa
-        , MACAlgorithm mal
+        , AEADAlgorithm mal
         , boost::asio::const_buffer const &control_direction_session_key
         , boost::asio::const_buffer const &monitoring_direction_session_key
         , boost::asio::const_buffer const &mac_value
@@ -80,7 +80,7 @@ namespace DNP3SAv6 {
         , unsigned int &mac_value_size
         , boost::asio::const_buffer const& update_key
         , KeyWrapAlgorithm kwa
-        , MACAlgorithm mal
+        , AEADAlgorithm mal
         , boost::asio::const_buffer const& incoming_wrapped_key_data
         );
 }

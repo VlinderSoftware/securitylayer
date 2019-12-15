@@ -18,7 +18,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 
 #include "config.hpp"
 #include "keywrapalgorithm.hpp"
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 #include "session.hpp"
 #include <boost/asio.hpp>
 
@@ -47,7 +47,7 @@ public :
     Session getSession() const noexcept;
 
 	void setKeyWrapAlgorithm(KeyWrapAlgorithm key_wrap_algorithm);
-	void setMACAlgorithm(MACAlgorithm mac_algorithm);
+	void setMACAlgorithm(AEADAlgorithm mac_algorithm);
 
 	// whole messages to calculate a MAC over
 	void setSessionStartRequest(boost::asio::const_buffer const &spdu);

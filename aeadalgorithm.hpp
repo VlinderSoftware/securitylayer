@@ -11,15 +11,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_macalgorithm_hpp
-#define dnp3sav6_macalgorithm_hpp
+#ifndef dnp3sav6_aeadalgorithm_hpp
+#define dnp3sav6_aeadalgorithm_hpp
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
 #include <cstdint>
 
 namespace DNP3SAv6 {
-	enum struct MACAlgorithm : std::uint8_t
+	enum struct AEADAlgorithm : std::uint8_t
 	{
           unknown__                     = 0 // not a valid over-the-wire value
 		, hmac_sha_256_truncated_8__	= 3
@@ -29,7 +29,7 @@ namespace DNP3SAv6 {
 		, hmac_blake2s_truncated_8__	= 9
 		, hmac_blake2s_truncated_16__	= 10
 	};
-    unsigned int getMACAlgorithmDigestSize(MACAlgorithm mac_algorithm);
+    unsigned int getMACAlgorithmDigestSize(AEADAlgorithm mac_algorithm);
 }
 
 #endif

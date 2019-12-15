@@ -11,21 +11,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 #include <stdexcept>
 
 namespace DNP3SAv6 {
-    unsigned int getMACAlgorithmDigestSize(MACAlgorithm mac_algorithm)
+    unsigned int getMACAlgorithmDigestSize(AEADAlgorithm mac_algorithm)
 	{
         switch (mac_algorithm)
 	    {
-        case MACAlgorithm::hmac_sha_256_truncated_8__     :
-        case MACAlgorithm::hmac_sha_3_256_truncated_8__   :
-        case MACAlgorithm::hmac_blake2s_truncated_8__     :
+        case AEADAlgorithm::hmac_sha_256_truncated_8__     :
+        case AEADAlgorithm::hmac_sha_3_256_truncated_8__   :
+        case AEADAlgorithm::hmac_blake2s_truncated_8__     :
             return 8;
-        case MACAlgorithm::hmac_sha_256_truncated_16__    :
-        case MACAlgorithm::hmac_sha_3_256_truncated_16__  :
-        case MACAlgorithm::hmac_blake2s_truncated_16__    :
+        case AEADAlgorithm::hmac_sha_256_truncated_16__    :
+        case AEADAlgorithm::hmac_sha_3_256_truncated_16__  :
+        case AEADAlgorithm::hmac_blake2s_truncated_16__    :
             return 16;
         default :
             throw std::logic_error("Unknown MAC algorithm type");

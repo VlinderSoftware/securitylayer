@@ -50,9 +50,9 @@ namespace DNP3SAv6 {
 		key_wrap_algorithm_ = key_wrap_algorithm;
 	}
 
-	void SessionBuilder::setMACAlgorithm(MACAlgorithm mac_algorithm)
+	void SessionBuilder::setMACAlgorithm(AEADAlgorithm mac_algorithm)
 	{
-		pre_condition(mac_algorithm != MACAlgorithm::unknown__);
+		pre_condition(mac_algorithm != AEADAlgorithm::unknown__);
 		mac_algorithm_ = mac_algorithm;
 	}
 
@@ -85,7 +85,7 @@ namespace DNP3SAv6 {
 	mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	{
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
-		pre_condition(mac_algorithm_ != MACAlgorithm::unknown__);
+		pre_condition(mac_algorithm_ != AEADAlgorithm::unknown__);
 
 		unsigned char *curr(static_cast< unsigned char* >(buffer.data()));
 		unsigned char *const end(curr + buffer.size());
@@ -115,7 +115,7 @@ namespace DNP3SAv6 {
 	bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data)
 	{
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
-		pre_condition(mac_algorithm_ != MACAlgorithm::unknown__);
+		pre_condition(mac_algorithm_ != AEADAlgorithm::unknown__);
 
 		pre_condition(incoming_key_wrap_data.size() <= Config::max_key_wrap_data_size__);
 
@@ -228,7 +228,6 @@ namespace DNP3SAv6 {
 			);
 		return out_digest;
 	}
-
 }
 
 

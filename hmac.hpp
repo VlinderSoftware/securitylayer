@@ -18,7 +18,7 @@
 #include "details/hmacsha256.hpp"
 #include "details/hmacsha3256.hpp"
 #include "exceptions/contract.hpp"
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 #include <algorithm>
 
 #ifdef min
@@ -29,13 +29,13 @@ using namespace std;
 
 namespace DNP3SAv6 {
 
-	template < MACAlgorithm a__ > struct HMACType;
-	template <> struct HMACType< MACAlgorithm::hmac_sha_256_truncated_8__    > { typedef Details::HMACSHA256 type; };
-	template <> struct HMACType< MACAlgorithm::hmac_sha_256_truncated_16__   > { typedef Details::HMACSHA256 type; };
-	template <> struct HMACType< MACAlgorithm::hmac_sha_3_256_truncated_8__  > { typedef Details::HMACSHA3256 type; };
-	template <> struct HMACType< MACAlgorithm::hmac_sha_3_256_truncated_16__ > { typedef Details::HMACSHA3256 type; };
-	template <> struct HMACType< MACAlgorithm::hmac_blake2s_truncated_8__    > { typedef Details::HMACBLAKE2s type; };
-	template <> struct HMACType< MACAlgorithm::hmac_blake2s_truncated_16__   > { typedef Details::HMACBLAKE2s type; };
+	template < AEADAlgorithm a__ > struct HMACType;
+	template <> struct HMACType< AEADAlgorithm::hmac_sha_256_truncated_8__    > { typedef Details::HMACSHA256 type; };
+	template <> struct HMACType< AEADAlgorithm::hmac_sha_256_truncated_16__   > { typedef Details::HMACSHA256 type; };
+	template <> struct HMACType< AEADAlgorithm::hmac_sha_3_256_truncated_8__  > { typedef Details::HMACSHA3256 type; };
+	template <> struct HMACType< AEADAlgorithm::hmac_sha_3_256_truncated_16__ > { typedef Details::HMACSHA3256 type; };
+	template <> struct HMACType< AEADAlgorithm::hmac_blake2s_truncated_8__    > { typedef Details::HMACBLAKE2s type; };
+	template <> struct HMACType< AEADAlgorithm::hmac_blake2s_truncated_16__   > { typedef Details::HMACBLAKE2s type; };
 
 	void digest_(Details::IHMAC &hmac, boost::asio::const_buffer const &data);
 
@@ -57,16 +57,16 @@ namespace DNP3SAv6 {
 	}
 
 	template < typename... Buffers >
-	void digest(boost::asio::mutable_buffer out, MACAlgorithm algorithm, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
+	void digest(boost::asio::mutable_buffer out, AEADAlgorithm algorithm, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
 	{
 		switch (algorithm)
 		{
-		case MACAlgorithm::hmac_sha_256_truncated_8__    : digest(HMACType< MACAlgorithm::hmac_sha_256_truncated_8__    >::type(), out, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_sha_256_truncated_16__   : digest(HMACType< MACAlgorithm::hmac_sha_256_truncated_16__   >::type(), out, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_sha_3_256_truncated_8__  : digest(HMACType< MACAlgorithm::hmac_sha_3_256_truncated_8__  >::type(), out, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_sha_3_256_truncated_16__ : digest(HMACType< MACAlgorithm::hmac_sha_3_256_truncated_16__ >::type(), out, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_blake2s_truncated_8__    : digest(HMACType< MACAlgorithm::hmac_blake2s_truncated_8__    >::type(), out, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_blake2s_truncated_16__   : digest(HMACType< MACAlgorithm::hmac_blake2s_truncated_16__   >::type(), out, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_8__    : digest(HMACType< AEADAlgorithm::hmac_sha_256_truncated_8__    >::type(), out, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_16__   : digest(HMACType< AEADAlgorithm::hmac_sha_256_truncated_16__   >::type(), out, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_8__  : digest(HMACType< AEADAlgorithm::hmac_sha_3_256_truncated_8__  >::type(), out, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_16__ : digest(HMACType< AEADAlgorithm::hmac_sha_3_256_truncated_16__ >::type(), out, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_8__    : digest(HMACType< AEADAlgorithm::hmac_blake2s_truncated_8__    >::type(), out, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_16__   : digest(HMACType< AEADAlgorithm::hmac_blake2s_truncated_16__   >::type(), out, key, data, additional_buffers...); break;
 		default : throw std::logic_error("Unexpected algorithm value");
 		};
 	}
@@ -80,16 +80,16 @@ namespace DNP3SAv6 {
 	}
 
 	template < typename... Buffers >
-	bool verify(boost::asio::const_buffer const &incoming_digest, MACAlgorithm algorithm, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
+	bool verify(boost::asio::const_buffer const &incoming_digest, AEADAlgorithm algorithm, boost::asio::const_buffer const &key, boost::asio::const_buffer const &data, Buffers... additional_buffers)
 	{
 		switch (algorithm)
 		{
-		case MACAlgorithm::hmac_sha_256_truncated_8__    : return verify(HMACType< MACAlgorithm::hmac_sha_256_truncated_8__    >::type(), incoming_digest, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_sha_256_truncated_16__   : return verify(HMACType< MACAlgorithm::hmac_sha_256_truncated_16__   >::type(), incoming_digest, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_sha_3_256_truncated_8__  : return verify(HMACType< MACAlgorithm::hmac_sha_3_256_truncated_8__  >::type(), incoming_digest, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_sha_3_256_truncated_16__ : return verify(HMACType< MACAlgorithm::hmac_sha_3_256_truncated_16__ >::type(), incoming_digest, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_blake2s_truncated_8__    : return verify(HMACType< MACAlgorithm::hmac_blake2s_truncated_8__    >::type(), incoming_digest, key, data, additional_buffers...); break;
-		case MACAlgorithm::hmac_blake2s_truncated_16__   : return verify(HMACType< MACAlgorithm::hmac_blake2s_truncated_16__   >::type(), incoming_digest, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_8__    : return verify(HMACType< AEADAlgorithm::hmac_sha_256_truncated_8__    >::type(), incoming_digest, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_16__   : return verify(HMACType< AEADAlgorithm::hmac_sha_256_truncated_16__   >::type(), incoming_digest, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_8__  : return verify(HMACType< AEADAlgorithm::hmac_sha_3_256_truncated_8__  >::type(), incoming_digest, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_16__ : return verify(HMACType< AEADAlgorithm::hmac_sha_3_256_truncated_16__ >::type(), incoming_digest, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_8__    : return verify(HMACType< AEADAlgorithm::hmac_blake2s_truncated_8__    >::type(), incoming_digest, key, data, additional_buffers...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_16__   : return verify(HMACType< AEADAlgorithm::hmac_blake2s_truncated_16__   >::type(), incoming_digest, key, data, additional_buffers...); break;
 		default : throw std::logic_error("Unexpected algorithm value");
 		};
 	}

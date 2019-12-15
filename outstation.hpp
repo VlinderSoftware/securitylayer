@@ -18,7 +18,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 
 #include "securitylayer.hpp"
 #include "keywrapalgorithm.hpp"
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 #include "sessionbuilder.hpp"
 
 namespace DNP3SAv6 {

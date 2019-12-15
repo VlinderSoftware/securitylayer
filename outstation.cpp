@@ -117,9 +117,9 @@ Outstation::Outstation(
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
 		}
-		if (acceptMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_)))
+		if (acceptMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.mac_algorithm_)))
 		{
-            session_builder_.setMACAlgorithm(static_cast< MACAlgorithm >(incoming_ssr.mac_algorithm_));
+            session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.mac_algorithm_));
         }
 		else
 		{

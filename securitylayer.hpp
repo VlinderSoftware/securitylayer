@@ -21,7 +21,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "exceptions.hpp"
 #include "statistics.hpp"
 #include "keywrapalgorithm.hpp"
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 #include "session.hpp"
 #include "details/seqvalidator.hpp"
 
@@ -106,10 +106,10 @@ protected:
 	 *       don't start allocating resources etc. Also don't log everything: that can be used as DOS attacks on your
 	 *       logs. The fewer side-effects the better. */
 	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
-	virtual bool acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept;
+	virtual bool acceptMACAlgorithm(AEADAlgorithm incoming_mal) const noexcept;
 
 	virtual KeyWrapAlgorithm getPreferredKeyWrapAlgorithm() const noexcept;
-	virtual MACAlgorithm getPreferredMACAlgorithm() const noexcept;
+	virtual AEADAlgorithm getPreferredMACAlgorithm() const noexcept;
 
 protected :
     //TODO unify with the equivalent enum in the session builder 

@@ -42,10 +42,10 @@ link_directories(${BOOST_LIBRARYDIR})
 include(GNUInstallDirs)
 
 set(LAYER_PUBLIC_HEADERS
+	aeadalgorithm.hpp
 	config.hpp
 	exceptions.hpp
 	keywrapalgorithm.hpp
-	macalgorithm.hpp
 	master.hpp
 	messages.hpp
 	messages/authenticatedapdu.hpp
@@ -66,6 +66,7 @@ set(LAYER_PUBLIC_HEADERS
 #	)
 set(LIBLAYER_SRC
 	${LAYER_PUBLIC_HEADERS}
+	aeadalgorithm.cpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacblake2s.cpp
@@ -86,7 +87,6 @@ set(LIBLAYER_SRC
 	exceptions.cpp
 	hmac.cpp
 	hmac.hpp
-	macalgorithm.cpp
 	master.cpp
 	outstation.cpp
 	securitylayer.cpp

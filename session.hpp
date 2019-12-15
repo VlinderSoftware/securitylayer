@@ -17,7 +17,7 @@
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
 #include "keywrapalgorithm.hpp"
-#include "macalgorithm.hpp"
+#include "aeadalgorithm.hpp"
 #include "config.hpp"
 #include <boost/asio/buffer.hpp>
 
@@ -27,7 +27,7 @@ class Session
 {
 public :
     KeyWrapAlgorithm getKeyWrapAlgorithm() const noexcept;
-    MACAlgorithm getMACAlgorithm() const noexcept;
+    AEADAlgorithm getMACAlgorithm() const noexcept;
 
     boost::asio::const_buffer getControlDirectionSessionKey() const noexcept;
     boost::asio::const_buffer getMonitoringDirectionSessionKey() const noexcept;
@@ -37,7 +37,7 @@ public :
 
 private :
 	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
-	MACAlgorithm mac_algorithm_ = MACAlgorithm::unknown__;
+	AEADAlgorithm mac_algorithm_ = AEADAlgorithm::unknown__;
 
     unsigned char control_direction_session_key_[Config::max_session_key_size__];
     std::size_t control_direction_session_key_size_ = 0;

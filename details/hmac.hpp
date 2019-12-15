@@ -15,7 +15,7 @@
 #define dnp3sav6_details_hmac_hpp
 
 #include "ihmac.hpp"
-#include "../macalgorithm.hpp"
+#include "../aeadalgorithm.hpp"
 
 typedef struct evp_md_st EVP_MD;
 typedef struct evp_md_ctx_st EVP_MD_CTX;

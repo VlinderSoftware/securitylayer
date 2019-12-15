@@ -20,7 +20,7 @@ using namespace boost::asio;
 
 namespace DNP3SAv6 {
 	namespace {
-		template < KeyWrapAlgorithm kwa, MACAlgorithm mal, typename KeyWrapAlgorithm >
+		template < KeyWrapAlgorithm kwa, AEADAlgorithm mal, typename KeyWrapAlgorithm >
         struct Wrapper
         {
             typedef typename WrappedKeyData< kwa, mal >::type WrappedKeyDataType;
@@ -96,7 +96,7 @@ void wrap(
       boost::asio::mutable_buffer &out
     , boost::asio::const_buffer const& update_key
     , KeyWrapAlgorithm kwa
-    , MACAlgorithm mal
+    , AEADAlgorithm mal
     , boost::asio::const_buffer const &control_direction_session_key
     , boost::asio::const_buffer const &monitoring_direction_session_key
     , boost::asio::const_buffer const &mac_value
@@ -107,12 +107,12 @@ void wrap(
 	case KeyWrapAlgorithm::rfc3394_aes256_key_wrap__ :
 		switch (mal)
 		{
-		case MACAlgorithm::hmac_sha_256_truncated_8__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_8__,	 Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
-		case MACAlgorithm::hmac_sha_256_truncated_16__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_16__,   Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
-		case MACAlgorithm::hmac_sha_3_256_truncated_8__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_8__,  Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
-		case MACAlgorithm::hmac_sha_3_256_truncated_16__	: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_16__, Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
-		case MACAlgorithm::hmac_blake2s_truncated_8__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_8__,    Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
-		case MACAlgorithm::hmac_blake2s_truncated_16__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_16__,   Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_8__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__,	 Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_16__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__,   Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_8__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_8__,  Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_16__	: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_16__, Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_8__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_8__,    Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_16__		: Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_16__,   Details::RFC3394AES256KeyWrap >::wrap(out, update_key, control_direction_session_key, monitoring_direction_session_key, mac_value); break;
 		default :
 			throw std::logic_error("Unknown MAC algorithm");
 		}
@@ -128,7 +128,7 @@ bool unwrap(
     , unsigned int &mac_value_size
     , boost::asio::const_buffer const& update_key
     , KeyWrapAlgorithm kwa
-    , MACAlgorithm mal
+    , AEADAlgorithm mal
     , boost::asio::const_buffer const& incoming_wrapped_key_data
     )
 {
@@ -137,12 +137,12 @@ bool unwrap(
 	case KeyWrapAlgorithm::rfc3394_aes256_key_wrap__ :
 		switch (mal)
 		{
-		case MACAlgorithm::hmac_sha_256_truncated_8__		: mac_value_size =  8; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_8__,    Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
-		case MACAlgorithm::hmac_sha_256_truncated_16__		: mac_value_size = 16; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_256_truncated_16__,   Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
-		case MACAlgorithm::hmac_sha_3_256_truncated_8__		: mac_value_size =  8; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_8__,  Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
-		case MACAlgorithm::hmac_sha_3_256_truncated_16__	: mac_value_size = 16; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_sha_3_256_truncated_16__, Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
-		case MACAlgorithm::hmac_blake2s_truncated_8__		: mac_value_size =  8; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_8__,    Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
-		case MACAlgorithm::hmac_blake2s_truncated_16__		: mac_value_size = 16; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, MACAlgorithm::hmac_blake2s_truncated_16__,   Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
+		case AEADAlgorithm::hmac_sha_256_truncated_8__		: mac_value_size =  8; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__,    Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
+		case AEADAlgorithm::hmac_sha_256_truncated_16__		: mac_value_size = 16; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__,   Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
+		case AEADAlgorithm::hmac_sha_3_256_truncated_8__		: mac_value_size =  8; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_8__,  Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
+		case AEADAlgorithm::hmac_sha_3_256_truncated_16__	: mac_value_size = 16; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_16__, Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
+		case AEADAlgorithm::hmac_blake2s_truncated_8__		: mac_value_size =  8; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_8__,    Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
+		case AEADAlgorithm::hmac_blake2s_truncated_16__		: mac_value_size = 16; return Wrapper< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_16__,   Details::RFC3394AES256KeyWrap >::unwrap(control_direction_session_key, monitoring_direction_session_key, mac_value, update_key, incoming_wrapped_key_data);
 		default :
 			throw std::logic_error("Unknown MAC algorithm");
 		}

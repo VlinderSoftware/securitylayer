@@ -140,7 +140,7 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 	return true;
 }
 
-/*virtual */bool SecurityLayer::acceptMACAlgorithm(MACAlgorithm incoming_mal) const noexcept
+/*virtual */bool SecurityLayer::acceptMACAlgorithm(AEADAlgorithm incoming_mal) const noexcept
 {
 	return true;
 }
@@ -150,9 +150,9 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 	return KeyWrapAlgorithm::rfc3394_aes256_key_wrap__;
 }
 
-/*virtual */MACAlgorithm SecurityLayer::getPreferredMACAlgorithm() const noexcept
+/*virtual */AEADAlgorithm SecurityLayer::getPreferredMACAlgorithm() const noexcept
 {
-	return MACAlgorithm::hmac_sha_256_truncated_16__;
+	return AEADAlgorithm::hmac_sha_256_truncated_16__;
 }
 
 void SecurityLayer::reset() noexcept
