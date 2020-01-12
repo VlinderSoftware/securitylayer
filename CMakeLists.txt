@@ -15,6 +15,12 @@ cmake_minimum_required(VERSION 3.1)
 project(secureauthentication VERSION 1.0 LANGUAGES C CXX)
 enable_testing()
 
+if (WIN32)
+	set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /FC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /FC")
+endif()
+
 include(FindOpenSSL)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
