@@ -83,6 +83,8 @@ set(LIBLAYER_SRC
 	details/hmacsha3256.hpp
 	details/ihmac.hpp
 	details/ikeywrap.hpp
+	details/intermediatebufferadapter.cpp
+	details/intermediatebufferadapter.hpp
 	details/irandomnumbergenerator.hpp
 	details/randomnumbergenerator.cpp
 	details/randomnumbergenerator.hpp
