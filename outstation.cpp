@@ -117,9 +117,9 @@ Outstation::Outstation(
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
 		}
-		if (acceptMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.mac_algorithm_)))
+		if (acceptMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.aead_algorithm_)))
 		{
-            session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.mac_algorithm_));
+            session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.aead_algorithm_));
         }
 		else
 		{
@@ -184,7 +184,7 @@ Outstation::Outstation(
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            response_spdu = format(session_builder_.getSEQ(), Messages::SessionConfirmation(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+            response_spdu = format(session_builder_.getSEQ(), Messages::SessionConfirmation(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
             setOutgoingSPDU(response_spdu, std::chrono::seconds(config_.session_key_change_interval_));
             incrementStatistic(Statistics::total_messages_sent__);
             if (getSession().valid())

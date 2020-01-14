@@ -1,3 +1,4 @@
+#include "securitylayer.hpp"
 /* Copyright 2019  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -16,6 +17,7 @@
 #include <openssl/crypto.h>
 #include "messages.hpp"
 #include "hmac.hpp"
+#include "aead.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -202,30 +204,44 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept
 {
     invariant(getSession().valid());
-    pre_condition(apdu.size() <= sizeof(outgoing_spdu_buffer_) - (8/*SPDU header size*/) - sizeof(Messages::AuthenticatedAPDU) - getMACAlgorithmDigestSize(session_.getMACAlgorithm()));
+
+    size_t const needed_space((8/*SPDU header size*/) + sizeof(Messages::AuthenticatedAPDU) + apdu.size() + getAEADAlgorithmAuthenticationTagSize(session_.getAEADAlgorithm()));
+
+    pre_condition(needed_space <= sizeof(outgoing_spdu_buffer_));
 
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::authenticated_apdu__);
+
+    const_buffer associated_data_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
+
 	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+    const_buffer nonce_buffer(outgoing_spdu_buffer_ + outgoing_spdu_size_, sizeof(seq_));
 	outgoing_spdu_size_ += sizeof(seq_);
 	assert(outgoing_spdu_size_ == 8);
+
     pre_condition(apdu.size() < numeric_limits< decltype(Messages::AuthenticatedAPDU::apdu_length_) >::max());
     Messages::AuthenticatedAPDU authenticated_apdu(static_cast< decltype(Messages::AuthenticatedAPDU::apdu_length_) >(apdu.size()));
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &authenticated_apdu, sizeof(authenticated_apdu));
-    outgoing_spdu_size_ += sizeof(authenticated_apdu);
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, apdu.data(), apdu.size());
-    outgoing_spdu_size_ += apdu.size();
-    digest(
-          mutable_buffer(outgoing_spdu_buffer_  + outgoing_spdu_size_, getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
-        , getSession().getMACAlgorithm()
-        , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
-        , const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_)
+    unsigned char authenticated_apdu_serialized[sizeof(authenticated_apdu)];
+    memcpy(authenticated_apdu_serialized, &authenticated_apdu, sizeof(authenticated_apdu));
+    const_buffer authenticated_apdu_serialized_buffer(authenticated_apdu_serialized, sizeof(authenticated_apdu_serialized));
+
+    mutable_buffer output_buffer(outgoing_spdu_buffer_ + outgoing_spdu_size_, needed_space - outgoing_spdu_size_);
+    auto encrypt_result(
+          encrypt(
+              output_buffer
+            , getSession().getAEADAlgorithm()
+            , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
+            , nonce_buffer
+            , associated_data_buffer
+            , authenticated_apdu_serialized_buffer
+            , apdu
+            )
         );
-    outgoing_spdu_size_ += getMACAlgorithmDigestSize(getSession().getMACAlgorithm());
+    outgoing_spdu_size_ += encrypt_result.size();
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
@@ -400,7 +416,7 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
     incrementStatistic(Statistics::unexpected_messages__);
 }
 
-void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::AuthenticatedAPDU const& incoming_aa, boost::asio::const_buffer const& incoming_apdu, boost::asio::const_buffer const& incoming_mac, boost::asio::const_buffer const& incoming_spdu, ptrdiff_t offset_to_mac) noexcept
+void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept
 {
     /* NOTE we don't check the state here: if we have a valid session, we use it.
      *      This means we can receive authenticated APDUs while a new session is being built.
@@ -434,32 +450,56 @@ void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::Au
         break;
     }
 
-    pre_condition(incoming_aa.apdu_length_ == incoming_apdu.size());
-    if (incoming_mac.size() != getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
-    {   //TODO message if in maintenance mode
-        //TODO statistics
-        return;
-    }
-    else
-    { /* all is well */ }
-    unsigned char expected_digest[Config::max_digest_size__];
-    digest(
-          mutable_buffer(expected_digest, sizeof(expected_digest))
-        , getSession().getMACAlgorithm()
-        , getIncomingDirection() == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
-        , const_buffer(incoming_spdu.data(), offset_to_mac)
+    auto incoming_apdu(
+          decrypt(
+              mutable_buffer(incoming_apdu_buffer_, sizeof(incoming_apdu_buffer_))
+            , getSession().getAEADAlgorithm()
+            , getIncomingDirection() == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
+            , incoming_nonce
+            , incoming_associated_data
+            , incoming_payload
+            )
         );
-    if (CRYPTO_memcmp(expected_digest, incoming_mac.data(), getMACAlgorithmDigestSize(getSession().getMACAlgorithm())) != 0)
+
+    if (!incoming_apdu.data()) // auth failure
     {   //TODO message if in maintenance mode
         //TODO statistics
         return;
     }
     else
     { /* all is well */ }
-    incoming_apdu_ = incoming_apdu;
+
+    assert(incoming_apdu.data() == incoming_apdu_buffer_);
+    assert(incoming_apdu.size() <= sizeof(incoming_apdu_buffer_));
+
+    unsigned char const *curr(static_cast< unsigned char const * >(incoming_apdu.data()));
+    unsigned char const *const end(curr + incoming_apdu.size());
+
+    Messages::AuthenticatedAPDU incoming_aa;
+    if (static_cast< size_t >(distance(curr, end)) < sizeof(incoming_aa)) // invalid message
+    {   //TODO message if in maintenance mode
+        //TODO statistics
+        return;
+    }
+    else
+    { /* all is well */ }
+    memcpy(&incoming_aa, curr, sizeof(incoming_aa));
+    curr += sizeof(incoming_aa);
+
+    if (incoming_aa.apdu_length_ != distance(curr, end))
+    { //TODO handle maintenance mode
+        const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+        setOutgoingSPDU(response_spdu);
+        incrementStatistic(Statistics::error_messages_sent__);
+        incrementStatistic(Statistics::total_messages_sent__);
+        return;
+    }
+    else
+    { /* all is well */ }
+
+    incoming_apdu_ = const_buffer(curr, incoming_aa.apdu_length_);
     seq_validator_.setLatestIncomingSEQ(incoming_seq);
 }
-
 
 void SecurityLayer::parseIncomingSPDU() noexcept
 {
@@ -467,6 +507,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 	unsigned char const *curr(incoming_spdu_data);
 	unsigned char const *const end(curr + incoming_spdu_.size());
 
+    unsigned char const *const associated_data_begin(curr);
 	if (distance(curr, end) < 8)
 	{
 		const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
@@ -491,9 +532,13 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 
 	unsigned char const incoming_function_code(*curr++);
 
+    unsigned char const *const associated_data_end(curr);
+
 	uint32_t incoming_seq;
 	memcpy(&incoming_seq, curr, 4/*size of the sequence number*/);
+    unsigned char const *nonce_begin(curr);
 	curr += 4;
+    unsigned char const *nonce_end(curr);
 
 	switch (incoming_function_code)
 	{
@@ -521,7 +566,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
  			incoming_ssr.flags_ = *curr++;
     
 			incoming_ssr.key_wrap_algorithm_ = *curr++;
-			incoming_ssr.mac_algorithm_ = *curr++;
+			incoming_ssr.aead_algorithm_ = *curr++;
 			memcpy(&incoming_ssr.session_key_change_interval_, curr, 4);
 			curr += 4;
 			memcpy(&incoming_ssr.session_key_change_count_, curr, 2);
@@ -642,29 +687,14 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     }
 	case static_cast< uint8_t >(Message::authenticated_apdu__) :
     {
-        unsigned int const min_expected_spdu_size(8/*header size*/ + sizeof(Messages::AuthenticatedAPDU) + 2/*minimal size of an APDU in either direction is two bytes, for the header with no objects*/ + getMACAlgorithmDigestSize(getSession().getMACAlgorithm()));
+        unsigned int const min_expected_spdu_size(8/*header size*/ + sizeof(Messages::AuthenticatedAPDU) + 2/*minimal size of an APDU in either direction is two bytes, for the header with no objects*/ + getAEADAlgorithmAuthenticationTagSize(getSession().getAEADAlgorithm()));
         unsigned int const max_expected_spdu_size(Config::max_spdu_size__);
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
         {
-            Messages::AuthenticatedAPDU incoming_aa;
-            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_aa));
-            memcpy(&incoming_aa, curr, sizeof(incoming_aa));
-            curr += sizeof(incoming_aa);
-
-            if (incoming_aa.apdu_length_ == distance(curr, end) - getMACAlgorithmDigestSize(getSession().getMACAlgorithm()))
-            {
-                const_buffer incoming_apdu(curr, incoming_aa.apdu_length_);
-                curr += incoming_aa.apdu_length_;
-                const_buffer incoming_mac(curr, getMACAlgorithmDigestSize(getSession().getMACAlgorithm()));
-                rxAuthenticatedAPDU(incoming_seq, incoming_aa, incoming_apdu, incoming_mac, incoming_spdu_, distance(incoming_spdu_data, curr));
-            }
-            else
-            {
-                const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
-                setOutgoingSPDU(response_spdu);
-                incrementStatistic(Statistics::error_messages_sent__);
-                incrementStatistic(Statistics::total_messages_sent__);
-            }
+            const_buffer incoming_nonce(nonce_begin, distance(nonce_begin, nonce_end));
+            const_buffer incoming_associated_data(associated_data_begin, distance(associated_data_begin, associated_data_end));
+            const_buffer incoming_payload(curr, distance(curr, end));
+            rxAuthenticatedAPDU(incoming_seq, incoming_nonce, incoming_associated_data, incoming_payload, incoming_spdu_);
         }
         else
         {

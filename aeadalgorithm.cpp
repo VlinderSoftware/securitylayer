@@ -15,7 +15,7 @@
 #include <stdexcept>
 
 namespace DNP3SAv6 {
-    unsigned int getMACAlgorithmDigestSize(AEADAlgorithm mac_algorithm)
+    unsigned int getAEADAlgorithmAuthenticationTagSize(AEADAlgorithm mac_algorithm)
 	{
         switch (mac_algorithm)
 	    {

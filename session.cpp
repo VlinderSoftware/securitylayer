@@ -19,9 +19,9 @@ KeyWrapAlgorithm Session::getKeyWrapAlgorithm() const noexcept
     return key_wrap_algorithm_;
 }
 
-AEADAlgorithm Session::getMACAlgorithm() const noexcept
+AEADAlgorithm Session::getAEADAlgorithm() const noexcept
 {
-    return mac_algorithm_;
+    return aead_algorithm_;
 }
 
 boost::asio::const_buffer Session::getControlDirectionSessionKey() const noexcept

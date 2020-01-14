@@ -72,6 +72,8 @@ set(LAYER_PUBLIC_HEADERS
 #	)
 set(LIBLAYER_SRC
 	${LAYER_PUBLIC_HEADERS}
+	aead.cpp
+	aead.hpp
 	aeadalgorithm.cpp
 	details/hmac.cpp
 	details/hmac.hpp
@@ -81,6 +83,7 @@ set(LIBLAYER_SRC
 	details/hmacsha256.hpp
 	details/hmacsha3256.cpp
 	details/hmacsha3256.hpp
+	details/iaead.hpp
 	details/ihmac.hpp
 	details/ikeywrap.hpp
 	details/intermediatebufferadapter.cpp

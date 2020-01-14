@@ -153,7 +153,7 @@ protected :
 	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &incoming_spdu) noexcept;
     virtual void rxSetSessionKeys(std::uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& incoming_spdu) noexcept;
     virtual void rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& incoming_spdu) noexcept;
-    virtual void rxAuthenticatedAPDU(std::uint32_t incoming_seq, Messages::AuthenticatedAPDU const &incoming_aa, boost::asio::const_buffer const &incoming_apdu, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const &incoming_spdu, ptrdiff_t offset_to_mac) noexcept;
+    virtual void rxAuthenticatedAPDU(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept;
 
     void setSession(Session const &session) noexcept { session_ = session; }
     Session getSession() const noexcept { return session_; }
@@ -172,6 +172,7 @@ private :
 	boost::asio::const_buffer incoming_spdu_;
 
 	unsigned char incoming_spdu_buffer_[Config::max_spdu_size__];
+	unsigned char incoming_apdu_buffer_[Config::max_spdu_size__/*yes, SPDU size -- we use this buffer to decrypt into*/];
 	unsigned char outgoing_apdu_buffer_[Config::max_apdu_size__];
 	unsigned char outgoing_spdu_buffer_[Config::max_apdu_size__];
 	unsigned int outgoing_spdu_size_;

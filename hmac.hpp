@@ -21,12 +21,6 @@
 #include "aeadalgorithm.hpp"
 #include <algorithm>
 
-#ifdef min
-#undef min
-#endif
-
-using namespace std;
-
 namespace DNP3SAv6 {
 
 	template < AEADAlgorithm a__ > struct HMACType;
@@ -52,7 +46,7 @@ namespace DNP3SAv6 {
 		hmac.setKey(key);
 		digest_(hmac, data, additional_buffers...);
 		auto digested(hmac.get());
-		size_t to_copy(min(out.size(), digested.size()));
+		size_t to_copy(std::min(out.size(), digested.size()));
 		memcpy(out.data(), digested.data(), to_copy);
 	}
 

@@ -50,10 +50,10 @@ namespace DNP3SAv6 {
 		key_wrap_algorithm_ = key_wrap_algorithm;
 	}
 
-	void SessionBuilder::setMACAlgorithm(AEADAlgorithm mac_algorithm)
+	void SessionBuilder::setMACAlgorithm(AEADAlgorithm aead_algorithm)
 	{
-		pre_condition(mac_algorithm != AEADAlgorithm::unknown__);
-		mac_algorithm_ = mac_algorithm;
+		pre_condition(aead_algorithm != AEADAlgorithm::unknown__);
+		aead_algorithm_ = aead_algorithm;
 	}
 
 	void SessionBuilder::setSessionStartRequest(const_buffer const &spdu)
@@ -85,7 +85,7 @@ namespace DNP3SAv6 {
 	mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	{
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
-		pre_condition(mac_algorithm_ != AEADAlgorithm::unknown__);
+		pre_condition(aead_algorithm_ != AEADAlgorithm::unknown__);
 
 		unsigned char *curr(static_cast< unsigned char* >(buffer.data()));
 		unsigned char *const end(curr + buffer.size());
@@ -102,7 +102,7 @@ namespace DNP3SAv6 {
 			  buffer
 			, getUpdateKey()
 			, key_wrap_algorithm_
-			, mac_algorithm_
+			, aead_algorithm_
 			, const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
 			, const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
 			, getDigest(Direction::control_direction__)
@@ -115,7 +115,7 @@ namespace DNP3SAv6 {
 	bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data)
 	{
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
-		pre_condition(mac_algorithm_ != AEADAlgorithm::unknown__);
+		pre_condition(aead_algorithm_ != AEADAlgorithm::unknown__);
 
 		pre_condition(incoming_key_wrap_data.size() <= Config::max_key_wrap_data_size__);
 
@@ -135,7 +135,7 @@ namespace DNP3SAv6 {
 			, incoming_digest_value_size
 			, getUpdateKey()
 			, key_wrap_algorithm_
-			, mac_algorithm_
+			, aead_algorithm_
 			, incoming_key_wrap_data
 			))
 		{
@@ -221,7 +221,7 @@ namespace DNP3SAv6 {
 	{
 		digest(
 			  out_digest
-			, mac_algorithm_
+			, aead_algorithm_
 			, session_key
 			, const_buffer(session_start_request_message_, session_start_request_message_size_)
 			, const_buffer(session_start_response_message_, session_start_response_message_size_)

@@ -42,7 +42,7 @@ struct SessionStartRequest
     std::uint8_t key_wrap_algorithm_ = 2/*NIST SP800-38F AES-256 GCM*/;
     /* The MAC algorithm to be used. SAv6 mandates the use of at least HMAC SHA-256. 
      *The value is one of MACAlgorithm's values. */
-    std::uint8_t mac_algorithm_ = 4/* HMAC SHA256 T16*/;
+    std::uint8_t aead_algorithm_ = 4/* HMAC SHA256 T16*/;
     /* Indicates the amount of time, in seconds, the session will be considered valid 
      * by the Master once the session is established (i.e. as of the moment 
      * SetSessionKeys is first sent). This value is informative to the Outstation. 

@@ -62,7 +62,7 @@ public :
     boost::asio::const_buffer getUpdateKey() const;
 
     using Session::getKeyWrapAlgorithm;
-    using Session::getMACAlgorithm;
+    using Session::getAEADAlgorithm;
 
     boost::asio::const_buffer getDigest(Direction direction) const noexcept;
 

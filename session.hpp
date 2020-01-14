@@ -27,7 +27,7 @@ class Session
 {
 public :
     KeyWrapAlgorithm getKeyWrapAlgorithm() const noexcept;
-    AEADAlgorithm getMACAlgorithm() const noexcept;
+    AEADAlgorithm getAEADAlgorithm() const noexcept;
 
     boost::asio::const_buffer getControlDirectionSessionKey() const noexcept;
     boost::asio::const_buffer getMonitoringDirectionSessionKey() const noexcept;
@@ -37,7 +37,7 @@ public :
 
 private :
 	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
-	AEADAlgorithm mac_algorithm_ = AEADAlgorithm::unknown__;
+	AEADAlgorithm aead_algorithm_ = AEADAlgorithm::unknown__;
 
     unsigned char control_direction_session_key_[Config::max_session_key_size__];
     std::size_t control_direction_session_key_size_ = 0;

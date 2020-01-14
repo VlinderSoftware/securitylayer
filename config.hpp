@@ -27,7 +27,7 @@ namespace DNP3SAv6 {
 		unsigned int set_session_keys_timeout_ = 5000; // milliseconds
 
 		std::uint8_t key_wrap_algorithm_ = 2/*NIST SP800-38F AES-256 GCM*/;
-		std::uint8_t mac_algorithm_ = 4/* HMAC SHA256 T16*/;
+		std::uint8_t aead_algorithm_ = 4/* HMAC SHA256 T16*/;
 
 		std::uint32_t session_key_change_interval_ = 3600/*one hour*/;
 		std::uint16_t session_key_change_count_ = 4096;

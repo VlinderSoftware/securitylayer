@@ -190,7 +190,7 @@ Master::Master(
         }
         else
         { /* all is well */ }
-        if (incoming_sc.mac_length_ != getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm()))
+        if (incoming_sc.mac_length_ != getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()))
         {
             //TODO increment stat
             return;
@@ -205,7 +205,7 @@ Master::Master(
         else
         { /* OK so far */ }
         // check whether the incoming MAC size corresponds to the expected MAC size
-        auto expected_mac_size(getMACAlgorithmDigestSize(session_builder_.getMACAlgorithm()));
+        auto expected_mac_size(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()));
         if (expected_mac_size != incoming_sc.mac_length_)
         {   //TODO increment stat
             //TODO in maintenance mode, message
@@ -247,9 +247,9 @@ void Master::sendSessionStartRequest() noexcept
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
 	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
-	ssr.mac_algorithm_ = config_.mac_algorithm_;
+	ssr.aead_algorithm_ = config_.aead_algorithm_;
 	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
-	session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(ssr.mac_algorithm_));
+	session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(ssr.aead_algorithm_));
 	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
 	ssr.session_key_change_count_ = config_.session_key_change_count_;
 
