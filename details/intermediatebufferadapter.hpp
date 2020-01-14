@@ -38,7 +38,7 @@ public :
     IntermediateBufferAdapter& operator=(IntermediateBufferAdapter const &other) = delete;
     IntermediateBufferAdapter& operator=(IntermediateBufferAdapter &&other) = default;
 
-    size_t push(boost::asio::mutable_buffer out, boost::asio::const_buffer in);
+    std::pair< size_t, size_t > push(boost::asio::mutable_buffer out, boost::asio::const_buffer in);
 
 private :
     boost::asio::mutable_buffer buffer_;
