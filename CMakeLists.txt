@@ -75,6 +75,9 @@ set(LIBLAYER_SRC
 	aead.cpp
 	aead.hpp
 	aeadalgorithm.cpp
+	details/aeadhmacadapter.hpp
+	details/aesgcm.cpp
+	details/aesgcm.hpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacblake2s.cpp

@@ -19,13 +19,14 @@ namespace DNP3SAv6 {
 	{
         switch (mac_algorithm)
 	    {
-        case AEADAlgorithm::hmac_sha_256_truncated_8__     :
-        case AEADAlgorithm::hmac_sha_3_256_truncated_8__   :
-        case AEADAlgorithm::hmac_blake2s_truncated_8__     :
+        case AEADAlgorithm::hmac_sha_256_truncated_8__      :
+        case AEADAlgorithm::hmac_sha_3_256_truncated_8__    :
+        case AEADAlgorithm::hmac_blake2s_truncated_8__      :
             return 8;
-        case AEADAlgorithm::hmac_sha_256_truncated_16__    :
-        case AEADAlgorithm::hmac_sha_3_256_truncated_16__  :
-        case AEADAlgorithm::hmac_blake2s_truncated_16__    :
+        case AEADAlgorithm::hmac_sha_256_truncated_16__     :
+        case AEADAlgorithm::hmac_sha_3_256_truncated_16__   :
+        case AEADAlgorithm::hmac_blake2s_truncated_16__     :
+        case AEADAlgorithm::aes256_gcm__                    :
             return 16;
         default :
             throw std::logic_error("Unknown MAC algorithm type");

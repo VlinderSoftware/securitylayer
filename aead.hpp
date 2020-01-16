@@ -24,6 +24,7 @@
 #include "details/hmacblake2s.hpp"
 #include "details/hmacsha256.hpp"
 #include "details/hmacsha3256.hpp"
+#include "details/aesgcm.hpp"
 #include "exceptions/contract.hpp"
 #include "aeadalgorithm.hpp"
 #include <algorithm>
@@ -31,12 +32,13 @@
 namespace DNP3SAv6 {
 
 	template < AEADAlgorithm a__ > struct AEADType;
-	template <> struct AEADType< AEADAlgorithm::hmac_sha_256_truncated_8__    > { typedef Details::AEADHMACAdapter< Details::HMACSHA256,  AEADAlgorithm::hmac_sha_256_truncated_8__    > type; };
-	template <> struct AEADType< AEADAlgorithm::hmac_sha_256_truncated_16__   > { typedef Details::AEADHMACAdapter< Details::HMACSHA256,  AEADAlgorithm::hmac_sha_256_truncated_16__   > type; };
-	template <> struct AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_8__  > { typedef Details::AEADHMACAdapter< Details::HMACSHA3256, AEADAlgorithm::hmac_sha_3_256_truncated_8__  > type; };
-	template <> struct AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_16__ > { typedef Details::AEADHMACAdapter< Details::HMACSHA3256, AEADAlgorithm::hmac_sha_3_256_truncated_16__ > type; };
-	template <> struct AEADType< AEADAlgorithm::hmac_blake2s_truncated_8__    > { typedef Details::AEADHMACAdapter< Details::HMACBLAKE2s, AEADAlgorithm::hmac_blake2s_truncated_8__    > type; };
-	template <> struct AEADType< AEADAlgorithm::hmac_blake2s_truncated_16__   > { typedef Details::AEADHMACAdapter< Details::HMACBLAKE2s, AEADAlgorithm::hmac_blake2s_truncated_16__   > type; };
+	template <> struct AEADType< AEADAlgorithm::hmac_sha_256_truncated_8__      > { typedef Details::AEADHMACAdapter< Details::HMACSHA256,  AEADAlgorithm::hmac_sha_256_truncated_8__    > type; };
+	template <> struct AEADType< AEADAlgorithm::hmac_sha_256_truncated_16__     > { typedef Details::AEADHMACAdapter< Details::HMACSHA256,  AEADAlgorithm::hmac_sha_256_truncated_16__   > type; };
+	template <> struct AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_8__    > { typedef Details::AEADHMACAdapter< Details::HMACSHA3256, AEADAlgorithm::hmac_sha_3_256_truncated_8__  > type; };
+	template <> struct AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_16__   > { typedef Details::AEADHMACAdapter< Details::HMACSHA3256, AEADAlgorithm::hmac_sha_3_256_truncated_16__ > type; };
+	template <> struct AEADType< AEADAlgorithm::hmac_blake2s_truncated_8__      > { typedef Details::AEADHMACAdapter< Details::HMACBLAKE2s, AEADAlgorithm::hmac_blake2s_truncated_8__    > type; };
+	template <> struct AEADType< AEADAlgorithm::hmac_blake2s_truncated_16__     > { typedef Details::AEADHMACAdapter< Details::HMACBLAKE2s, AEADAlgorithm::hmac_blake2s_truncated_16__   > type; };
+	template <> struct AEADType< AEADAlgorithm::aes256_gcm__                    > { typedef Details::AESGCM                                                                                type; };
 
 	void encrypt_(Details::IAEAD &aead, boost::asio::const_buffer const &data);
 
@@ -58,12 +60,13 @@ namespace DNP3SAv6 {
 	{
 		switch (algorithm)
 		{
-		case AEADAlgorithm::hmac_sha_256_truncated_8__    : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_8__    >::type >(out, key, nonce, associated_data), data...); break;
-		case AEADAlgorithm::hmac_sha_256_truncated_16__   : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_16__   >::type >(out, key, nonce, associated_data), data...); break;
-		case AEADAlgorithm::hmac_sha_3_256_truncated_8__  : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_8__  >::type >(out, key, nonce, associated_data), data...); break;
-		case AEADAlgorithm::hmac_sha_3_256_truncated_16__ : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_16__ >::type >(out, key, nonce, associated_data), data...); break;
-		case AEADAlgorithm::hmac_blake2s_truncated_8__    : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_8__    >::type >(out, key, nonce, associated_data), data...); break;
-		case AEADAlgorithm::hmac_blake2s_truncated_16__   : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_16__   >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_8__      : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_8__     >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_16__     : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_16__    >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_8__    : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_8__   >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_16__   : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_16__  >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_8__      : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_8__     >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_16__     : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_16__    >::type >(out, key, nonce, associated_data), data...); break;
+		case AEADAlgorithm::aes256_gcm__                    : return encrypt(Details::makeAEAD< AEADType< AEADAlgorithm::aes256_gcm__                   >::type >(out, key, nonce, associated_data), data...); break;
 		default : throw std::logic_error("Unexpected algorithm value");
 		};
 	}
@@ -87,12 +90,13 @@ namespace DNP3SAv6 {
     {
 		switch (algorithm)
 		{
-		case AEADAlgorithm::hmac_sha_256_truncated_8__    : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_8__    >::type >(out, key, nonce, associated_data), encrypted_data...); break;
-		case AEADAlgorithm::hmac_sha_256_truncated_16__   : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_16__   >::type >(out, key, nonce, associated_data), encrypted_data...); break;
-		case AEADAlgorithm::hmac_sha_3_256_truncated_8__  : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_8__  >::type >(out, key, nonce, associated_data), encrypted_data...); break;
-		case AEADAlgorithm::hmac_sha_3_256_truncated_16__ : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_16__ >::type >(out, key, nonce, associated_data), encrypted_data...); break;
-		case AEADAlgorithm::hmac_blake2s_truncated_8__    : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_8__    >::type >(out, key, nonce, associated_data), encrypted_data...); break;
-		case AEADAlgorithm::hmac_blake2s_truncated_16__   : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_16__   >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_8__      : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_8__     >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::hmac_sha_256_truncated_16__     : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_256_truncated_16__    >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_8__    : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_8__   >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::hmac_sha_3_256_truncated_16__   : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_sha_3_256_truncated_16__  >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_8__      : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_8__     >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::hmac_blake2s_truncated_16__     : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::hmac_blake2s_truncated_16__    >::type >(out, key, nonce, associated_data), encrypted_data...); break;
+		case AEADAlgorithm::aes256_gcm__                    : return decrypt(Details::makeAEAD< AEADType< AEADAlgorithm::aes256_gcm__                   >::type >(out, key, nonce, associated_data), encrypted_data...); break;
 		default : throw std::logic_error("Unexpected algorithm value");
 		};
     }
