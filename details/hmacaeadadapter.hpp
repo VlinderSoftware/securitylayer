@@ -15,6 +15,7 @@
 #define dnp3sav6_details_hmacaeadadapter_hpp
 
 #include "ihmac.hpp"
+#include <openssl/crypto.h>
 
 namespace DNP3SAv6 { namespace Details { 
     template < typename AEAD, AEADAlgorithm algorithm__ >
@@ -24,7 +25,7 @@ namespace DNP3SAv6 { namespace Details {
         static AEADAlgorithm const algorithm = algorithm__;
 
         HMACAEADAdapter()
-            : aead_(AEAD::use_as_digest())
+            : aead_(typename AEAD::use_as_digest())
         {
         }
 
@@ -46,11 +47,11 @@ namespace DNP3SAv6 { namespace Details {
         }
 		virtual boost::asio::const_buffer get() override
         {
-            return aead_.getTag(mutable_buffer(tag_, sizeof(tag_)));
+            return aead_.getTag(boost::asio::mutable_buffer(tag_, sizeof(tag_)));
         }
 		virtual bool verify(boost::asio::const_buffer const &digest) override
         {
-            aead_.getTag(mutable_buffer(tag_, sizeof(tag_)));
+            aead_.getTag(boost::asio::mutable_buffer(tag_, sizeof(tag_)));
             return (digest.size() <= sizeof(tag_)) && (CRYPTO_memcmp(digest.data(), tag_, digest.size()) == 0);
         }
 

@@ -33,7 +33,8 @@ TEST_CASE( "IntermediateBufferAdapter: straight-forward pipe-through (1)", "[int
     TestBuffers< 32, 32, 64 > test_buffers;
 
     DeterministicRandomNumberGenerator rng;
-    rng.generate(mutable_buffer(test_buffers.input_, sizeof(test_buffers.input_)));
+    mutable_buffer input_buffer(test_buffers.input_, sizeof(test_buffers.input_));
+    rng.generate(input_buffer);
 
     IntermediateBufferAdapter intermediate_buffer_adapter(mutable_buffer(test_buffers.buffer_, sizeof(test_buffers.buffer_)));
     REQUIRE( intermediate_buffer_adapter.push(mutable_buffer(test_buffers.output_, sizeof(test_buffers.output_)), const_buffer(test_buffers.input_, sizeof(test_buffers.input_))) == std::make_pair(sizeof(test_buffers.output_), sizeof(test_buffers.input_)) );
@@ -45,7 +46,8 @@ TEST_CASE( "IntermediateBufferAdapter: straight-forward pipe-through (2)", "[int
     TestBuffers< 16, 48, 64 > test_buffers;
 
     DeterministicRandomNumberGenerator rng;
-    rng.generate(mutable_buffer(test_buffers.input_, sizeof(test_buffers.input_)));
+    mutable_buffer input_buffer(test_buffers.input_, sizeof(test_buffers.input_));
+    rng.generate(input_buffer);
 
     IntermediateBufferAdapter intermediate_buffer_adapter(mutable_buffer(test_buffers.buffer_, sizeof(test_buffers.buffer_)));
     REQUIRE( intermediate_buffer_adapter.push(mutable_buffer(test_buffers.output_, sizeof(test_buffers.output_)), const_buffer(test_buffers.input_, sizeof(test_buffers.input_))) == std::make_pair(sizeof(test_buffers.output_), sizeof(test_buffers.input_)) );
@@ -57,7 +59,8 @@ TEST_CASE( "IntermediateBufferAdapter: straight-forward pipe-through (3)", "[int
     TestBuffers< 8, 56, 64 > test_buffers;
 
     DeterministicRandomNumberGenerator rng;
-    rng.generate(mutable_buffer(test_buffers.input_, sizeof(test_buffers.input_)));
+    mutable_buffer input_buffer(test_buffers.input_, sizeof(test_buffers.input_));
+    rng.generate(input_buffer);
 
     IntermediateBufferAdapter intermediate_buffer_adapter(mutable_buffer(test_buffers.buffer_, sizeof(test_buffers.buffer_)));
     REQUIRE( intermediate_buffer_adapter.push(mutable_buffer(test_buffers.output_, sizeof(test_buffers.output_)), const_buffer(test_buffers.input_, sizeof(test_buffers.input_))) == std::make_pair(sizeof(test_buffers.output_), sizeof(test_buffers.input_)) );

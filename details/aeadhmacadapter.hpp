@@ -101,12 +101,12 @@ namespace DNP3SAv6 { namespace Details {
             while (plaintext_curr != plaintext_end)
             {
                 size_t const remaining(std::distance(plaintext_curr, plaintext_end));
-                auto push_result(tag_buffer_adapter_.push(mutable_buffer(buffer, sizeof(buffer)), const_buffer(plaintext_curr, remaining)));
+                auto push_result(tag_buffer_adapter_.push(boost::asio::mutable_buffer(buffer, sizeof(buffer)), boost::asio::const_buffer(plaintext_curr, remaining)));
                 size_t const throughput_produced(push_result.first);
                 size_t const input_consumed(push_result.second);
                 assert((plaintext_curr + input_consumed) <= plaintext_end);
                 plaintext_curr += input_consumed;
-                hmac_.digest(const_buffer(buffer, throughput_produced));
+                hmac_.digest(boost::asio::const_buffer(buffer, throughput_produced));
                 auto size_to_copy(std::min< size_t >(std::distance(curr_, end_), throughput_produced));
                 error_ |= (size_to_copy < throughput_produced);
                 unsigned char const *throughput_begin(buffer);
