@@ -80,6 +80,7 @@ set(LIBLAYER_SRC
 	details/aesgcm.hpp
 	details/hmac.cpp
 	details/hmac.hpp
+	details/hmacaeadadapter.hpp
 	details/hmacblake2s.cpp
 	details/hmacblake2s.hpp
 	details/hmacsha256.cpp

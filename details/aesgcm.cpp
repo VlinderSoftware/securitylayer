@@ -53,29 +53,71 @@ AESGCM::AESGCM(
     context.release();
 }
 
+AESGCM::AESGCM(use_as_digest const&)
+    : state_(use_as_digest__)
+    , tag_buffer_adapter_(mutable_buffer(potential_tag_, sizeof(potential_tag_)))
+{
+    auto context_deleter([=](EVP_CIPHER_CTX *context){ EVP_CIPHER_CTX_free(context); });
+    unique_ptr< EVP_CIPHER_CTX, decltype(context_deleter) > context(EVP_CIPHER_CTX_new(), context_deleter);
+    context_ = context.get();
+    if (!context_) throw std::bad_alloc();
+
+    context.release();
+}
+
 /*virtual */AESGCM::~AESGCM()
 {
     EVP_CIPHER_CTX_free(context_);
+}
+
+void AESGCM::setKey(boost::asio::const_buffer const& key)
+{
+    pre_condition((state_ == undetermined__) || (state_ == use_as_digest__));
+    pre_condition(!cipher_initialized_);
+    key_ = key;
+}
+
+void AESGCM::addAssociatedData(boost::asio::const_buffer const& associated_data)
+{
+    pre_condition((state_ != undetermined__) && (state_ != error__));
+    pre_condition(consumed_input_ == 0);
+
+    switch (state_)
+    {
+    case decrypting__ :
+    {
+        initializeCipher();
+        int len; // ignored, but appears to be needed by OpenSSL
+        if (1 != EVP_DecryptUpdate(context_, NULL, &len, static_cast< unsigned char const* >(associated_data.data()), associated_data.size()))
+        {
+            throw AESGCMDecryptionFailed("Failed to add associated data");
+        }
+        else
+        { /* all is well */ }
+        break;
+    }
+    case encrypting__ :
+    case use_as_digest__ :
+    {
+        initializeCipher();
+        int len; // ignored, but appears to be needed by OpenSSL
+        if (1 != EVP_EncryptUpdate(context_, NULL, &len, static_cast< unsigned char const* >(associated_data.data()), associated_data.size()))
+        {
+            throw AESGCMDecryptionFailed("Failed to add associated data");
+        }
+        else
+        { /* all is well */ }
+        break;
+    }
+    }
 }
 
 /*virtual */void AESGCM::encrypt(const_buffer const &plaintext)/* override*/
 {
     if (state_ == undetermined__)
     {
-        if (1 != EVP_EncryptInit_ex(context_, EVP_aes_256_gcm(), NULL, static_cast< unsigned char const* >(key_.data()), iv_))
-        {
-            throw FailedToInitializeAEASGCM("EVP_EncryptInit_ex failed");
-        }
-        else
-        { /* all is well */ }
-        int len; // ignored, but appears to be needed by OpenSSL
-        if (1 != EVP_EncryptUpdate(context_, NULL, &len, static_cast< unsigned char const* >(associated_data_.data()), associated_data_.size()))
-        {
-            throw AESGCMEncryptionFailed("Failed to add associated data");
-        }
-        else
-        { /* all is well */ }
         state_ = encrypting__;
+        initializeCipher();
     }
     else
     { /* no-op */ }
@@ -97,6 +139,7 @@ AESGCM::AESGCM(
     else
     { /* all is well */ }
     out_curr_ += len;
+    consumed_input_ += plaintext.size();
 }
 
 /*virtual */const_buffer AESGCM::getEncrypted()/* override*/
@@ -132,20 +175,8 @@ AESGCM::AESGCM(
 {
     if (state_ == undetermined__)
     {
-        if (1 != EVP_DecryptInit_ex(context_, EVP_aes_256_gcm(), NULL, static_cast< unsigned char const* >(key_.data()), iv_))
-        {
-            throw FailedToInitializeAEASGCM("EVP_EncryptInit_ex failed");
-        }
-        else
-        { /* all is well */ }
-        int len; // ignored, but appears to be needed by OpenSSL
-        if (1 != EVP_DecryptUpdate(context_, NULL, &len, static_cast< unsigned char const* >(associated_data_.data()), associated_data_.size()))
-        {
-            throw AESGCMDecryptionFailed("Failed to add associated data");
-        }
-        else
-        { /* all is well */ }
         state_ = decrypting__;
+        initializeCipher();
     }
     else
     { /* no-op */ }
@@ -181,6 +212,7 @@ AESGCM::AESGCM(
         }
         else
         { /* all is well */ }
+        consumed_input_ += throughput_produced;
         out_curr_ += len;
     }
 }
@@ -211,6 +243,80 @@ AESGCM::AESGCM(
     {
         return const_buffer();
     }
+}
+boost::asio::const_buffer AESGCM::getTag(boost::asio::mutable_buffer buffer)
+{
+    pre_condition(state_ == use_as_digest__);
+    pre_condition(buffer.data());
+    pre_condition(buffer.size() >= getAEADAlgorithmAuthenticationTagSize(AEADAlgorithm::aes256_gcm__));
+
+    int len;
+    if (1 != EVP_EncryptFinal_ex(context_, nullptr, &len))
+    {
+        throw AESGCMEncryptionFailed("Failed to finalize encryption");
+    }
+    else
+    { /* all is well */ }
+
+    if (1 != EVP_CIPHER_CTX_ctrl(context_, EVP_CTRL_GCM_GET_TAG, getAEADAlgorithmAuthenticationTagSize(AEADAlgorithm::aes256_gcm__), static_cast< unsigned char* >(buffer.data())))
+    {
+        throw AESGCMEncryptionFailed("Failed to retrieve authentication tag");
+    }
+    else
+    { /* all is well */ }
+
+    return boost::asio::const_buffer(buffer.data(), getAEADAlgorithmAuthenticationTagSize(AEADAlgorithm::aes256_gcm__));
+}
+void AESGCM::initializeCipher()
+{
+    pre_condition(key_.data());
+
+    if (cipher_initialized_) return;
+
+    if ((state_ == encrypting__) || (state_ == use_as_digest__))
+    {
+        if (1 != EVP_EncryptInit_ex(context_, EVP_aes_256_gcm(), NULL, static_cast< unsigned char const* >(key_.data()), iv_))
+        {
+            throw FailedToInitializeAEASGCM("EVP_EncryptInit_ex failed");
+        }
+        else
+        { /* all is well */ }
+        if (associated_data_.data())
+        {
+            int len; // ignored, but appears to be needed by OpenSSL
+            if (1 != EVP_EncryptUpdate(context_, NULL, &len, static_cast< unsigned char const* >(associated_data_.data()), associated_data_.size()))
+            {
+                throw AESGCMEncryptionFailed("Failed to add associated data");
+            }
+            else
+            { /* all is well */ }
+        }
+        else
+        { /* no associated data (yet?) */ }
+    }
+    else
+    {
+        assert(state_ == decrypting__);
+        if (1 != EVP_DecryptInit_ex(context_, EVP_aes_256_gcm(), NULL, static_cast< unsigned char const* >(key_.data()), iv_))
+        {
+            throw FailedToInitializeAEASGCM("EVP_EncryptInit_ex failed");
+        }
+        else
+        { /* all is well */ }
+        if (associated_data_.data())
+        {
+            int len; // ignored, but appears to be needed by OpenSSL
+            if (1 != EVP_DecryptUpdate(context_, NULL, &len, static_cast< unsigned char const* >(associated_data_.data()), associated_data_.size()))
+            {
+                throw AESGCMEncryptionFailed("Failed to add associated data");
+            }
+            else
+            { /* all is well */ }
+        }
+        else
+        { /* no associated data (yet?) */ }
+    }
+    cipher_initialized_ = true;
 }
 }}
 

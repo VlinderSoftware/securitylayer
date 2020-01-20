@@ -20,6 +20,8 @@ namespace DNP3SAv6 { namespace Details {
 	class IAEAD
 	{
 	public :
+        struct use_as_digest {}; // tag to tell the child class that it'll be used as a digest
+
 		IAEAD() = default;
 		virtual ~IAEAD() = default;
 

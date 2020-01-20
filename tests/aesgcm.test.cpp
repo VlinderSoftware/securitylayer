@@ -15,6 +15,8 @@
 #include "../details/aesgcm.hpp"
 #include "deterministicrandomnumbergenerator.hpp"
 #include "../aead.hpp"
+#include "../hmac.hpp"
+#include "../exceptions/contract.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -73,4 +75,22 @@ TEST_CASE( "AESGCM encrypt data", "[aesgcm]" ) {
         REQUIRE( decrypt_result.size() == sizeof(payload) );
         REQUIRE( memcmp(decrypt_result.data(), payload, decrypt_result.size()) == 0 );
     }
+}
+
+TEST_CASE( "AESGCM used as a MAC", "[aesgcm]" ) {
+    unsigned char key[getKeySize< AESGCM >()];
+	Tests::DeterministicRandomNumberGenerator rng;
+    rng.generate(mutable_buffer(key, sizeof(key)));
+    unsigned char const payload[] = {
+          0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
+        , 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F
+        };
+    assert(16 == getAEADAlgorithmAuthenticationTagSize(AEADAlgorithm::aes256_gcm__));
+    unsigned char mac_out[16];
+    unsigned char const expected_mac[16] = {
+          0x1f, 0xf1, 0xf9, 0x4e, 0x92, 0x88, 0x50, 0xa7, 0xa2, 0x44, 0x6d, 0xcd, 0x5e, 0x62, 0x0c, 0xc2
+        };
+    digest(mutable_buffer(mac_out, sizeof(mac_out)), AEADAlgorithm::aes256_gcm__, const_buffer(key, sizeof(key)), const_buffer(payload, sizeof(payload)));
+    REQUIRE( memcmp(mac_out, expected_mac, 16) == 0 );
+    REQUIRE( verify(const_buffer(mac_out, sizeof(mac_out)), AEADAlgorithm::aes256_gcm__, const_buffer(key, sizeof(key)), const_buffer(payload, sizeof(payload))) );
 }

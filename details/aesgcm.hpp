@@ -32,6 +32,7 @@ public :
         , boost::asio::const_buffer const &associated_data
         , size_t authentication_tag_size
         );
+    AESGCM(use_as_digest const &);
     virtual ~AESGCM();
 
 	AESGCM(AESGCM const&) = delete;
@@ -39,15 +40,23 @@ public :
 	AESGCM& operator=(AESGCM const&) = delete;
 	AESGCM& operator=(AESGCM &&) = default;
 
+    void setKey(boost::asio::const_buffer const &key);
+    void addAssociatedData(boost::asio::const_buffer const &associated_data);
+
 	virtual void encrypt(boost::asio::const_buffer const &plaintext) override;
     virtual boost::asio::const_buffer getEncrypted() override;
 	virtual void decrypt(boost::asio::const_buffer const &ciphertext) override;
     virtual boost::asio::const_buffer getDecrypted() override;
+
+    boost::asio::const_buffer getTag(boost::asio::mutable_buffer buffer);
+
     static constexpr size_t getKeySize() { return 32; }
     static constexpr size_t getIVSize() { return 12; }
 
 private :
-    enum State { undetermined__, encrypting__, decrypting__, error__ } state_ = undetermined__;
+    void initializeCipher();
+
+    enum State { undetermined__, encrypting__, decrypting__, use_as_digest__, error__ } state_ = undetermined__;
     EVP_CIPHER_CTX *context_ = nullptr;
     unsigned char iv_[12] = { 0 };
     boost::asio::const_buffer key_;
@@ -59,6 +68,7 @@ private :
     size_t consumed_input_ = 0;
     unsigned char potential_tag_[16] = { 0 };
     IntermediateBufferAdapter tag_buffer_adapter_;
+    bool cipher_initialized_ = false;
 };
 }}
 
