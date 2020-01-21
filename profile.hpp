@@ -60,22 +60,5 @@
 // TO DISCUSS: Broadcast messages could be done using asymmetric keys, as discussed by the SATF
 //             on 2019-06-26.
 #undef OPTION_IMPLEMENT_ASYMMETRIC_BROADCAST
-// REJECTED BY DNP: My initial strawman proposal from 2017 contained an association ID in the 
-//             SessionStartRequest and SessionStartResponse messages. This ID made it into the
-//             IEC TC57 WG15 working document presented by Marco Grechi at the San Francisco 
-//             meeting in May 2019, but had since been removed from DNP3 by means of 
-//             TB2019-001, in which multi-user support was deprecated, the Master-Outstation 
-//             Association was defined and the association ID was thus no longer necessary.
-//             The Association ID was intended to be an identifier for use by the Master and 
-//             Outstation to allow them to choose which Update Key should be used for 
-//             autentication. When provided by the Master, it could never be more than a hint 
-//             because the value of the identifier was owned by the Outstation and not 
-//             guaranteed to be constant and/or non-volatile. In any case, it was a numeric value.
-//             In recent (time of writing: June 2019 discussions in the DNP Cybersecurity and Secure 
-//             Authentication Task Force, the Master-Outstation Association is uniquely identified 
-//             by a system-wide unique name, but that name does not need to be communicated because, 
-//             over the link, the identifying information as described in TB2019-001 is sufficient.
-// =========== This code does not implement this option
-#undef OPTION_INCLUDE_ASSOCIATION_ID_IN_SESSION_MESSAGES
 
 #endif
