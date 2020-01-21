@@ -23,5 +23,5 @@ TEST_CASE( "Master: try to create an instance", "[master]" ) {
 	boost::asio::io_context io_context;
 	Config config;
 	Details::RandomNumberGenerator rng;
-	Master master(io_context, config, rng);
+	Master master(io_context, 0/* association ID */, config, rng);
 }

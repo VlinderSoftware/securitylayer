@@ -23,7 +23,7 @@ TEST_CASE( "Outstation: try to create an instance", "[outstation]" ) {
 	boost::asio::io_context io_context;
 	Config config;
 	Details::RandomNumberGenerator rng;
-	Outstation outstation(io_context, config, rng);
+	Outstation outstation(io_context, 0/* association ID */, config, rng);
 }
 
 //TODO add a test with an overloaded Outstation with accept* functions that may return false

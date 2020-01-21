@@ -43,6 +43,7 @@ class SecurityLayer
 public :
 	SecurityLayer(
 		  boost::asio::io_context &io_context
+        , std::uint16_t association_id
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		);
@@ -179,6 +180,7 @@ private :
 
 	boost::asio::steady_timer timeout_;
 
+    std::uint16_t association_id_ = 0;
 	std::uint32_t seq_ = 0;
 
 	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];

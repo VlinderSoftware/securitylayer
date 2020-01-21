@@ -24,9 +24,9 @@ using namespace DNP3SAv6;
 namespace {
     uint32_t getSPDUSequenceNumber(const_buffer const &spdu)
     {
-        pre_condition(spdu.size() >= 8);
+        pre_condition(spdu.size() >= (10/*SPDU header size*/));
         uint32_t seq;
-        memcpy(&seq, static_cast< unsigned char const* >(spdu.data()) + 4, 4);
+        memcpy(&seq, static_cast< unsigned char const* >(spdu.data()) + 6, 4);
         return seq;
     }
 }
@@ -39,8 +39,8 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
 		io_context ioc;
 		Config default_config;
 		Tests::DeterministicRandomNumberGenerator rng;
-		Master master(ioc, default_config, rng);
-		Outstation outstation(ioc, default_config, rng);
+		Master master(ioc, 0/* association ID */, default_config, rng);
+		Outstation outstation(ioc, 0/* association ID */, default_config, rng);
 
         WHEN( "A session is set up and an APDU pushed through" ) {
             master.postAPDU(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -97,36 +97,11 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
                         outstation.postAPDU(const_buffer(response_bytes, sizeof(response_bytes)));
                         auto apdu_carrying_spdu(outstation.getSPDU());
                         unsigned char const *apdu_carrying_spdu_bytes(static_cast< unsigned char const * >(apdu_carrying_spdu.data()));
-                        REQUIRE( apdu_carrying_spdu_bytes[ 0] == 0xc0 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 1] == 0x80 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 2] == 0x01 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 3] == 0x06 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 4] == 0x02 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 5] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 6] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 7] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 8] == 0x04 );
-                        REQUIRE( apdu_carrying_spdu_bytes[ 9] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[10] == 0xc9 );
-                        REQUIRE( apdu_carrying_spdu_bytes[11] == 0x81 );
-                        REQUIRE( apdu_carrying_spdu_bytes[12] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[13] == 0x00 );
-                        REQUIRE( apdu_carrying_spdu_bytes[14] == 0xcb );
-                        REQUIRE( apdu_carrying_spdu_bytes[15] == 0xe4 );
-                        REQUIRE( apdu_carrying_spdu_bytes[16] == 0x7c );
-                        REQUIRE( apdu_carrying_spdu_bytes[17] == 0xff );
-                        REQUIRE( apdu_carrying_spdu_bytes[18] == 0x9a );
-                        REQUIRE( apdu_carrying_spdu_bytes[19] == 0x56 );
-                        REQUIRE( apdu_carrying_spdu_bytes[20] == 0x4b );
-                        REQUIRE( apdu_carrying_spdu_bytes[21] == 0xf1 );
-                        REQUIRE( apdu_carrying_spdu_bytes[22] == 0xa5 );
-                        REQUIRE( apdu_carrying_spdu_bytes[23] == 0xb7 );
-                        REQUIRE( apdu_carrying_spdu_bytes[24] == 0x50 );
-                        REQUIRE( apdu_carrying_spdu_bytes[25] == 0x8e );
-                        REQUIRE( apdu_carrying_spdu_bytes[26] == 0xd6 );
-                        REQUIRE( apdu_carrying_spdu_bytes[27] == 0xef );
-                        REQUIRE( apdu_carrying_spdu_bytes[28] == 0xd8 );
-                        REQUIRE( apdu_carrying_spdu_bytes[29] == 0xd5 ); 
+                        unsigned char const expected[] = {
+                              0xc0, 0x80, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0xc9, 0x81, 0x00, 0x00
+                            , 0xe5, 0xed, 0xf5, 0xd7, 0x19, 0xdb, 0xd3, 0x19, 0xe7, 0x03, 0xc1, 0xcb, 0x02, 0x5a, 0x12, 0x9b
+                            };
+                        REQUIRE( memcmp(apdu_carrying_spdu_bytes, expected, sizeof(expected)) == 0 );
 
                         outstation.postSPDU(master.getSPDU());
                         master.postSPDU(outstation.getSPDU());
