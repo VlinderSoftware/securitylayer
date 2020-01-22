@@ -22,11 +22,11 @@ using namespace boost::asio;
 using namespace DNP3SAv6;
 
 namespace {
-    uint32_t getSPDUSequenceNumber(const_buffer const &spdu)
+    uint16_t getSPDUSequenceNumber(const_buffer const &spdu)
     {
-        pre_condition(spdu.size() >= (10/*SPDU header size*/));
-        uint32_t seq;
-        memcpy(&seq, static_cast< unsigned char const* >(spdu.data()) + 6, 4);
+        pre_condition(spdu.size() >= (8/*SPDU header size*/));
+        uint16_t seq;
+        memcpy(&seq, static_cast< unsigned char const* >(spdu.data()) + 6, sizeof(seq));
         return seq;
     }
 }
@@ -98,8 +98,9 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
                         auto apdu_carrying_spdu(outstation.getSPDU());
                         unsigned char const *apdu_carrying_spdu_bytes(static_cast< unsigned char const * >(apdu_carrying_spdu.data()));
                         unsigned char const expected[] = {
-                              0xc0, 0x80, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0xc9, 0x81, 0x00, 0x00
-                            , 0xe5, 0xed, 0xf5, 0xd7, 0x19, 0xdb, 0xd3, 0x19, 0xe7, 0x03, 0xc1, 0xcb, 0x02, 0x5a, 0x12, 0x9b
+                              0xc0, 0x80, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00
+                            , 0x04, 0x00, 0xc9, 0x81, 0x00, 0x00
+                            , 0xc5, 0xf7, 0x0c, 0x03, 0xd6, 0x20, 0x90, 0x4b, 0x53, 0x97, 0x7f, 0xbe, 0x63, 0xac, 0xcb, 0xa7
                             };
                         REQUIRE( memcmp(apdu_carrying_spdu_bytes, expected, sizeof(expected)) == 0 );
 
