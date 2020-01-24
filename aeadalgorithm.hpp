@@ -29,7 +29,7 @@ namespace DNP3SAv6 {
 		, hmac_blake2s_truncated_8__	= 9
 		, hmac_blake2s_truncated_16__	= 10
         , aes256_gcm__                  = 11
-	};
+	    };
     unsigned int getAEADAlgorithmAuthenticationTagSize(AEADAlgorithm mac_algorithm);
 }
 

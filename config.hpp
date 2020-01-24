@@ -36,7 +36,7 @@ namespace DNP3SAv6 {
 		std::uint32_t min_acceptable_session_key_change_interval_ = 10/*one hour*/;
 		std::uint16_t min_acceptable_session_key_change_count_ = 1024;
 		std::uint32_t max_acceptable_session_key_change_interval_ = 3600/*one hour*/;
-		std::uint16_t max_acceptable_session_key_change_count_ = 65535;
+		std::uint16_t max_acceptable_session_key_change_count_ = 32767;
 
 		std::uint16_t nonce_size_ = 4; // bytes
 
