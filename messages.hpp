@@ -28,12 +28,16 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 namespace DNP3SAv6 {
 	enum struct Message : std::uint8_t
 	{
-		  request_session_initiation__	                    = 0x01
+		  session_initiation__	                            = 0x01
 		, session_start_request__		                    = 0x02
 		, session_start_response__		                    = 0x03
-		, set_session_keys__			                    = 0x04
-		, session_confirmation__		                    = 0x05
-		, authenticated_apdu__			                    = 0x06
+		, session_key_change__			                    = 0x04
+		, session_key_change_confirmation__                 = 0x05
+		, secure_message__			                        = 0x06
+        , enrollment_initiation__                           = 0x07
+        , enrollment_request__                              = 0x08
+        , enrollment_response__                             = 0x09
+        , enrollment_confirmation__                         = 0x0a
 		, error__						                    = 0x20 // must be 0x20 to be able to mimic IIN2.5
 	};
 }

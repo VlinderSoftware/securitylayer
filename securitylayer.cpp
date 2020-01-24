@@ -215,7 +215,7 @@ boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direc
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::authenticated_apdu__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::secure_message__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -262,7 +262,7 @@ boost::asio::const_buffer SecurityLayer::format(Messages::RequestSessionInitiati
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::request_session_initiation__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_initiation__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -342,7 +342,7 @@ const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buf
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::set_session_keys__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -373,7 +373,7 @@ boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::Ses
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_confirmation__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change_confirmation__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -407,7 +407,7 @@ boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::Err
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::request_session_initiation__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_initiation__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -596,7 +596,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 
 	switch (incoming_function_code)
 	{
-	case static_cast< uint8_t >(Message::request_session_initiation__) :
+	case static_cast< uint8_t >(Message::session_initiation__) :
 		rxRequestSessionInitiation(incoming_seq, incoming_spdu_);
 		break;
 	case static_cast< uint8_t >(Message::session_start_request__) :
@@ -672,7 +672,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 		// if so, parse into a SessionStartResponse object and call rxSessionStartResponse(incoming_seq, incoming_ssr);
 		break;
 	}
-	case static_cast< uint8_t >(Message::set_session_keys__) :
+	case static_cast< uint8_t >(Message::session_key_change__) :
     {
         // check the SPDU size to see if it's big enough to hold a SetSessionKeys message
         unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SetSessionKeys));
@@ -706,7 +706,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         }
         break;
     }
-    case static_cast< uint8_t >(Message::session_confirmation__) :
+    case static_cast< uint8_t >(Message::session_key_change_confirmation__) :
     {
         unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionConfirmation));
         unsigned int const max_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionConfirmation) + Config::max_digest_size__);
@@ -739,7 +739,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         }
 		break;
     }
-	case static_cast< uint8_t >(Message::authenticated_apdu__) :
+	case static_cast< uint8_t >(Message::secure_message__) :
     {
         unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::AuthenticatedAPDU) + 2/*minimal size of an APDU in either direction is two bytes, for the header with no objects*/ + getAEADAlgorithmAuthenticationTagSize(getSession().getAEADAlgorithm()));
         unsigned int const max_expected_spdu_size(Config::max_spdu_size__);
