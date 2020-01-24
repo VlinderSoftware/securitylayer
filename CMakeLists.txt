@@ -54,13 +54,13 @@ set(LAYER_PUBLIC_HEADERS
 	keywrapalgorithm.hpp
 	master.hpp
 	messages.hpp
-	messages/authenticatedapdu.hpp
 	messages/error.hpp
-	messages/requestsessioninitiation.hpp
-	messages/sessionconfirmation.hpp
+	messages/securemessage.hpp
+	messages/sessioninitiation.hpp
+	messages/sessionkeychangerequest.hpp
+	messages/sessionkeychangeresponse.hpp
 	messages/sessionstartrequest.hpp
 	messages/sessionstartresponse.hpp
-	messages/setsessionkeys.hpp
 	outstation.hpp
 	profile.hpp
 	securitylayer.hpp

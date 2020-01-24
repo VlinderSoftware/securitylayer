@@ -11,22 +11,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_messages_authenticatedapdu_hpp
-#define dnp3sav6_messages_authenticatedapdu_hpp
+#ifndef dnp3sav6_messages_sessionkeychangeresponse_hpp
+#define dnp3sav6_messages_sessionkeychangeresponse_hpp
 
 #include "../config.hpp"
 #include <cstdint>
 
 namespace DNP3SAv6 { namespace Messages {
-struct AuthenticatedAPDU
+struct SessionKeyChangeResponse
 {
-    AuthenticatedAPDU(std::uint16_t apdu_length = 0)
-        : apdu_length_(apdu_length)
+    SessionKeyChangeResponse(std::uint16_t mac_length = 0)
+        : mac_length_(mac_length)
     { /* no-op */ }
 
     // sequence number is already part of the SPDU header
 
-    std::uint16_t apdu_length_;
+    std::uint16_t mac_length_;
 };
 }}
 

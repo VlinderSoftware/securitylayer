@@ -15,7 +15,7 @@
 #include "messages.hpp"
 #include "details/irandomnumbergenerator.hpp"
 #include "exceptions/contract.hpp"
-#include "messages/sessionconfirmation.hpp"
+#include "messages.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -47,7 +47,7 @@ Outstation::Outstation(
     if (getSession().valid())
     {
 		incrementSEQ();
-        setOutgoingSPDU(formatAuthenticatedAPDU(Direction::monitoring__, apdu), std::chrono::seconds(config_.session_key_change_interval_));
+        setOutgoingSPDU(formatSecureMessage(Direction::monitoring__, apdu), std::chrono::seconds(config_.session_key_change_interval_));
         incrementStatistic(Statistics::authenticated_apdus_sent__);
         incrementStatistic(Statistics::total_messages_sent__);
     }
@@ -58,10 +58,10 @@ Outstation::Outstation(
 	    case initial__ :
 		    incrementSEQ();
 	    case expect_session_start_request__ :
-		    sendRequestSessionInitiation();
+		    sendSessionInitiation();
 		    setState(expect_session_start_request__);
 		    break;
-	    case expect_set_keys__ :
+	    case expect_session_key_change_request__ :
 		    /* no-op: sending SessionStartResponse is drive by its time-out or receiving 
 		     * SessionStartRequest messages, not by APDUs */
 		    break;
@@ -141,12 +141,12 @@ Outstation::Outstation(
 		response_spdu = format(session_builder_.getSEQ(), response, nonce_buffer);
 		
 		session_builder_.setSessionStartResponse(response_spdu, nonce_buffer);
-		setState(State::expect_set_keys__);
+		setState(State::expect_session_key_change_request__);
 		setOutgoingSPDU(response_spdu, std::chrono::milliseconds(config_.session_start_response_timeout_));
 		incrementStatistic(Statistics::total_messages_sent__);
 		return;
 	}
-	case expect_set_keys__ :
+	case expect_session_key_change_request__ :
 		//TODO if the sequence number is the same, re-send our response -- make sure to use the same nonce
 		//     if the sequence number is one higher, and values for the KWA and the MAL from the Master are hints, treat them 
 		//     otherwise increment appropriate statistics and ignore
@@ -158,14 +158,14 @@ Outstation::Outstation(
 //send the response_spdu HERE!!
 }
 
-/*virtual */void Outstation::rxSetSessionKeys(
+/*virtual */void Outstation::rxSessionKeyChangeRequest(
       uint32_t incoming_seq
-    , Messages::SetSessionKeys const& incoming_ssk
+    , Messages::SessionKeyChangeRequest const& incoming_skcr
     , boost::asio::const_buffer const& incoming_key_wrap_data
     , boost::asio::const_buffer const& spdu
     ) noexcept/* override*/
 {
-    pre_condition(incoming_ssk.key_wrap_data_length_ == incoming_key_wrap_data.size());
+    pre_condition(incoming_skcr.key_wrap_data_length_ == incoming_key_wrap_data.size());
 
     const_buffer response_spdu;
     switch (getState())
@@ -180,12 +180,12 @@ Outstation::Outstation(
         incrementStatistic(Statistics::error_messages_sent__);
         incrementStatistic(Statistics::total_messages_sent__);
         return;
-    case expect_set_keys__:
+    case expect_session_key_change_request__:
     {
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            response_spdu = format(session_builder_.getSEQ(), Messages::SessionConfirmation(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+            response_spdu = format(session_builder_.getSEQ(), Messages::SessionKeyChangeResponse(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
             setOutgoingSPDU(response_spdu, std::chrono::seconds(config_.session_key_change_interval_));
             incrementStatistic(Statistics::total_messages_sent__);
             if (getSession().valid())
@@ -219,9 +219,9 @@ Outstation::Outstation(
 }
 
 
-void Outstation::sendRequestSessionInitiation() noexcept
+void Outstation::sendSessionInitiation() noexcept
 {
-	const_buffer spdu(format(Messages::RequestSessionInitiation()));
+	const_buffer spdu(format(Messages::SessionInitiation()));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.request_session_initiation_timeout_));
 	incrementStatistic(Statistics::total_messages_sent__);
 }

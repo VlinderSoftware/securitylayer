@@ -18,12 +18,12 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 
 #include <cstdint>
 #include "messages/error.hpp"
-#include "messages/requestsessioninitiation.hpp"
-#include "messages/sessionconfirmation.hpp"
+#include "messages/sessioninitiation.hpp"
+#include "messages/sessionkeychangerequest.hpp"
+#include "messages/sessionkeychangeresponse.hpp"
 #include "messages/sessionstartrequest.hpp"
 #include "messages/sessionstartresponse.hpp"
-#include "messages/setsessionkeys.hpp"
-#include "messages/authenticatedapdu.hpp"
+#include "messages/securemessage.hpp"
 
 namespace DNP3SAv6 {
 	enum struct Message : std::uint8_t
@@ -31,8 +31,8 @@ namespace DNP3SAv6 {
 		  session_initiation__	                            = 0x01
 		, session_start_request__		                    = 0x02
 		, session_start_response__		                    = 0x03
-		, session_key_change__			                    = 0x04
-		, session_key_change_confirmation__                 = 0x05
+		, session_key_change_request__                      = 0x04
+		, session_key_change_response__                     = 0x05
 		, secure_message__			                        = 0x06
         , enrollment_initiation__                           = 0x07
         , enrollment_request__                              = 0x08

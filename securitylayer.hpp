@@ -31,12 +31,12 @@ namespace Details {
 }
 namespace Messages {
 	struct Error;
-	struct RequestSessionInitiation;
-	struct SessionConfirmation;
+	struct SecureMessage;
+	struct SessionInitiation;
+	struct SessionKeyChangeRequest;
+	struct SessionKeyChangeResponse;
 	struct SessionStartRequest;
 	struct SessionStartResponse;
-	struct SetSessionKeys;
-	struct AuthenticatedAPDU;
 }
 class SecurityLayer
 {
@@ -92,8 +92,8 @@ public : // public API for testing purposes
 		  initial__
 		, expect_session_start_request__
 		, expect_session_start_response__
-		, expect_set_keys__
-		, expect_session_confirmation__
+		, expect_session_key_change_request__
+		, expect_session_key_change_response__
 		, active__
 		};
 
@@ -138,12 +138,12 @@ protected :
 	std::uint32_t getSEQ() const noexcept { return seq_; }
 	void setSEQ(std::uint32_t seq) noexcept { seq_ = seq; }
 
-	boost::asio::const_buffer formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept;
-	boost::asio::const_buffer format(Messages::RequestSessionInitiation const &rsi) noexcept;
+	boost::asio::const_buffer formatSecureMessage(Direction direction, boost::asio::const_buffer const &apdu) noexcept;
+	boost::asio::const_buffer format(Messages::SessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
-	boost::asio::const_buffer format(Messages::SetSessionKeys const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
-	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept;
+	boost::asio::const_buffer format(Messages::SessionKeyChangeRequest const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
+	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &sc, boost::asio::const_buffer const &digest) noexcept;
 	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
 	boost::asio::const_buffer format(std::uint16_t seq, Messages::Error const &e) noexcept;
 
@@ -152,9 +152,9 @@ protected :
 	virtual void rxRequestSessionInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &incoming_spdu) noexcept;
-    virtual void rxSetSessionKeys(std::uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& incoming_spdu) noexcept;
-    virtual void rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& incoming_spdu) noexcept;
-    virtual void rxAuthenticatedAPDU(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept;
+    virtual void rxSessionKeyChangeRequest(std::uint32_t incoming_seq, Messages::SessionKeyChangeRequest const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& incoming_spdu) noexcept;
+    virtual void rxSessionKeyChangeResponse(std::uint32_t incoming_seq, Messages::SessionKeyChangeResponse const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& incoming_spdu) noexcept;
+    virtual void rxSecureMessage(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept;
 
     void setSession(Session const &session) noexcept { session_ = session; }
     Session getSession() const noexcept { return session_; }

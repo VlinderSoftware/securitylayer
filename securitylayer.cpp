@@ -60,8 +60,8 @@ void SecurityLayer::cancelPendingAPDU() noexcept
 		reset();
 		break;
 	case expect_session_start_response__ :
-	case expect_set_keys__ :
-	case expect_session_confirmation__ :
+	case expect_session_key_change_request__ :
+	case expect_session_key_change_response__ :
 	case active__ :
 		discardAPDU();
 		// no state change
@@ -203,11 +203,11 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 	outgoing_apdu_ = const_buffer(outgoing_apdu_buffer_, apdu.size());
 }
 
-boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direction, boost::asio::const_buffer const &apdu) noexcept
+boost::asio::const_buffer SecurityLayer::formatSecureMessage(Direction direction, boost::asio::const_buffer const &apdu) noexcept
 {
     invariant(getSession().valid());
 
-    size_t const needed_space((8/*SPDU header size*/) + sizeof(Messages::AuthenticatedAPDU) + apdu.size() + getAEADAlgorithmAuthenticationTagSize(session_.getAEADAlgorithm()));
+    size_t const needed_space((8/*SPDU header size*/) + sizeof(Messages::SecureMessage) + apdu.size() + getAEADAlgorithmAuthenticationTagSize(session_.getAEADAlgorithm()));
 
     pre_condition(needed_space <= sizeof(outgoing_spdu_buffer_));
 
@@ -230,11 +230,11 @@ boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direc
 
     assert(outgoing_spdu_size_ == (8/*SPDU header size*/));
 
-    pre_condition(apdu.size() < numeric_limits< decltype(Messages::AuthenticatedAPDU::apdu_length_) >::max());
-    Messages::AuthenticatedAPDU authenticated_apdu(static_cast< decltype(Messages::AuthenticatedAPDU::apdu_length_) >(apdu.size()));
-    unsigned char authenticated_apdu_serialized[sizeof(authenticated_apdu)];
-    memcpy(authenticated_apdu_serialized, &authenticated_apdu, sizeof(authenticated_apdu));
-    const_buffer authenticated_apdu_serialized_buffer(authenticated_apdu_serialized, sizeof(authenticated_apdu_serialized));
+    pre_condition(apdu.size() < numeric_limits< decltype(Messages::SecureMessage::apdu_length_) >::max());
+    Messages::SecureMessage secure_message(static_cast< decltype(Messages::SecureMessage::apdu_length_) >(apdu.size()));
+    unsigned char secure_message_serialized[sizeof(secure_message)];
+    memcpy(secure_message_serialized, &secure_message, sizeof(secure_message));
+    const_buffer secure_message_serialized_buffer(secure_message_serialized, sizeof(secure_message_serialized));
 
     mutable_buffer output_buffer(outgoing_spdu_buffer_ + outgoing_spdu_size_, needed_space - outgoing_spdu_size_);
     auto encrypt_result(
@@ -244,7 +244,7 @@ boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direc
             , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
             , nonce_buffer
             , associated_data_buffer
-            , authenticated_apdu_serialized_buffer
+            , secure_message_serialized_buffer
             , apdu
             )
         );
@@ -253,7 +253,7 @@ boost::asio::const_buffer SecurityLayer::formatAuthenticatedAPDU(Direction direc
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(Messages::RequestSessionInitiation const &rsi) noexcept
+boost::asio::const_buffer SecurityLayer::format(Messages::SessionInitiation const &session_initiation) noexcept
 {
     invariant(!getSession().valid());
 
@@ -334,15 +334,15 @@ boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::Ses
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buffer const &wrapped_key_data) noexcept
+const_buffer SecurityLayer::format(Messages::SessionKeyChangeRequest const &session_key_change_request, const_buffer const &wrapped_key_data) noexcept
 {
-	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(sk) + wrapped_key_data.size());
+	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(session_key_change_request) + wrapped_key_data.size());
 
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change_request__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -354,26 +354,26 @@ const_buffer SecurityLayer::format(Messages::SetSessionKeys const &sk, const_buf
 
 	assert(outgoing_spdu_size_ == (8/*SPDU header size*/));
 
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &sk, sizeof(sk));
-	outgoing_spdu_size_ += sizeof(sk);
-	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(sk));
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &session_key_change_request, sizeof(session_key_change_request));
+	outgoing_spdu_size_ += sizeof(session_key_change_request);
+	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(session_key_change_request));
 
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, wrapped_key_data.data(), wrapped_key_data.size());
 	outgoing_spdu_size_ += wrapped_key_data.size();
-	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(sk) + wrapped_key_data.size());
+	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(session_key_change_request) + wrapped_key_data.size());
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::SessionConfirmation const &sc, boost::asio::const_buffer const &digest) noexcept
+boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &session_key_change_response, boost::asio::const_buffer const &digest) noexcept
 {
-	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(sc) + sc.mac_length_);
-    pre_condition(sc.mac_length_ <= digest.size());
+	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(session_key_change_response) + session_key_change_response.mac_length_);
+    pre_condition(session_key_change_response.mac_length_ <= digest.size());
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x01;
-	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change_confirmation__);
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change_response__);
 
     static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
@@ -385,12 +385,12 @@ boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::Ses
 
 	assert(outgoing_spdu_size_ == (8/*SPDU header size*/));
 	
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &sc, sizeof(sc));
-	outgoing_spdu_size_ += sizeof(sc);
-	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(sc));
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &session_key_change_response, sizeof(session_key_change_response));
+	outgoing_spdu_size_ += sizeof(session_key_change_response);
+	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(session_key_change_response));
 
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), sc.mac_length_);
-    outgoing_spdu_size_ += sc.mac_length_;
+    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), session_key_change_response.mac_length_);
+    outgoing_spdu_size_ += session_key_change_response.mac_length_;
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
@@ -448,17 +448,17 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
 }
-/*virtual */void SecurityLayer::rxSetSessionKeys(uint32_t incoming_seq, Messages::SetSessionKeys const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept
+/*virtual */void SecurityLayer::rxSessionKeyChangeRequest(uint32_t incoming_seq, Messages::SessionKeyChangeRequest const& incoming_skcr, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept
 {
     incrementStatistic(Statistics::unexpected_messages__);
 }
 
-/*virtual */void SecurityLayer::rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept
+/*virtual */void SecurityLayer::rxSessionKeyChangeResponse(std::uint32_t incoming_seq, Messages::SessionKeyChangeResponse const &incoming_skcr, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept
 {
     incrementStatistic(Statistics::unexpected_messages__);
 }
 
-void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept
+void SecurityLayer::rxSecureMessage(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept
 {
     /* NOTE we don't check the state here: if we have a valid session, we use it.
      *      This means we can receive authenticated APDUs while a new session is being built.
@@ -517,18 +517,18 @@ void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, boost::asio:
     unsigned char const *curr(static_cast< unsigned char const * >(incoming_apdu.data()));
     unsigned char const *const end(curr + incoming_apdu.size());
 
-    Messages::AuthenticatedAPDU incoming_aa;
-    if (static_cast< size_t >(distance(curr, end)) < sizeof(incoming_aa)) // invalid message
+    Messages::SecureMessage incoming_sm;
+    if (static_cast< size_t >(distance(curr, end)) < sizeof(incoming_sm)) // invalid message
     {   //TODO message if in maintenance mode
         //TODO statistics
         return;
     }
     else
     { /* all is well */ }
-    memcpy(&incoming_aa, curr, sizeof(incoming_aa));
-    curr += sizeof(incoming_aa);
+    memcpy(&incoming_sm, curr, sizeof(incoming_sm));
+    curr += sizeof(incoming_sm);
 
-    if (incoming_aa.apdu_length_ != distance(curr, end))
+    if (incoming_sm.apdu_length_ != distance(curr, end))
     { //TODO handle maintenance mode
         const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
         setOutgoingSPDU(response_spdu);
@@ -539,7 +539,7 @@ void SecurityLayer::rxAuthenticatedAPDU(std::uint32_t incoming_seq, boost::asio:
     else
     { /* all is well */ }
 
-    incoming_apdu_ = const_buffer(curr, incoming_aa.apdu_length_);
+    incoming_apdu_ = const_buffer(curr, incoming_sm.apdu_length_);
     seq_validator_.setLatestIncomingSEQ(incoming_seq);
 }
 
@@ -672,22 +672,22 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 		// if so, parse into a SessionStartResponse object and call rxSessionStartResponse(incoming_seq, incoming_ssr);
 		break;
 	}
-	case static_cast< uint8_t >(Message::session_key_change__) :
+	case static_cast< uint8_t >(Message::session_key_change_request__) :
     {
         // check the SPDU size to see if it's big enough to hold a SetSessionKeys message
-        unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SetSessionKeys));
-        unsigned int const max_expected_spdu_size((8/*header size*/) + sizeof(Messages::SetSessionKeys) + Config::max_key_wrap_data_size__);
+        unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionKeyChangeRequest));
+        unsigned int const max_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionKeyChangeRequest) + Config::max_key_wrap_data_size__);
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
         {
-            Messages::SetSessionKeys incoming_ssk;
-            assert(static_cast< size_t >(distance(curr, end)) >= sizeof(incoming_ssk));
-            memcpy(&incoming_ssk, curr, sizeof(incoming_ssk));
-            curr += sizeof(incoming_ssk);
+            Messages::SessionKeyChangeRequest incoming_skcr;
+            assert(static_cast< size_t >(distance(curr, end)) >= sizeof(incoming_skcr));
+            memcpy(&incoming_skcr, curr, sizeof(incoming_skcr));
+            curr += sizeof(incoming_skcr);
 
-            if (incoming_ssk.key_wrap_data_length_ == distance(curr, end))
+            if (incoming_skcr.key_wrap_data_length_ == distance(curr, end))
             {
                 const_buffer incoming_key_wrap_data(curr, distance(curr, end));
-                rxSetSessionKeys(incoming_seq, incoming_ssk, incoming_key_wrap_data, incoming_spdu_);
+                rxSessionKeyChangeRequest(incoming_seq, incoming_skcr, incoming_key_wrap_data, incoming_spdu_);
             }
             else
             {
@@ -706,21 +706,21 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         }
         break;
     }
-    case static_cast< uint8_t >(Message::session_key_change_confirmation__) :
+    case static_cast< uint8_t >(Message::session_key_change_response__) :
     {
-        unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionConfirmation));
-        unsigned int const max_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionConfirmation) + Config::max_digest_size__);
+        unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionKeyChangeResponse));
+        unsigned int const max_expected_spdu_size((8/*header size*/) + sizeof(Messages::SessionKeyChangeResponse) + Config::max_digest_size__);
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
         {
-            Messages::SessionConfirmation incoming_sc;
-            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_sc));
-            memcpy(&incoming_sc, curr, sizeof(incoming_sc));
-            curr += sizeof(incoming_sc);
+            Messages::SessionKeyChangeResponse incoming_skcr;
+            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_skcr));
+            memcpy(&incoming_skcr, curr, sizeof(incoming_skcr));
+            curr += sizeof(incoming_skcr);
 
-            if (incoming_sc.mac_length_ == distance(curr, end))
+            if (incoming_skcr.mac_length_ == distance(curr, end))
             {
                 const_buffer incoming_mac(curr, distance(curr, end));
-                rxSessionConfirmation(incoming_seq, incoming_sc, incoming_mac, incoming_spdu_);
+                rxSessionKeyChangeResponse(incoming_seq, incoming_skcr, incoming_mac, incoming_spdu_);
             }
             else
             {
@@ -741,14 +741,14 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     }
 	case static_cast< uint8_t >(Message::secure_message__) :
     {
-        unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::AuthenticatedAPDU) + 2/*minimal size of an APDU in either direction is two bytes, for the header with no objects*/ + getAEADAlgorithmAuthenticationTagSize(getSession().getAEADAlgorithm()));
+        unsigned int const min_expected_spdu_size((8/*header size*/) + sizeof(Messages::SecureMessage) + 2/*minimal size of an APDU in either direction is two bytes, for the header with no objects*/ + getAEADAlgorithmAuthenticationTagSize(getSession().getAEADAlgorithm()));
         unsigned int const max_expected_spdu_size(Config::max_spdu_size__);
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
         {
             const_buffer incoming_nonce(nonce_begin, distance(nonce_begin, nonce_end));
             const_buffer incoming_associated_data(associated_data_begin, distance(associated_data_begin, associated_data_end));
             const_buffer incoming_payload(curr, distance(curr, end));
-            rxAuthenticatedAPDU(incoming_seq, incoming_nonce, incoming_associated_data, incoming_payload, incoming_spdu_);
+            rxSecureMessage(incoming_seq, incoming_nonce, incoming_associated_data, incoming_payload, incoming_spdu_);
         }
         else
         {

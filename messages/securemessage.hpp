@@ -11,22 +11,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_messages_sessionconfirmation_hpp
-#define dnp3sav6_messages_sessionconfirmation_hpp
+#ifndef dnp3sav6_messages_securemessage_hpp
+#define dnp3sav6_messages_securemessage_hpp
 
 #include "../config.hpp"
 #include <cstdint>
 
 namespace DNP3SAv6 { namespace Messages {
-struct SessionConfirmation
+struct SecureMessage
 {
-    SessionConfirmation(std::uint16_t mac_length = 0)
-        : mac_length_(mac_length)
+    SecureMessage(std::uint16_t apdu_length = 0)
+        : apdu_length_(apdu_length)
     { /* no-op */ }
 
     // sequence number is already part of the SPDU header
 
-    std::uint16_t mac_length_;
+    std::uint16_t apdu_length_;
 };
 }}
 

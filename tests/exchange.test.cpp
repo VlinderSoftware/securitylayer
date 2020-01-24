@@ -43,7 +43,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 			THEN( "The Outstation state will be EXPECT_SESSION_START_REQUEST" ) {
 				REQUIRE( outstation.getState() == Outstation::expect_session_start_request__ );
 			}
-			THEN( "The Outstation will attempt to send a RequestSessionInitiation message" ) {
+			THEN( "The Outstation will attempt to send a SessionInitiation message" ) {
 				REQUIRE( outstation.pollSPDU() );
 				auto spdu(outstation.getSPDU());
 				REQUIRE( !outstation.pollSPDU() );
@@ -106,7 +106,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					spdu = master.getSPDU();
 					outstation.postSPDU(spdu);
 					THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
-						REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
+						REQUIRE( outstation.getState() == Outstation::expect_session_key_change_request__ );
 					}
 			        THEN( "The outstation statistics should be OK" ) {
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -163,7 +163,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						auto spdu(outstation.getSPDU());
 						master.postSPDU(spdu);
 						THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
-							REQUIRE( master.getState() == SecurityLayer::expect_session_confirmation__ );
+							REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
 						}
 			            THEN( "The Master statistics should be OK" ) {
 				            REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -177,7 +177,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				        THEN( "The Master should not present anything as an APDU" ) {
 					        REQUIRE( !master.pollAPDU() );
 				        }
-						THEN( "The Master will send SetSessionKeys message" ) {
+						THEN( "The Master will send SessionKeyChangeRequest message" ) {
 							auto spdu(master.getSPDU());
 							REQUIRE( spdu.size() == 98 );
 							unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
@@ -199,7 +199,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 						}
 						//TODO check invalid messages (things that should provoke error returns)
 						//TODO check with the wrong sequence number
-                        WHEN( "The Outstation receives the SetSessionKeys message" ) {
+                        WHEN( "The Outstation receives the SessionKeyChangeRequest message" ) {
                             auto spdu(master.getSPDU());
                             outstation.postSPDU(spdu);
                             THEN( "The outstation should go to the ACTIVE state" ) {
@@ -217,7 +217,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
 				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
 			                }
-                            THEN( "The Outstation will attempt to send a SessionConfirmation message" ) {
+                            THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                                 REQUIRE( outstation.pollSPDU() );
 				                auto spdu(outstation.getSPDU());
 				                REQUIRE( !outstation.pollSPDU() );
@@ -233,7 +233,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                     };
                                 REQUIRE( memcmp(spdu_bytes + sizeof(expected_header_bytes), expected_payload_bytes, sizeof(expected_payload_bytes)) == 0 );
                             }
-                            WHEN( "The Outstation to sends a SessionConfirmation message" ) {
+                            WHEN( "The Outstation to sends a SessionKeyChangeResponse message" ) {
                                 auto spdu(outstation.getSPDU());
                                 THEN( "The Outstation has prepared the authenticated-APDU SPDU" )
                                 {
@@ -387,7 +387,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 			    auto spdu(master.getSPDU());
 			    outstation.postSPDU(spdu);
 			    THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
-				    REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
+				    REQUIRE( outstation.getState() == Outstation::expect_session_key_change_request__ );
 			    }
 			    THEN( "The outstation statistics should be OK" ) {
 				    REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 1 );
@@ -431,7 +431,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				    auto spdu(outstation.getSPDU());
 				    master.postSPDU(spdu);
 				    THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
-					    REQUIRE( master.getState() == SecurityLayer::expect_session_confirmation__ );
+					    REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
 				    }
 			        THEN( "The Master statistics should be OK" ) {
 				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -445,7 +445,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				    THEN( "The Master should not present anything as an APDU" ) {
 					    REQUIRE( !master.pollAPDU() );
 				    }
-				    THEN( "The Master will send SetSessionKeys message" ) {
+				    THEN( "The Master will send SessionKeyChangeRequest message" ) {
 					    auto spdu(master.getSPDU());
 					    REQUIRE( spdu.size() == 98 );
 					    unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
@@ -456,7 +456,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				    }
 				    //TODO check invalid messages (things that should provoke error returns)
 				    //TODO check with the wrong sequence number
-                    WHEN( "The Outstation receives the SetSessionKeys message" ) {
+                    WHEN( "The Outstation receives the SessionKeyChangeRequest message" ) {
                         auto spdu(master.getSPDU());
                         outstation.postSPDU(spdu);
                         THEN( "The outstation should go to the ACTIVE state" ) {
@@ -474,7 +474,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				            REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
 				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
 			            }
-                        THEN( "The Outstation will attempt to send a SessionConfirmation message" ) {
+                        THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                             REQUIRE( outstation.pollSPDU() );
 				            auto spdu(outstation.getSPDU());
 				            REQUIRE( !outstation.pollSPDU() );
@@ -485,7 +485,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
                                 };
                             REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
                         }
-                        WHEN( "The Outstation to sends a SessionConfirmation message" ) {
+                        WHEN( "The Outstation to sends a SessionKeyChangeResponse message" ) {
                             auto spdu(outstation.getSPDU());
 			                THEN( "The outstation statistics should be OK" ) {
 				                REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -581,7 +581,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 			THEN( "The Outstation state will be EXPECT_SESSION_START_REQUEST" ) {
 				REQUIRE( outstation.getState() == Outstation::expect_session_start_request__ );
 			}
-			THEN( "The Outstation will attempt to send a RequestSessionInitiation message" ) {
+			THEN( "The Outstation will attempt to send a SessionInitiation message" ) {
 				REQUIRE( outstation.pollSPDU() );
 				auto spdu(outstation.getSPDU());
 				REQUIRE( !outstation.pollSPDU() );
@@ -644,7 +644,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 					spdu = master.getSPDU();
 					outstation.postSPDU(spdu);
 					THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
-						REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
+						REQUIRE( outstation.getState() == Outstation::expect_session_key_change_request__ );
 					}
 			        THEN( "The outstation statistics should be OK" ) {
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -692,7 +692,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 						auto spdu(outstation.getSPDU());
 						master.postSPDU(spdu);
 						THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
-							REQUIRE( master.getState() == SecurityLayer::expect_session_confirmation__ );
+							REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
 						}
 			            THEN( "The Master statistics should be OK" ) {
 				            REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -706,7 +706,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				        THEN( "The Master should not present anything as an APDU" ) {
 					        REQUIRE( !master.pollAPDU() );
 				        }
-						THEN( "The Master will send SetSessionKeys message" ) {
+						THEN( "The Master will send SessionKeyChangeRequest message" ) {
 							auto spdu(master.getSPDU());
 							REQUIRE( spdu.size() == 98 );
 							unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
@@ -722,7 +722,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 						}
 						//TODO check invalid messages (things that should provoke error returns)
 						//TODO check with the wrong sequence number
-                        WHEN( "The Outstation receives the SetSessionKeys message" ) {
+                        WHEN( "The Outstation receives the SessionKeyChangeRequest message" ) {
                             auto spdu(master.getSPDU());
                             outstation.postSPDU(spdu);
                             THEN( "The outstation should go to the ACTIVE state" ) {
@@ -740,7 +740,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				                REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
 				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
 			                }
-                            THEN( "The Outstation will attempt to send a SessionConfirmation message" ) {
+                            THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                                 REQUIRE( outstation.pollSPDU() );
 				                auto spdu(outstation.getSPDU());
 				                REQUIRE( !outstation.pollSPDU() );
@@ -754,7 +754,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
                                 REQUIRE( spdu_bytes[sizeof(expected_header_bytes) + 1] == 0x00 );
                                 // we don't need to check the payload here
                             }
-                            WHEN( "The Outstation to sends a SessionConfirmation message" ) {
+                            WHEN( "The Outstation to sends a SessionKeyChangeResponse message" ) {
                                 auto spdu(outstation.getSPDU());
                                 THEN( "The Outstation has prepared the authenticated-APDU SPDU" )
                                 {
@@ -901,7 +901,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 			    auto spdu(master.getSPDU());
 			    outstation.postSPDU(spdu);
 			    THEN( "The Outstation should go to the EXPECT_SET_KEYS state" ) {
-				    REQUIRE( outstation.getState() == Outstation::expect_set_keys__ );
+				    REQUIRE( outstation.getState() == Outstation::expect_session_key_change_request__ );
 			    }
 			    THEN( "The outstation statistics should be OK" ) {
 				    REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 1 );
@@ -945,7 +945,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				    auto spdu(outstation.getSPDU());
 				    master.postSPDU(spdu);
 				    THEN( "The Master should go to the EXPECT_SESSION_ACK state" ) {
-					    REQUIRE( master.getState() == SecurityLayer::expect_session_confirmation__ );
+					    REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
 				    }
 			        THEN( "The Master statistics should be OK" ) {
 				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 2 );
@@ -959,7 +959,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				    THEN( "The Master should not present anything as an APDU" ) {
 					    REQUIRE( !master.pollAPDU() );
 				    }
-				    THEN( "The Master will send SetSessionKeys message" ) {
+				    THEN( "The Master will send SessionKeyChangeRequest message" ) {
 					    auto spdu(master.getSPDU());
 					    REQUIRE( spdu.size() == 98 );
 					    unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
@@ -970,7 +970,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				    }
 				    //TODO check invalid messages (things that should provoke error returns)
 				    //TODO check with the wrong sequence number
-                    WHEN( "The Outstation receives the SetSessionKeys message" ) {
+                    WHEN( "The Outstation receives the SessionKeyChangeRequest message" ) {
                         auto spdu(master.getSPDU());
                         outstation.postSPDU(spdu);
                         THEN( "The outstation should go to the ACTIVE state" ) {
@@ -988,7 +988,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				            REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 0 );	
 				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
 			            }
-                        THEN( "The Outstation will attempt to send a SessionConfirmation message" ) {
+                        THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                             REQUIRE( outstation.pollSPDU() );
 				            auto spdu(outstation.getSPDU());
 				            REQUIRE( !outstation.pollSPDU() );
@@ -999,7 +999,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
                                 };
                             REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
                         }
-                        WHEN( "The Outstation to sends a SessionConfirmation message" ) {
+                        WHEN( "The Outstation to sends a SessionKeyChangeResponse message" ) {
                             auto spdu(outstation.getSPDU());
 			                THEN( "The outstation statistics should be OK" ) {
 				                REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 2 );

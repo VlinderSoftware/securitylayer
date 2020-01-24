@@ -59,14 +59,14 @@ Master::Master(
 		/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
 		 * the APDUs */
 		break;
-	case expect_session_confirmation__ :
+	case expect_session_key_change_response__ :
 		/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
 		 * SessionStartResponse messages, not by APDUs. */
 		break;
 	case active__ :
 	{
 		incrementSEQ();
-		const_buffer spdu(formatAuthenticatedAPDU(Direction::controlling__, apdu));
+		const_buffer spdu(formatSecureMessage(Direction::controlling__, apdu));
 		setOutgoingSPDU(spdu/* no time-out */);
 		// no state change
 		incrementStatistic(Statistics::total_messages_sent__);
@@ -125,7 +125,7 @@ Master::Master(
 		setState(expect_session_start_response__);
 		break;
 #endif
-	case expect_session_confirmation__ :
+	case expect_session_key_change_response__ :
 	case active__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;
@@ -157,16 +157,16 @@ Master::Master(
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
 
 		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
-		Messages::SetSessionKeys set_session_keys;
-        invariant(wrapped_key_data.size() <= numeric_limits< decltype(set_session_keys.key_wrap_data_length_) >::max());
-		set_session_keys.key_wrap_data_length_ = static_cast< decltype(set_session_keys.key_wrap_data_length_) >(wrapped_key_data.size());
-		const_buffer const spdu(format(set_session_keys, wrapped_key_data));
+		Messages::SessionKeyChangeRequest session_key_change_request;
+        invariant(wrapped_key_data.size() <= numeric_limits< decltype(session_key_change_request.key_wrap_data_length_) >::max());
+		session_key_change_request.key_wrap_data_length_ = static_cast< decltype(session_key_change_request.key_wrap_data_length_) >(wrapped_key_data.size());
+		const_buffer const spdu(format(session_key_change_request, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
-		setState(expect_session_confirmation__);
+		setState(expect_session_key_change_response__);
         incrementStatistic(Statistics::total_messages_sent__);
 		break;
 	}
-	case expect_session_confirmation__ :
+	case expect_session_key_change_response__ :
         //TODO
 		/* This is probably the response we got previously. Check if it it's identical and, if so, repeat the response. 
 		 * Otherwise, it's an unexpected message. */
@@ -179,11 +179,11 @@ Master::Master(
 	}
 }
 
-/*virtual */void Master::rxSessionConfirmation(std::uint32_t incoming_seq, Messages::SessionConfirmation const &incoming_sc, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept/* override*/
+/*virtual */void Master::rxSessionKeyChangeResponse(std::uint32_t incoming_seq, Messages::SessionKeyChangeResponse const &incoming_skcr, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept/* override*/
 {
 	switch (getState())
 	{
-	case expect_session_confirmation__ :
+	case expect_session_key_change_response__ :
     {
         if (incoming_seq != session_builder_.getSEQ())
         {   //TODO increment statistics
@@ -191,14 +191,14 @@ Master::Master(
         }
         else
         { /* all is well */ }
-        if (incoming_sc.mac_length_ != getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()))
+        if (incoming_skcr.mac_length_ != getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()))
         {
             //TODO increment stat
             return;
         }
         else
         { /* OK so far */ }
-        if (incoming_mac.size() != incoming_sc.mac_length_)
+        if (incoming_mac.size() != incoming_skcr.mac_length_)
         {
             //TODO increment stat
             return;
@@ -207,7 +207,7 @@ Master::Master(
         { /* OK so far */ }
         // check whether the incoming MAC size corresponds to the expected MAC size
         auto expected_mac_size(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()));
-        if (expected_mac_size != incoming_sc.mac_length_)
+        if (expected_mac_size != incoming_skcr.mac_length_)
         {   //TODO increment stat
             //TODO in maintenance mode, message
             return;

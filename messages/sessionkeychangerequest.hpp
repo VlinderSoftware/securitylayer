@@ -11,18 +11,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_messages_requestsessioninitiation_hpp
-#define dnp3sav6_messages_requestsessioninitiation_hpp
+#ifndef dnp3sav6_messages_sessionkeychangerequest_hpp
+#define dnp3sav6_messages_sessionkeychangerequest_hpp
 
 #include <cstdint>
 
 namespace DNP3SAv6 { namespace Messages {
-struct RequestSessionInitiation
+struct SessionKeyChangeRequest
 {
+    // sequence number is already part of the SPDU header
+
+    /* Contains the length of the encrypted key-wrap data, in bytes, that follows this
+     * header. */
+    std::uint16_t key_wrap_data_length_;
 };
 }}
 
 #endif
+
 
 
 
