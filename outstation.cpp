@@ -130,8 +130,6 @@ Outstation::Outstation(
 			incrementStatistic(Statistics::total_messages_sent__);
 			return;
 		}
-		response.session_key_change_interval_ = config_.session_key_change_interval_;
-		response.session_key_change_count_ = config_.session_key_change_count_;
 
 		assert(config_.nonce_size_ <= config_.max_nonce_size__);
 		boost::asio::mutable_buffer nonce_buffer(nonce_, config_.nonce_size_);

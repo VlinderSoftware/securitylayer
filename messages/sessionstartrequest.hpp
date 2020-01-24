@@ -23,9 +23,6 @@ namespace DNP3SAv6 { namespace Messages {
 #endif
 struct SessionStartRequest
 {
-    // sequence number is already part of the SPDU header
-    // removed master ID from strawman proposal: it's not necessary
-    
     /* The version field is an 8-bit (changed from 16 vs. my strawman proposal to allow
      * for better alignment) numerical identifier for the current version. For SAv6,
      * the value is always 6. Future versions of the protocol should keep this value

@@ -152,8 +152,6 @@ Master::Master(
         else
         { /* all is well */ }
 		session_builder_.setSessionStartResponse(spdu, nonce);
-		session_builder_.setSessionKeyChangeInterval(std::chrono::seconds(incoming_ssr.session_key_change_interval_));
-		session_builder_.setSessionKeyChangeCount(incoming_ssr.session_key_change_count_);
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
 
 		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
