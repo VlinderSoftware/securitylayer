@@ -621,10 +621,6 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     
 			incoming_ssr.key_wrap_algorithm_ = *curr++;
 			incoming_ssr.aead_algorithm_ = *curr++;
-			memcpy(&incoming_ssr.session_key_change_interval_, curr, 4);
-			curr += 4;
-			memcpy(&incoming_ssr.session_key_change_count_, curr, 2);
-			curr += 2;
 			assert(curr == end);
 			rxSessionStartRequest(incoming_seq, incoming_ssr, incoming_spdu_);
 		}

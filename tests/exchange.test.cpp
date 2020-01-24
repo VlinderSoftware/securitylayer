@@ -88,7 +88,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 					REQUIRE( master.pollSPDU() );
 					auto spdu(master.getSPDU());
 					REQUIRE( !master.pollSPDU() );
-					REQUIRE( spdu.size() == 18 );
+					REQUIRE( spdu.size() == 12 );
 					unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
                     unsigned char const expected_header_bytes[] = {
                           0xc0, 0x80, 0x01, 0x02, 0x00, 0x00, 0x01, 0x00
@@ -96,7 +96,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                     REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
 
                     unsigned char const expected_payload_bytes[] = {
-                          0x06, 0x00, 0x02, 0x04, 0x10, 0x0E, 0x00, 0x00, 0x00, 0x10
+                          0x06, 0x00, 0x02, 0x04
                         };
                     REQUIRE( memcmp(spdu_bytes + sizeof(expected_header_bytes), expected_payload_bytes, sizeof(expected_payload_bytes)) == 0 );
 				}
@@ -187,12 +187,12 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                             REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
 							unsigned char const expected[] = {
                                   0x58, 0x00
-                                , 0x5b, 0x15, 0x3e, 0xe4, 0x2e, 0x7f, 0x74, 0xc3, 0x26, 0xdc, 0x04, 0x8c, 0xc4, 0xcd, 0x16, 0x9d
-                                , 0xa9, 0x41, 0x2d, 0x19, 0x85, 0x8c, 0xfe, 0xd6, 0x05, 0x92, 0xc4, 0x5b, 0x2b, 0x9f, 0x4e, 0x0f
-                                , 0x33, 0x4a, 0x5e, 0xff, 0xb1, 0xdc, 0xf2, 0xd4, 0xc5, 0xa8, 0xf6, 0x3f, 0x89, 0xbf, 0x03, 0xb9
-                                , 0x39, 0x9d, 0x59, 0xd9, 0x7b, 0x97, 0x58, 0x80, 0x95, 0xa6, 0xb4, 0xfc, 0xd0, 0x89, 0x73, 0x93
-                                , 0xae, 0xa6, 0xa8, 0x1c, 0x49, 0x9a, 0x04, 0xde, 0x17, 0x24, 0x09, 0x55, 0xcd, 0x2d, 0x25, 0xad
-                                , 0x6d, 0xba, 0xca, 0xbd, 0x64, 0x03, 0x71, 0x6f
+                                , 0xd4, 0xdb, 0x5a, 0x81, 0x24, 0x95, 0x87, 0xd2, 0x53, 0x77, 0x1f, 0xa4, 0x07, 0x9e, 0xa1, 0x13
+                                , 0x03, 0x16, 0x52, 0x45, 0xcd, 0x34, 0x14, 0x7b, 0xb9, 0x46, 0x24, 0xff, 0xdd, 0x25, 0x23, 0x3f
+                                , 0x40, 0x1c, 0xaf, 0x67, 0xfa, 0xdd, 0x2a, 0x27, 0xc9, 0xd9, 0x67, 0x55, 0x86, 0xd4, 0x9c, 0xe0
+                                , 0x18, 0xbc, 0xe4, 0xdb, 0x2a, 0x8e, 0x34, 0xf9, 0xd0, 0xf6, 0x9c, 0xff, 0x81, 0x6f, 0xf1, 0x16
+                                , 0xcf, 0xf6, 0xa2, 0x4e, 0xef, 0xa9, 0xef, 0xba, 0xba, 0x9c, 0xd7, 0x8b, 0x3c, 0x32, 0x08, 0xcf
+                                , 0x57, 0xcf, 0x57, 0x68, 0x9d, 0x92, 0x50, 0x84
                                 };
 							static_assert(sizeof(expected) == 90, "unexpected size for expected response");
 							REQUIRE( memcmp(spdu_bytes + sizeof(expected_header_bytes), expected, sizeof(expected)) == 0 );
@@ -229,7 +229,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
                                 REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
                                 unsigned char const expected_payload_bytes[] = {
                                       0x10, 0x00
-                                    , 0xc8, 0xe3, 0x9d, 0x3e, 0xfb, 0xaf, 0x45, 0x8a, 0x9e, 0xfb, 0x76, 0xcb, 0x73, 0xfa, 0x6d, 0x9d
+                                    , 0x69, 0x49, 0x5b, 0x9f, 0x76, 0x7a, 0x47, 0x51, 0xe2, 0xc5, 0x28, 0x07, 0x46, 0x55, 0x65, 0xc3
                                     };
                                 REQUIRE( memcmp(spdu_bytes + sizeof(expected_header_bytes), expected_payload_bytes, sizeof(expected_payload_bytes)) == 0 );
                             }
@@ -372,7 +372,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 			REQUIRE( master.pollSPDU() );
 			auto spdu(master.getSPDU());
 			REQUIRE( !master.pollSPDU() );
-			REQUIRE( spdu.size() == 18 );
+			REQUIRE( spdu.size() == 12 );
 			unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
             unsigned char const expected_header_bytes[] = {
                     0xc0, 0x80, 0x01, 0x02, 0x00, 0x00, 0x01, 0x00
@@ -626,7 +626,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 					REQUIRE( master.pollSPDU() );
 					auto spdu(master.getSPDU());
 					REQUIRE( !master.pollSPDU() );
-					REQUIRE( spdu.size() == 18 );
+					REQUIRE( spdu.size() == 12 );
 					unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
                     unsigned char const expected_header_bytes[] = {
                             0xc0, 0x80, 0x01, 0x02, 0x00, 0x00, 0x01, 0x00
@@ -634,7 +634,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
                     REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
 
                     unsigned char const expected_payload_bytes[] = {
-                           0x06, 0x00, 0x02, 0x0b, 0x10, 0x0e, 0x00, 0x00, 0x00, 0x10
+                           0x06, 0x00, 0x02, 0x0b
                         };
                     REQUIRE( memcmp(spdu_bytes + sizeof(expected_header_bytes), expected_payload_bytes, sizeof(expected_payload_bytes)) == 0 );
 				}
@@ -886,10 +886,10 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 			REQUIRE( master.pollSPDU() );
 			auto spdu(master.getSPDU());
 			REQUIRE( !master.pollSPDU() );
-			REQUIRE( spdu.size() == 18 );
+			REQUIRE( spdu.size() == 12 );
 			unsigned char const *spdu_bytes(static_cast< unsigned char const * >(spdu.data()));
             unsigned char const expected_header_bytes[] = {
-                    0xc0, 0x80, 0x01, 0x02, 0x00, 0x00, 0x01, 0x00
+                  0xc0, 0x80, 0x01, 0x02, 0x00, 0x00, 0x01, 0x00
                 };
             REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
 		}

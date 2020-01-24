@@ -43,17 +43,6 @@ struct SessionStartRequest
     /* The MAC algorithm to be used. SAv6 mandates the use of at least HMAC SHA-256. 
      *The value is one of MACAlgorithm's values. */
     std::uint8_t aead_algorithm_ = 4/* HMAC SHA256 T16*/;
-    /* Indicates the amount of time, in seconds, the session will be considered valid 
-     * by the Master once the session is established (i.e. as of the moment 
-     * SetSessionKeys is first sent). This value is informative to the Outstation. 
-     * It is recommended that the Outstation use a (slightly) larger value for its own 
-     * time-out so as to prevent a clock skew between the two devices from causing 
-     * errors during the session.
-     * The strawman proposal had this as a 24-bit value, but 32-bit aligns better */
-    std::uint32_t session_key_change_interval_ = 300/*five minutes*/;
-    /* Indicates the number of times the session keys may be used before they need 
-     * to be replaced. */
-    std::uint16_t session_key_change_count_ = 4096;
 }
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -61,7 +50,7 @@ struct SessionStartRequest
 __attribute__((packed))
 #endif
 ;
-static_assert(sizeof(SessionStartRequest) == 10, "unexpected padding for SessionStartRequest");
+static_assert(sizeof(SessionStartRequest) == 4, "unexpected padding for SessionStartRequest");
 }}
 
 #endif

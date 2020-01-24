@@ -251,8 +251,6 @@ void Master::sendSessionStartRequest() noexcept
 	ssr.aead_algorithm_ = config_.aead_algorithm_;
 	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
 	session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(ssr.aead_algorithm_));
-	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
-	ssr.session_key_change_count_ = config_.session_key_change_count_;
 
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
