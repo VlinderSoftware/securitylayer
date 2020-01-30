@@ -1,3 +1,5 @@
+#include "sessionbuilder.hpp"
+#include "sessionbuilder.hpp"
 /* Copyright 2019  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -24,9 +26,10 @@ using namespace std;
 using namespace boost::asio;
 
 namespace DNP3SAv6 {
-	SessionBuilder::SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator)
+	SessionBuilder::SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Config const &config)
 		: session_timeout_(ioc)
 		, random_number_generator_(random_number_generator)
+        , config_(config)
 	{
 	}
 
@@ -36,6 +39,7 @@ namespace DNP3SAv6 {
 		session_start_request_message_size_ = 0;
 		session_start_response_message_size_ = 0;
 		session_start_response_nonce_size_ = 0;
+		session_key_change_request_message_size_ = 0;
 		session_key_change_count_ = 0;
 	}
 
@@ -72,6 +76,13 @@ namespace DNP3SAv6 {
 		session_start_response_nonce_size_ = nonce.size();
 	}
 
+    void SessionBuilder::setSessionKeyChangeRequest(boost::asio::const_buffer const& spdu)
+    {
+		pre_condition(spdu.size() <= sizeof(session_key_change_request_message_));
+		memcpy(session_key_change_request_message_, spdu.data(), spdu.size());
+		session_key_change_request_message_size_ = spdu.size();
+    }
+
 	void SessionBuilder::setSessionKeyChangeInterval(std::chrono::seconds const &ttl_duration)
 	{
 		session_timeout_.expires_after(ttl_duration);
@@ -82,10 +93,33 @@ namespace DNP3SAv6 {
 		session_key_change_count_ = session_key_change_count;
 	}
 
-	mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
+    unsigned int SessionBuilder::getWrappedKeyDataLength() const
+    {
+	    switch (config_.key_wrap_algorithm_)
+	    {
+	    case KeyWrapAlgorithm::rfc3394_aes256_key_wrap__ :
+		    switch (config_.aead_algorithm_)
+		    {
+		    case AEADAlgorithm::hmac_sha_256_truncated_8__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__       >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_sha_256_truncated_16__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__      >::type) + 8/*IV size*/;
+            case AEADAlgorithm::hmac_sha_3_256_truncated_8__	: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_8__     >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_sha_3_256_truncated_16__	: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_16__    >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_blake2s_truncated_8__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_8__       >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_blake2s_truncated_16__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_16__      >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::aes256_gcm__		            : return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::aes256_gcm__                     >::type) + 8/*IV size*/;
+		    default : 
+			    throw std::logic_error("Unknown MAC algorithm");
+		    }
+            break;
+	    default :
+		    throw std::logic_error("Unknown key-wrap algorithm");
+	    }
+    }
+
+    mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	{
-		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
-		pre_condition(aead_algorithm_ != AEADAlgorithm::unknown__);
+		key_wrap_algorithm_ = static_cast< decltype(key_wrap_algorithm_) >(config_.key_wrap_algorithm_);
+		aead_algorithm_ = static_cast< decltype(aead_algorithm_) >(config_.aead_algorithm_);
 
 		unsigned char *curr(static_cast< unsigned char* >(buffer.data()));
 		unsigned char *const end(curr + buffer.size());
@@ -225,6 +259,7 @@ namespace DNP3SAv6 {
 			, session_key
 			, const_buffer(session_start_request_message_, session_start_request_message_size_)
 			, const_buffer(session_start_response_message_, session_start_response_message_size_)
+			, const_buffer(session_key_change_request_message_, session_key_change_request_message_size_)
 			);
 		return out_digest;
 	}

@@ -34,7 +34,7 @@ public :
         , monitoring_direction__
         };
 
-	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator);
+	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Config const &config);
 	~SessionBuilder() = default;
 	
 	SessionBuilder(SessionBuilder &&other) noexcept = default;
@@ -52,10 +52,12 @@ public :
 	// whole messages to calculate a MAC over
 	void setSessionStartRequest(boost::asio::const_buffer const &spdu);
 	void setSessionStartResponse(boost::asio::const_buffer const &spdu, boost::asio::const_buffer const &nonce);
+	void setSessionKeyChangeRequest(boost::asio::const_buffer const &spdu);
 
 	void setSessionKeyChangeInterval(std::chrono::seconds const &ttl_duration);
 	void setSessionKeyChangeCount(unsigned int session_key_change_count);
 
+    unsigned int getWrappedKeyDataLength() const;
 	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer);
     bool unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data);
 
@@ -78,6 +80,8 @@ private :
 	unsigned int session_start_response_message_size_ = 0;
 	unsigned char session_start_response_nonce_[Config::max_spdu_size__];
 	unsigned int session_start_response_nonce_size_ = 0;
+    unsigned char session_key_change_request_message_[Config::max_spdu_size__];
+	unsigned int session_key_change_request_message_size_ = 0;
 
 	boost::asio::steady_timer session_timeout_;
 	unsigned int session_key_change_count_ = 0;
@@ -88,6 +92,7 @@ private :
     mutable unsigned char monitoring_direction_digest_[Config::max_digest_size__];
 
     std::uint32_t seq_;
+    Config config_;
 };
 }
 

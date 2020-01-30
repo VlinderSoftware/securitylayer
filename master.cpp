@@ -34,7 +34,7 @@ Master::Master(
 	, kwa_index_(0)
 	, mal_index_(0)
 #endif
-	, session_builder_(io_context, random_number_generator)
+	, session_builder_(io_context, random_number_generator, config)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
@@ -154,10 +154,15 @@ Master::Master(
 		session_builder_.setSessionStartResponse(spdu, nonce);
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
 
-		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
 		Messages::SessionKeyChangeRequest session_key_change_request;
+        session_key_change_request.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
+        session_key_change_request.aead_algorithm_ = config_.aead_algorithm_;
+        session_key_change_request.key_wrap_data_length_ = session_builder_.getWrappedKeyDataLength();
+        session_builder_.setSessionKeyChangeRequest(const_buffer(&session_key_change_request, sizeof(session_key_change_request)));
+
+		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
         invariant(wrapped_key_data.size() <= numeric_limits< decltype(session_key_change_request.key_wrap_data_length_) >::max());
-		session_key_change_request.key_wrap_data_length_ = static_cast< decltype(session_key_change_request.key_wrap_data_length_) >(wrapped_key_data.size());
+		post_condition(session_key_change_request.key_wrap_data_length_ == static_cast< decltype(session_key_change_request.key_wrap_data_length_) >(wrapped_key_data.size()));
 		const_buffer const spdu(format(session_key_change_request, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
 		setState(expect_session_key_change_response__);
@@ -245,10 +250,6 @@ void Master::sendSessionStartRequest() noexcept
 	Messages::SessionStartRequest ssr;
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
-	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
-	ssr.aead_algorithm_ = config_.aead_algorithm_;
-	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
-	session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(ssr.aead_algorithm_));
 
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));

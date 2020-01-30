@@ -34,12 +34,6 @@ struct SessionStartRequest
      * and shall be 0. Bit 0 is set to 1 if the Master supports higher versions
      * than what is currently requested, or 0 if not. */
     std::uint8_t flags_ = 0;
-    /* Indicates the key-wrap algorithm to be used. SAv6 mandates the use of at least
-     * AES-256. The value is one of KeyWrapAlgorithm's values. */
-    std::uint8_t key_wrap_algorithm_ = 2/*NIST SP800-38F AES-256 GCM*/;
-    /* The MAC algorithm to be used. SAv6 mandates the use of at least HMAC SHA-256. 
-     *The value is one of MACAlgorithm's values. */
-    std::uint8_t aead_algorithm_ = 4/* HMAC SHA256 T16*/;
 }
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -47,7 +41,7 @@ struct SessionStartRequest
 __attribute__((packed))
 #endif
 ;
-static_assert(sizeof(SessionStartRequest) == 4, "unexpected padding for SessionStartRequest");
+static_assert(sizeof(SessionStartRequest) == 2, "unexpected padding for SessionStartRequest");
 }}
 
 #endif

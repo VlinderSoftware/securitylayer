@@ -19,6 +19,12 @@
 namespace DNP3SAv6 { namespace Messages {
 struct SessionKeyChangeRequest
 {
+    /* Indicates the key-wrap algorithm to be used. SAv6 mandates the use of at least
+     * AES-256. The value is one of KeyWrapAlgorithm's values. */
+    std::uint8_t key_wrap_algorithm_ = 2/*NIST SP800-38F AES-256 GCM*/;
+    /* The MAC algorithm to be used. SAv6 mandates the use of at least HMAC SHA-256. 
+     *The value is one of MACAlgorithm's values. */
+    std::uint8_t aead_algorithm_ = 4/* HMAC SHA256 T16*/;
     /* Contains the length of the encrypted key-wrap data, in bytes, that follows this
      * header. */
     std::uint16_t key_wrap_data_length_;

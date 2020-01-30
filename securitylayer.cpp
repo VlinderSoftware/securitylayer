@@ -618,10 +618,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 			else
 			{ /* all is well as far as the version is concerned */ }
  			incoming_ssr.flags_ = *curr++;
-    
-			incoming_ssr.key_wrap_algorithm_ = *curr++;
-			incoming_ssr.aead_algorithm_ = *curr++;
-			assert(curr == end);
+   			assert(curr == end);
 			rxSessionStartRequest(incoming_seq, incoming_ssr, incoming_spdu_);
 		}
 		else
