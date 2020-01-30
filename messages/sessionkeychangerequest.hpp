@@ -19,8 +19,6 @@
 namespace DNP3SAv6 { namespace Messages {
 struct SessionKeyChangeRequest
 {
-    // sequence number is already part of the SPDU header
-
     /* Contains the length of the encrypted key-wrap data, in bytes, that follows this
      * header. */
     std::uint16_t key_wrap_data_length_;

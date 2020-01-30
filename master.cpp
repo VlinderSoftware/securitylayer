@@ -189,14 +189,14 @@ Master::Master(
         }
         else
         { /* all is well */ }
-        if (incoming_skcr.mac_length_ != getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()))
+        if (incoming_skcr.authentication_tag_length_ != getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()))
         {
             //TODO increment stat
             return;
         }
         else
         { /* OK so far */ }
-        if (incoming_mac.size() != incoming_skcr.mac_length_)
+        if (incoming_mac.size() != incoming_skcr.authentication_tag_length_)
         {
             //TODO increment stat
             return;
@@ -205,7 +205,7 @@ Master::Master(
         { /* OK so far */ }
         // check whether the incoming MAC size corresponds to the expected MAC size
         auto expected_mac_size(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()));
-        if (expected_mac_size != incoming_skcr.mac_length_)
+        if (expected_mac_size != incoming_skcr.authentication_tag_length_)
         {   //TODO increment stat
             //TODO in maintenance mode, message
             return;

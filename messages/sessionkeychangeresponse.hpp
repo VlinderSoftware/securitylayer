@@ -21,12 +21,10 @@ namespace DNP3SAv6 { namespace Messages {
 struct SessionKeyChangeResponse
 {
     SessionKeyChangeResponse(std::uint16_t mac_length = 0)
-        : mac_length_(mac_length)
+        : authentication_tag_length_(mac_length)
     { /* no-op */ }
 
-    // sequence number is already part of the SPDU header
-
-    std::uint16_t mac_length_;
+    std::uint16_t authentication_tag_length_;
 };
 }}
 

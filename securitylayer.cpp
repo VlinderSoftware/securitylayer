@@ -367,8 +367,8 @@ const_buffer SecurityLayer::format(Messages::SessionKeyChangeRequest const &sess
 
 boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &session_key_change_response, boost::asio::const_buffer const &digest) noexcept
 {
-	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(session_key_change_response) + session_key_change_response.mac_length_);
-    pre_condition(session_key_change_response.mac_length_ <= digest.size());
+	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(session_key_change_response) + session_key_change_response.authentication_tag_length_);
+    pre_condition(session_key_change_response.authentication_tag_length_ <= digest.size());
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
@@ -389,8 +389,8 @@ boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::Ses
 	outgoing_spdu_size_ += sizeof(session_key_change_response);
 	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(session_key_change_response));
 
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), session_key_change_response.mac_length_);
-    outgoing_spdu_size_ += session_key_change_response.mac_length_;
+    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), session_key_change_response.authentication_tag_length_);
+    outgoing_spdu_size_ += session_key_change_response.authentication_tag_length_;
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
@@ -713,7 +713,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
             memcpy(&incoming_skcr, curr, sizeof(incoming_skcr));
             curr += sizeof(incoming_skcr);
 
-            if (incoming_skcr.mac_length_ == distance(curr, end))
+            if (incoming_skcr.authentication_tag_length_ == distance(curr, end))
             {
                 const_buffer incoming_mac(curr, distance(curr, end));
                 rxSessionKeyChangeResponse(incoming_seq, incoming_skcr, incoming_mac, incoming_spdu_);
