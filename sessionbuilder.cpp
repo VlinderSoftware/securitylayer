@@ -31,6 +31,7 @@ namespace DNP3SAv6 {
 		, random_number_generator_(random_number_generator)
         , config_(config)
 	{
+        pre_condition(config.session_key_change_count_ <= OPTION_MAX_SESSION_KEY_CHANGE_COUNT);
 	}
 
 	void SessionBuilder::reset() noexcept
