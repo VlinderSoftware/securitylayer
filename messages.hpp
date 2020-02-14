@@ -17,6 +17,10 @@
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
 #include <cstdint>
+#include "messages/enrollmentinitiation.hpp"
+#include "messages/enrollmentrequest.hpp"
+#include "messages/enrollmentresponse.hpp"
+#include "messages/enrollmentconfirmation.hpp"
 #include "messages/error.hpp"
 #include "messages/sessioninitiation.hpp"
 #include "messages/sessionkeychangerequest.hpp"

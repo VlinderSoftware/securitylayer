@@ -54,6 +54,10 @@ set(LAYER_PUBLIC_HEADERS
 	keywrapalgorithm.hpp
 	master.hpp
 	messages.hpp
+	messages/enrollmentinitiation
+	messages/enrollmentrequest
+	messages/enrollmentresponse
+	messages/enrollmentconfirmation
 	messages/error.hpp
 	messages/securemessage.hpp
 	messages/sessioninitiation.hpp
