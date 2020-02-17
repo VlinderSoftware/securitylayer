@@ -70,7 +70,7 @@ public :
 	// signal application reset (from application layer)
 	void onApplicationReset() noexcept;
 	// signal an application layer timeout
-	void onAPDUTimeout() noexcept;
+	void onApplicationLayerTimeout() noexcept;
     // cancel a pending APDU for any reason
     void cancelPendingAPDU() noexcept;
 
@@ -143,13 +143,13 @@ protected :
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
 	boost::asio::const_buffer format(Messages::SessionKeyChangeRequest const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
-	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &sc, boost::asio::const_buffer const &digest) noexcept;
+	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &sc, boost::asio::const_buffer const &digest, unsigned int authentication_tag_length) noexcept;
 	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
 	boost::asio::const_buffer format(std::uint16_t seq, Messages::Error const &e) noexcept;
 
 	void incrementStatistic(Statistics statistics) noexcept;
 
-	virtual void rxRequestSessionInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxSessionInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &incoming_spdu) noexcept;
     virtual void rxSessionKeyChangeRequest(std::uint32_t incoming_seq, Messages::SessionKeyChangeRequest const& incoming_ssk, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& incoming_spdu) noexcept;

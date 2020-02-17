@@ -42,7 +42,7 @@ protected :
     virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;
 
-	virtual void rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept override;
+	virtual void rxSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept override;
 	virtual void rxSessionStartResponse(uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &spdu) noexcept override;
     virtual void rxSessionKeyChangeResponse(std::uint32_t incoming_seq, Messages::SessionKeyChangeResponse const &incoming_skcr, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept override;
 

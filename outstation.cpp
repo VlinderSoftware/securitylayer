@@ -184,7 +184,12 @@ Outstation::Outstation(
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            response_spdu = format(session_builder_.getSEQ(), Messages::SessionKeyChangeResponse(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+            response_spdu = format(
+				  session_builder_.getSEQ()
+				, Messages::SessionKeyChangeResponse()
+				, session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__)
+				, getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())
+				);
             setOutgoingSPDU(response_spdu, std::chrono::seconds(config_.session_key_change_interval_));
             incrementStatistic(Statistics::total_messages_sent__);
             if (getSession().valid())

@@ -26,7 +26,7 @@ struct SessionStartResponse
     /* Contains the length of the challenge data, in bytes, that follows this header.
      * It should be reasonably small, but large enough to fit its cryptographic 
      * purpose. Minimal value is 4. */
-    std::uint16_t challenge_data_length_;
+    std::uint8_t challenge_data_length_;
 }
 #ifdef _MSC_VER
 #pragma pack(pop)

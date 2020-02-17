@@ -47,7 +47,7 @@ void SecurityLayer::onApplicationReset() noexcept
 {
 	reset();
 }
-void SecurityLayer::onAPDUTimeout() noexcept
+void SecurityLayer::onApplicationLayerTimeout() noexcept
 {
     cancelPendingAPDU();
 }
@@ -365,10 +365,10 @@ const_buffer SecurityLayer::format(Messages::SessionKeyChangeRequest const &sess
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
 
-boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &session_key_change_response, boost::asio::const_buffer const &digest) noexcept
+boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &session_key_change_response, boost::asio::const_buffer const &digest, unsigned int authentication_tag_length) noexcept
 {
-	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + sizeof(session_key_change_response) + session_key_change_response.authentication_tag_length_);
-    pre_condition(session_key_change_response.authentication_tag_length_ <= digest.size());
+	pre_condition(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/) + /*sizeof(session_key_change_response) + */authentication_tag_length); // NOTE: in C++, the size of an empty struct is 1, so we don't want it in here. In C, it's 0 (as IMHO it should be)
+    pre_condition(authentication_tag_length <= digest.size());
 	outgoing_spdu_size_ = 0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
@@ -384,13 +384,14 @@ boost::asio::const_buffer SecurityLayer::format(std::uint16_t seq, Messages::Ses
 	outgoing_spdu_size_ += sizeof(seq);
 
 	assert(outgoing_spdu_size_ == (8/*SPDU header size*/));
-	
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &session_key_change_response, sizeof(session_key_change_response));
-	outgoing_spdu_size_ += sizeof(session_key_change_response);
-	assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(session_key_change_response));
 
-    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), session_key_change_response.authentication_tag_length_);
-    outgoing_spdu_size_ += session_key_change_response.authentication_tag_length_;
+	// the SessionKeyChangeResponse structure is now empty, but as noted below, C++ gives this a size of 1, so we shouldn't copy it in
+	//memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &session_key_change_response, sizeof(session_key_change_response));
+	//outgoing_spdu_size_ += sizeof(session_key_change_response);
+	//assert(outgoing_spdu_size_ == (8/*SPDU header size*/) + sizeof(session_key_change_response));
+
+    memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, digest.data(), authentication_tag_length);
+    outgoing_spdu_size_ += authentication_tag_length;
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
@@ -436,7 +437,7 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 	return statistics_[static_cast< int >(statistic)];
 }
 
-/*virtual */void SecurityLayer::rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept
+/*virtual */void SecurityLayer::rxSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
 }
@@ -597,7 +598,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 	switch (incoming_function_code)
 	{
 	case static_cast< uint8_t >(Message::session_initiation__) :
-		rxRequestSessionInitiation(incoming_seq, incoming_spdu_);
+		rxSessionInitiation(incoming_seq, incoming_spdu_);
 		break;
 	case static_cast< uint8_t >(Message::session_start_request__) :
 		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
@@ -706,22 +707,13 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         if ((incoming_spdu_.size() >= min_expected_spdu_size) && (incoming_spdu_.size() <= max_expected_spdu_size))
         {
             Messages::SessionKeyChangeResponse incoming_skcr;
-            assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_skcr));
-            memcpy(&incoming_skcr, curr, sizeof(incoming_skcr));
-            curr += sizeof(incoming_skcr);
+			// Note: empty structs are 1 byte in C++, so skip this
+            //assert(static_cast< size_t >(distance(curr, end)) > sizeof(incoming_skcr));
+            //memcpy(&incoming_skcr, curr, sizeof(incoming_skcr));
+            //curr += sizeof(incoming_skcr);
 
-            if (incoming_skcr.authentication_tag_length_ == distance(curr, end))
-            {
-                const_buffer incoming_mac(curr, distance(curr, end));
-                rxSessionKeyChangeResponse(incoming_seq, incoming_skcr, incoming_mac, incoming_spdu_);
-            }
-            else
-            {
-                const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
-                setOutgoingSPDU(response_spdu);
-                incrementStatistic(Statistics::error_messages_sent__);
-                incrementStatistic(Statistics::total_messages_sent__);
-            }
+            const_buffer incoming_mac(curr, distance(curr, end));
+            rxSessionKeyChangeResponse(incoming_seq, incoming_skcr, incoming_mac, incoming_spdu_);
         }
         else
         {

@@ -20,11 +20,6 @@
 namespace DNP3SAv6 { namespace Messages {
 struct SessionKeyChangeResponse
 {
-    SessionKeyChangeResponse(std::uint16_t mac_length = 0)
-        : authentication_tag_length_(mac_length)
-    { /* no-op */ }
-
-    std::uint16_t authentication_tag_length_;
 };
 }}
 
