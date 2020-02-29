@@ -96,10 +96,10 @@ namespace DNP3SAv6 {
 
     unsigned int SessionBuilder::getWrappedKeyDataLength() const
     {
-	    switch (config_.key_wrap_algorithm_)
+	    switch (static_cast< KeyWrapAlgorithm >(config_.key_wrap_algorithm_))
 	    {
 	    case KeyWrapAlgorithm::rfc3394_aes256_key_wrap__ :
-		    switch (config_.aead_algorithm_)
+		    switch (static_cast< AEADAlgorithm >(config_.aead_algorithm_))
 		    {
 		    case AEADAlgorithm::hmac_sha_256_truncated_8__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__       >::type) + 8/*IV size*/;
 		    case AEADAlgorithm::hmac_sha_256_truncated_16__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__      >::type) + 8/*IV size*/;
