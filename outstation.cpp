@@ -30,7 +30,7 @@ Outstation::Outstation(
 	, Details::IRandomNumberGenerator &random_number_generator
 	)
 	: SecurityLayer(io_context, association_id, config, random_number_generator)
-	, session_builder_(io_context, random_number_generator)
+	, session_builder_(io_context, random_number_generator, config)
 { /* no-op */ }
 
 /*virtual */void Outstation::reset() noexcept/* override*/
@@ -106,32 +106,6 @@ Outstation::Outstation(
 			break;
 		}
 		session_builder_.setSessionStartRequest(incoming_spdu);
-		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_ssr.key_wrap_algorithm_)))
-		{
-            session_builder_.setKeyWrapAlgorithm(static_cast<KeyWrapAlgorithm>(incoming_ssr.key_wrap_algorithm_));
-        }
-		else
-		{
-			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_keywrap_algorithm__));
-			setOutgoingSPDU(response_spdu);
-			incrementStatistic(Statistics::error_messages_sent__);
-			incrementStatistic(Statistics::total_messages_sent__);
-			return;
-		}
-		if (acceptMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.aead_algorithm_)))
-		{
-            session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(incoming_ssr.aead_algorithm_));
-        }
-		else
-		{
-			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_mac_algorithm__));
-			setOutgoingSPDU(response_spdu);
-			incrementStatistic(Statistics::error_messages_sent__);
-			incrementStatistic(Statistics::total_messages_sent__);
-			return;
-		}
-		response.session_key_change_interval_ = config_.session_key_change_interval_;
-		response.session_key_change_count_ = config_.session_key_change_count_;
 
 		assert(config_.nonce_size_ <= config_.max_nonce_size__);
 		boost::asio::mutable_buffer nonce_buffer(nonce_, config_.nonce_size_);
@@ -182,10 +156,40 @@ Outstation::Outstation(
         return;
     case expect_session_key_change_request__:
     {
+		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_skcr.key_wrap_algorithm_)))
+		{
+            session_builder_.setKeyWrapAlgorithm(static_cast<KeyWrapAlgorithm>(incoming_skcr.key_wrap_algorithm_));
+        }
+		else
+		{
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_keywrap_algorithm__));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+			return;
+		}
+		if (acceptMACAlgorithm(static_cast< AEADAlgorithm >(incoming_skcr.aead_algorithm_)))
+		{
+            session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(incoming_skcr.aead_algorithm_));
+        }
+		else
+		{
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unsupported_mac_algorithm__));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+			return;
+		}
+        session_builder_.setSessionKeyChangeRequest(const_buffer(&incoming_skcr, sizeof(incoming_skcr)));
         // try to unwrap the wrapped key data
         if (session_builder_.unwrapKeyData(incoming_key_wrap_data))
         {
-            response_spdu = format(session_builder_.getSEQ(), Messages::SessionKeyChangeResponse(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())), session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+            response_spdu = format(
+				  session_builder_.getSEQ()
+				, Messages::SessionKeyChangeResponse()
+				, session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__)
+				, getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())
+				);
             setOutgoingSPDU(response_spdu, std::chrono::seconds(config_.session_key_change_interval_));
             incrementStatistic(Statistics::total_messages_sent__);
             if (getSession().valid())

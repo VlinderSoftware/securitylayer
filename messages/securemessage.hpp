@@ -24,8 +24,6 @@ struct SecureMessage
         : apdu_length_(apdu_length)
     { /* no-op */ }
 
-    // sequence number is already part of the SPDU header
-
     std::uint16_t apdu_length_;
 };
 }}

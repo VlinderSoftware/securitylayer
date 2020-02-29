@@ -38,14 +38,14 @@ namespace DNP3SAv6 {
 		std::uint32_t max_acceptable_session_key_change_interval_ = 3600/*one hour*/;
 		std::uint16_t max_acceptable_session_key_change_count_ = 32767;
 
-		std::uint16_t nonce_size_ = 4; // bytes
+		std::uint8_t nonce_size_ = 4; // bytes
 
 		static unsigned int const max_key_wrap_data_size__ = 128; // some reasonable size for key-wrap data (it's currently 88 bytes). Note that a buffer for this is allocated on the stack, so we need this to be small
 
 		static unsigned int const max_apdu_size__ = 4096;
 		static unsigned int const max_spdu_size__ = 4096;
 		static unsigned int const min_nonce_size__ = 4; // bytes
-		static unsigned int const max_nonce_size__ = 16; // bytes
+		static unsigned int const max_nonce_size__ = 64; // bytes
 
         static unsigned int const max_digest_size__ = 32; // bytes
         static unsigned int const max_session_key_size__ = 32; // bytes

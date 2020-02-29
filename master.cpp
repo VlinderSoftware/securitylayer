@@ -34,7 +34,7 @@ Master::Master(
 	, kwa_index_(0)
 	, mal_index_(0)
 #endif
-	, session_builder_(io_context, random_number_generator)
+	, session_builder_(io_context, random_number_generator, config)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/
@@ -78,7 +78,7 @@ Master::Master(
 	}
 }
 
-/*virtual */void Master::rxRequestSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept/* override*/
+/*virtual */void Master::rxSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept/* override*/
 {
 	switch (getState())
 	{
@@ -152,14 +152,17 @@ Master::Master(
         else
         { /* all is well */ }
 		session_builder_.setSessionStartResponse(spdu, nonce);
-		session_builder_.setSessionKeyChangeInterval(std::chrono::seconds(incoming_ssr.session_key_change_interval_));
-		session_builder_.setSessionKeyChangeCount(incoming_ssr.session_key_change_count_);
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
 
-		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
 		Messages::SessionKeyChangeRequest session_key_change_request;
+        session_key_change_request.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
+        session_key_change_request.aead_algorithm_ = config_.aead_algorithm_;
+        session_key_change_request.key_wrap_data_length_ = session_builder_.getWrappedKeyDataLength();
+        session_builder_.setSessionKeyChangeRequest(const_buffer(&session_key_change_request, sizeof(session_key_change_request)));
+
+		auto wrapped_key_data(session_builder_.createWrappedKeyData(mutable_buffer(buffer_, sizeof(buffer_))));
         invariant(wrapped_key_data.size() <= numeric_limits< decltype(session_key_change_request.key_wrap_data_length_) >::max());
-		session_key_change_request.key_wrap_data_length_ = static_cast< decltype(session_key_change_request.key_wrap_data_length_) >(wrapped_key_data.size());
+		post_condition(session_key_change_request.key_wrap_data_length_ == static_cast< decltype(session_key_change_request.key_wrap_data_length_) >(wrapped_key_data.size()));
 		const_buffer const spdu(format(session_key_change_request, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
 		setState(expect_session_key_change_response__);
@@ -191,14 +194,8 @@ Master::Master(
         }
         else
         { /* all is well */ }
-        if (incoming_skcr.mac_length_ != getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()))
-        {
-            //TODO increment stat
-            return;
-        }
-        else
-        { /* OK so far */ }
-        if (incoming_mac.size() != incoming_skcr.mac_length_)
+        auto const expected_mac_size(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()));
+        if (incoming_mac.size() != expected_mac_size)
         {
             //TODO increment stat
             return;
@@ -206,14 +203,6 @@ Master::Master(
         else
         { /* OK so far */ }
         // check whether the incoming MAC size corresponds to the expected MAC size
-        auto expected_mac_size(getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm()));
-        if (expected_mac_size != incoming_skcr.mac_length_)
-        {   //TODO increment stat
-            //TODO in maintenance mode, message
-            return;
-        }
-        else
-        { /* all is fine so far */ }
         assert(expected_mac_size == incoming_mac.size());
         // calculate the MAC with the monitoring-direction session key
         auto expected_mac(session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
@@ -224,12 +213,13 @@ Master::Master(
             //TODO in maintenance mode, message
             return;
         }
+
+		// if they're the same, go to active state
         setState(State::active__);
         setSession(session_builder_.getSession());
         setSEQ(0);
         seq_validator_.reset();
 
-        // if they're the same, go to active state
         break;
     }
 	case expect_session_start_response__ :
@@ -247,12 +237,6 @@ void Master::sendSessionStartRequest() noexcept
 	Messages::SessionStartRequest ssr;
 	assert(ssr.version_ == 6);
 	assert(ssr.flags_ == 0);
-	ssr.key_wrap_algorithm_ = config_.key_wrap_algorithm_;
-	ssr.aead_algorithm_ = config_.aead_algorithm_;
-	session_builder_.setKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(ssr.key_wrap_algorithm_));
-	session_builder_.setMACAlgorithm(static_cast< AEADAlgorithm >(ssr.aead_algorithm_));
-	ssr.session_key_change_interval_ = config_.session_key_change_interval_;
-	ssr.session_key_change_count_ = config_.session_key_change_count_;
 
 	const_buffer const spdu(format(ssr));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.session_start_request_timeout_));
