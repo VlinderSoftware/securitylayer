@@ -78,6 +78,10 @@ set(LIBLAYER_SRC
 	details/aeadhmacadapter.hpp
 	details/aesgcm.cpp
 	details/aesgcm.hpp
+	details/certificate.cpp
+	details/certificate.hpp
+	details/distinguishednameparser.cpp
+	details/distinguishednameparser.hpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacaeadadapter.hpp
@@ -139,6 +143,22 @@ set(LESS_GENERATOR_SRC
 	)
 add_executable(less ${LESS_GENERATOR_SRC})
 target_link_libraries(less secureauthentication OpenSSL::Crypto)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(less PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
+endif()
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_options(less PRIVATE -D_WIN32_WINNT=0x0601 /FI "${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp" /wd4996)
+endif()
+
+set(GENCERTS_SRC
+	tests/gencerts.cpp
+	details/certificate.cpp
+	details/certificate.hpp
+	details/distinguishednameparser.cpp
+	details/distinguishednameparser.hpp
+	)
+add_executable(gencerts ${GENCERTS_SRC})
+target_link_libraries(gencerts OpenSSL::Crypto)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(less PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
 endif()
