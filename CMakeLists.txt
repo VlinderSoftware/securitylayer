@@ -158,7 +158,7 @@ set(GENCERTS_SRC
 	details/distinguishednameparser.hpp
 	)
 add_executable(gencerts ${GENCERTS_SRC})
-target_link_libraries(gencerts OpenSSL::Crypto)
+target_link_libraries(gencerts OpenSSL::Crypto exceptions)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(less PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
 endif()
