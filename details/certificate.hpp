@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace DNP3SAv6 { namespace Details { 
 	class Certificate
@@ -31,6 +32,13 @@ namespace DNP3SAv6 { namespace Details {
             , std::string const &curve
             , std::string const &sha
             );
+        static Certificate load(std::string const &filename);
+        static Certificate load(std::string const &filename, std::string const &passkey); // if a private key is there, load it using the passkey
+        static Certificate decode(std::vector< unsigned char > const &serialized_certificate);
+
+        void store(std::string const &filename, bool include_human_readable = false) const;
+        void store(std::string const &filename, std::string const &passkey, bool include_human_readable = false) const; // includes the private key in PKCS#12 format
+        std::vector< unsigned char > encode() const;
 
 		Certificate(Certificate const&) = delete;
 		Certificate(Certificate &&) = default;
@@ -48,6 +56,10 @@ namespace DNP3SAv6 { namespace Details {
         static void setSubject(X509_REQ *req, std::string const &subject_distinguished_name);
         static void setExpiryTimes(X509 *x509, unsigned int days);
         static void sign(X509 *x509, EVP_PKEY *private_key, std::string const &sha);
+        static std::unique_ptr< BIO, std::function< void(BIO*) > > openFile(std::string const &filename, bool for_reading);
+        static void outputCertificate(BIO *bio, X509 *x509);
+        static void outputPrivateKey(BIO *bio, EVP_PKEY *key, std::string const &passkey);
+        static void outputX509Info(BIO *bio, X509 *x509);
 
         X509 *x509_ = nullptr;
         EVP_PKEY *private_key_ = nullptr;

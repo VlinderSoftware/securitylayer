@@ -1,3 +1,5 @@
+//!!! Some error checking is missing in this code!
+
 /* Copyright 2020  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -15,7 +17,9 @@
 #include <new>
 #include <memory>
 #include <stdexcept>
+#include "../exceptions/contract.hpp"
 #include "distinguishednameparser.hpp"
+#include <openssl/pem.h>
 
 using namespace std;
 
@@ -66,13 +70,70 @@ namespace DNP3SAv6 { namespace Details {
     // sign it all with our own private key
     sign(x509.get(), private_key.get(), sha);
 
-    // keep the private key around
-    // we'll also need code to serialize either the public and private key, or just the public key
-    // we should also be able to encrypt the private key with PKCS#12
-    // we should also be able to load the public key from file or from an ASN.1 encoded object
-    // and we should be able to serialize it to either PEM or DER
-
     return Certificate(x509.release(), private_key.release());
+}
+
+/*static */Certificate Certificate::load(std::string const& filename)
+{
+    auto bio(openFile(filename, true));
+    X509 *x509(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+    return Certificate(x509, nullptr);
+}
+
+/*static */Certificate Certificate::load(std::string const& filename, std::string const& passkey)
+{
+    auto bio(openFile(filename, true));
+    X509 *x509(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+    EVP_PKEY *privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, const_cast< void* >(reinterpret_cast< void const * >(passkey.c_str()))));
+    return Certificate(x509, privkey);
+}
+
+/*static */Certificate Certificate::decode(std::vector< unsigned char > const& serialized_certificate)
+{
+    unsigned char const *p(&serialized_certificate[0]);
+    X509 *x509(d2i_X509(nullptr, &p, serialized_certificate.size()));
+    return Certificate(x509, nullptr);
+}
+
+void Certificate::store(std::string const& filename, bool include_human_readable/* = false*/) const
+{
+    pre_condition(x509_);
+    auto bio(openFile(filename, false));
+    outputCertificate(bio.get(), x509_);
+    if (include_human_readable) outputX509Info(bio.get(), x509_);
+}
+
+void Certificate::store(std::string const& filename, std::string const& passkey, bool include_human_readable/* = false*/) const
+{
+    pre_condition(x509_);
+    pre_condition(private_key_);
+    auto bio(openFile(filename, false));
+    outputCertificate(bio.get(), x509_);
+    outputPrivateKey(bio.get(), private_key_, passkey);
+    if (include_human_readable) outputX509Info(bio.get(), x509_);
+}
+
+std::vector< unsigned char > Certificate::encode() const
+{
+    int required(i2d_X509(x509_, nullptr));
+    if (required <= 0)
+    {
+        throw runtime_error("cannot encode certificate");
+    }
+    else
+    { /* all is well */ }
+
+    vector< unsigned char > retval(required);
+    unsigned char *p(&retval[0]);
+    int result(i2d_X509(x509_, &p));
+    if (result != required)
+    {
+        throw runtime_error("failed to encode certificate");
+    }
+    else
+    { /* all is well */ }
+
+    return retval;
 }
 
 Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
@@ -134,7 +195,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
 
     return pkey;
 }
-unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > Certificate::generateRequest(EVP_PKEY *private_key, string const &subject_distinguished_name)
+/*static */unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > Certificate::generateRequest(EVP_PKEY *private_key, string const &subject_distinguished_name)
 {
     auto x509_req_deleter([](X509_REQ *req){ X509_REQ_free(req); });
     unique_ptr< X509_REQ, decltype(x509_req_deleter) > req(X509_REQ_new(), x509_req_deleter);
@@ -157,7 +218,7 @@ unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > Certificate::generateRe
     return req;
 }
 
-void Certificate::setSubject(X509_REQ *req, std::string const &subject_distinguished_name)
+/*static */void Certificate::setSubject(X509_REQ *req, std::string const &subject_distinguished_name)
 {
     auto parse_result(parse(subject_distinguished_name));
     if (!parse_result.second)
@@ -194,7 +255,7 @@ void Certificate::setSubject(X509_REQ *req, std::string const &subject_distingui
     else
     { /* all is well */ }
 }
-void Certificate::setExpiryTimes(X509 *x509, unsigned int days)
+/*static */void Certificate::setExpiryTimes(X509 *x509, unsigned int days)
 {
     if (!X509_gmtime_adj(X509_getm_notBefore(x509), 0))
     {
@@ -202,14 +263,14 @@ void Certificate::setExpiryTimes(X509 *x509, unsigned int days)
     }
     else
     { /* all is well */ }
-    if (!X509_time_adj_ex(X509_getm_notAfter(x509), days, 0, NULL))
+    if (!X509_time_adj_ex(X509_getm_notAfter(x509), days, 0, nullptr))
     {
         throw runtime_error("Failed to set expiry date");
     }
     else
     { /* all is well */ }
 }
-void Certificate::sign(X509 *x509, EVP_PKEY *private_key, std::string const &sha)
+/*static */void Certificate::sign(X509 *x509, EVP_PKEY *private_key, std::string const &sha)
 {
     EVP_MD const *md(EVP_get_digestbyname(sha.c_str()));
     if (!md)
@@ -226,7 +287,7 @@ void Certificate::sign(X509 *x509, EVP_PKEY *private_key, std::string const &sha
     case 2 : // the default digest is required: ignore the parameter given to us and use it in stead
         if (default_nid == NID_undef)
         {
-            md = NULL;
+            md = nullptr;
         }
         else
         {
@@ -251,6 +312,46 @@ void Certificate::sign(X509 *x509, EVP_PKEY *private_key, std::string const &sha
     if (X509_sign_ctx(x509, md_context.get()) <= 0)
     {
         throw runtime_error("Failed to sign certificate");
+    }
+    else
+    { /* all is well */ }
+}
+/*static */unique_ptr< BIO, function< void(BIO*) > > Certificate::openFile(std::string const &filename, bool for_reading)
+{
+    auto bio_deleter([](BIO *bio){ BIO_free_all(bio); });
+    if (filename == "-") // stdin/stdout, depending on read_only bit
+    {
+        if (for_reading)
+        {
+            return unique_ptr< BIO, decltype(bio_deleter) >(BIO_new_fp(stdin, BIO_NOCLOSE), bio_deleter);
+        }
+        else
+        {
+            return unique_ptr< BIO, decltype(bio_deleter) >(BIO_new_fp(stdout, BIO_NOCLOSE), bio_deleter);
+        }
+    }
+    else
+    {
+        return unique_ptr< BIO, decltype(bio_deleter) >(BIO_new_file(filename.c_str(), for_reading ? "rb" : "wb"), bio_deleter);
+    }
+}
+
+/*static */void Certificate::outputCertificate(BIO *bio, X509 *x509)
+{
+    PEM_write_bio_X509(bio, x509);
+}
+
+void Certificate::outputPrivateKey(BIO *bio, EVP_PKEY *key, std::string const &passkey)
+{
+    vector< unsigned char > enc_passkey(passkey.begin(), passkey.end());
+    PEM_write_bio_PrivateKey(bio, key, EVP_aes_256_cbc(), &enc_passkey[0], enc_passkey.size(), nullptr, nullptr);
+}
+
+/*static */void Certificate::outputX509Info(BIO *bio, X509 *x509)
+{
+    if(!X509_print_ex(bio, x509, 0, 0))
+    {
+        throw runtime_error("Error writing certificate to file");
     }
     else
     { /* all is well */ }
