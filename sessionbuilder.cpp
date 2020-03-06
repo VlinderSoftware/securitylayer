@@ -17,7 +17,7 @@
 #include "exceptions/contract.hpp"
 #include "details/irandomnumbergenerator.hpp"
 #include "hmac.hpp"
-#include "wrappedkeydata.hpp"
+#include "messages/wrappedkeydata.hpp"
 #include <openssl/crypto.h>
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
@@ -101,13 +101,13 @@ namespace DNP3SAv6 {
 	    case KeyWrapAlgorithm::rfc3394_aes256_key_wrap__ :
 		    switch (static_cast< AEADAlgorithm >(config_.aead_algorithm_))
 		    {
-		    case AEADAlgorithm::hmac_sha_256_truncated_8__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__       >::type) + 8/*IV size*/;
-		    case AEADAlgorithm::hmac_sha_256_truncated_16__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__      >::type) + 8/*IV size*/;
-            case AEADAlgorithm::hmac_sha_3_256_truncated_8__	: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_8__     >::type) + 8/*IV size*/;
-		    case AEADAlgorithm::hmac_sha_3_256_truncated_16__	: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_16__    >::type) + 8/*IV size*/;
-		    case AEADAlgorithm::hmac_blake2s_truncated_8__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_8__       >::type) + 8/*IV size*/;
-		    case AEADAlgorithm::hmac_blake2s_truncated_16__		: return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_16__      >::type) + 8/*IV size*/;
-		    case AEADAlgorithm::aes256_gcm__		            : return sizeof(typename WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::aes256_gcm__                     >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_sha_256_truncated_8__		: return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_8__       >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_sha_256_truncated_16__		: return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_256_truncated_16__      >::type) + 8/*IV size*/;
+            case AEADAlgorithm::hmac_sha_3_256_truncated_8__	: return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_8__     >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_sha_3_256_truncated_16__	: return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_sha_3_256_truncated_16__    >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_blake2s_truncated_8__		: return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_8__       >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::hmac_blake2s_truncated_16__		: return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::hmac_blake2s_truncated_16__      >::type) + 8/*IV size*/;
+		    case AEADAlgorithm::aes256_gcm__		            : return sizeof(typename Messages::WrappedKeyData< KeyWrapAlgorithm::rfc3394_aes256_key_wrap__, AEADAlgorithm::aes256_gcm__                     >::type) + 8/*IV size*/;
 		    default : 
 			    throw std::logic_error("Unknown MAC algorithm");
 		    }
@@ -119,6 +119,8 @@ namespace DNP3SAv6 {
 
     mutable_buffer SessionBuilder::createWrappedKeyData(mutable_buffer buffer)
 	{
+		using Messages::wrap;
+
 		key_wrap_algorithm_ = static_cast< decltype(key_wrap_algorithm_) >(config_.key_wrap_algorithm_);
 		aead_algorithm_ = static_cast< decltype(aead_algorithm_) >(config_.aead_algorithm_);
 
@@ -149,6 +151,8 @@ namespace DNP3SAv6 {
 
 	bool SessionBuilder::unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data)
 	{
+		using Messages::unwrap;
+
 		pre_condition(key_wrap_algorithm_ != KeyWrapAlgorithm::unknown__);
 		pre_condition(aead_algorithm_ != AEADAlgorithm::unknown__);
 
