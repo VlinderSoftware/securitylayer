@@ -149,16 +149,6 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 	return true;
 }
 
-/*virtual */KeyWrapAlgorithm SecurityLayer::getPreferredKeyWrapAlgorithm() const noexcept
-{
-	return KeyWrapAlgorithm::rfc3394_aes256_key_wrap__;
-}
-
-/*virtual */AEADAlgorithm SecurityLayer::getPreferredMACAlgorithm() const noexcept
-{
-	return AEADAlgorithm::hmac_sha_256_truncated_16__;
-}
-
 void SecurityLayer::reset() noexcept
 {
 	discardAPDU();
