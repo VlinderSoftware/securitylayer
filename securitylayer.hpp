@@ -109,9 +109,6 @@ protected:
 	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
 	virtual bool acceptMACAlgorithm(AEADAlgorithm incoming_mal) const noexcept;
 
-	virtual KeyWrapAlgorithm getPreferredKeyWrapAlgorithm() const noexcept;
-	virtual AEADAlgorithm getPreferredMACAlgorithm() const noexcept;
-
 protected :
     //TODO unify with the equivalent enum in the session builder 
     enum struct Direction {
