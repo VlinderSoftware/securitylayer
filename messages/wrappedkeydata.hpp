@@ -11,15 +11,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_wrappedkeydata_hpp
-#define dnp3sav6_wrappedkeydata_hpp
+#ifndef dnp3sav6_messages_wrappedkeydata_hpp
+#define dnp3sav6_messages_wrappedkeydata_hpp
 
 #include <cstdint>
 #include <boost/asio.hpp>
-#include "keywrapalgorithm.hpp"
-#include "aeadalgorithm.hpp"
+#include "../keywrapalgorithm.hpp"
+#include "../aeadalgorithm.hpp"
 
-namespace DNP3SAv6 {
+namespace DNP3SAv6 { namespace Messages {
 	/* There are a few variable-length fields in this struct as defined by the WG15 working document. IEEE 1815-2012 
 	 * defines it with similar variable-length fields for SAv5. I am not a fan of variable-length fields: it makes 
 	 * specs ambiguous and makes implementations harder to verify. Hence, the present proposal removes a number of 
@@ -84,7 +84,7 @@ namespace DNP3SAv6 {
         , AEADAlgorithm mal
         , boost::asio::const_buffer const& incoming_wrapped_key_data
         );
-}
+}}
 
 #endif
 

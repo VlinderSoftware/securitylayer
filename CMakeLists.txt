@@ -61,6 +61,7 @@ set(LAYER_PUBLIC_HEADERS
 	messages/sessionkeychangeresponse.hpp
 	messages/sessionstartrequest.hpp
 	messages/sessionstartresponse.hpp
+	messages/wrappedkeydata.hpp
 	outstation.hpp
 	profile.hpp
 	securitylayer.hpp
@@ -103,12 +104,11 @@ set(LIBLAYER_SRC
 	hmac.cpp
 	hmac.hpp
 	master.cpp
+	messages/wrappedkeydata.cpp
 	outstation.cpp
 	securitylayer.cpp
 	session.cpp
 	sessionbuilder.cpp
-	wrappedkeydata.cpp
-	wrappedkeydata.hpp
 	)
 
 add_library(secureauthentication SHARED
