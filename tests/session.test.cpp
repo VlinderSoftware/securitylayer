@@ -23,9 +23,8 @@ using namespace DNP3SAv6;
 
 SCENARIO( "Master sets up a session, then exchanges messages until the keys expire" "[session]") {
     unsigned char const request_bytes[] = { 0xC9, 0x01, 0x3C, 0x02, 0x06, 0x3C, 0x03, 0x06, 0x3C, 0x04, 0x06 }; // class 123 poll
-    unsigned char const response_bytes[] = { 0xC9, 0x81, 0x00, 0x00 }; // null response
 
-    GIVEN( "A new Master and a new Outstation" ) {
+    GIVEN( "A new Master and a new Outstation, configured for up to 1000 messages in either direction" ) {
 		io_context ioc;
 		Config default_config;
         default_config.session_key_change_count_ = 1000;
@@ -34,7 +33,6 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
 		Outstation outstation(ioc, 0/* association ID */, default_config, rng);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
-            bool done(false);
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
             
             auto master_update_result(master.update());
@@ -184,7 +182,6 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             }
         }
         WHEN( "A session is set up and an APDU pushed through by the Outstation" ) {
-            bool done(false);
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
             
             auto master_update_result(master.update());
@@ -338,6 +335,146 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
                             REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    /******************************************************************************************************************
+     * NOTE: this test is timing-dependent in that if you run it in a debugger and hang around for more than five     *
+     *       seconds, it may fail in unexpected ways because the session may time out where it's not expected.        *
+     ******************************************************************************************************************/
+    GIVEN( "A new Master and a new Outstation, configured for a session duration of up to five seconds on the Master" ) {
+		io_context ioc;
+		Config master_config;
+		master_config.session_key_change_interval_ = 5;
+		Config outstation_config;
+		Tests::DeterministicRandomNumberGenerator rng;
+		Master master(ioc, 0/* association ID */, master_config, rng);
+		Outstation outstation(ioc, 0/* association ID */, outstation_config, rng);
+
+        WHEN( "A session is set up and an APDU pushed through by the Master" ) {
+            auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
+            master.postAPDU(apdu_to_post);
+            outstation.postSPDU(master.getSPDU());
+            master.postSPDU(outstation.getSPDU());
+            outstation.postSPDU(master.getSPDU());
+            master.postSPDU(outstation.getSPDU());
+            master.update();
+            outstation.postSPDU(master.getSPDU());
+            auto received_apdu(outstation.getAPDU());
+
+            THEN( "The session can go on for five seconds" ) {
+                boost::asio::steady_timer session_timer(ioc, std::chrono::milliseconds(4900));
+                bool done(false);
+                session_timer.async_wait([&](const boost::system::error_code& error){ done = !error; });
+
+                boost::asio::steady_timer pump_timer(ioc, std::chrono::milliseconds(100));
+                auto pump_an_apdu_through([&](const boost::system::error_code& error){
+                        if (!done)
+                        {
+                            master.postAPDU(apdu_to_post);
+                            outstation.postSPDU(master.getSPDU());
+                            received_apdu = outstation.getAPDU();
+                            REQUIRE( master.getState() == SecurityLayer::active__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                            pump_timer.expires_at(pump_timer.expires_at() + std::chrono::milliseconds(100));
+                        }
+                    });
+                while (!done)
+                {
+                    pump_timer.async_wait(pump_an_apdu_through);
+                    ioc.run_one();
+                }
+
+                WHEN( "The session is thus expired" ) {
+                    this_thread::sleep_for(std::chrono::milliseconds(200));
+
+                    THEN( "The Master will send a SessionStartRequest when a new new APDU comes in" ) {
+                        master.postAPDU(apdu_to_post);
+                        outstation.postSPDU(master.getSPDU());
+                        REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+                    }
+
+                    THEN( "The Master will reject an incoming SecureMessage as unexpected" ) {
+                        outstation.postAPDU(apdu_to_post);
+				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
+                        master.postSPDU(outstation.getSPDU());
+				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 1 );
+                        REQUIRE( master.getState() == SecurityLayer::active__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                    }
+                }
+            }
+        }
+    }
+
+    /******************************************************************************************************************
+     * NOTE: this test is timing-dependent in that if you run it in a debugger and hang around for more than five     *
+     *       seconds, it may fail in unexpected ways because the session may time out where it's not expected.        *
+     ******************************************************************************************************************/
+    GIVEN( "A new Master and a new Outstation, configured for a session duration of up to five seconds on the outstation" ) {
+		io_context ioc;
+		Config master_config;
+		Config outstation_config;
+		outstation_config.session_key_change_interval_ = 5;
+		Tests::DeterministicRandomNumberGenerator rng;
+		Master master(ioc, 0/* association ID */, master_config, rng);
+		Outstation outstation(ioc, 0/* association ID */, outstation_config, rng);
+
+        WHEN( "A session is set up and an APDU pushed through by the Master" ) {
+            auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
+            master.postAPDU(apdu_to_post);
+            outstation.postSPDU(master.getSPDU());
+            master.postSPDU(outstation.getSPDU());
+            outstation.postSPDU(master.getSPDU());
+            master.postSPDU(outstation.getSPDU());
+            master.update();
+            outstation.postSPDU(master.getSPDU());
+            auto received_apdu(outstation.getAPDU());
+
+            THEN( "The session can go on for five seconds" ) {
+                boost::asio::steady_timer session_timer(ioc, std::chrono::milliseconds(4900));
+                bool done(false);
+                session_timer.async_wait([&](const boost::system::error_code& error){ done = !error; });
+
+                boost::asio::steady_timer pump_timer(ioc, std::chrono::milliseconds(100));
+                auto pump_an_apdu_through([&](const boost::system::error_code& error){
+                        if (!done)
+                        {
+                            master.postAPDU(apdu_to_post);
+                            outstation.postSPDU(master.getSPDU());
+                            received_apdu = outstation.getAPDU();
+                            REQUIRE( master.getState() == SecurityLayer::active__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                            pump_timer.expires_at(pump_timer.expires_at() + std::chrono::milliseconds(100));
+                        }
+                    });
+                while (!done)
+                {
+                    pump_timer.async_wait(pump_an_apdu_through);
+                    ioc.run_one();
+                }
+
+                WHEN( "The session is thus expired" ) {
+                    this_thread::sleep_for(std::chrono::milliseconds(200));
+
+                    THEN( "The Outstation will send a SessionInitiation when a new new APDU comes in" ) {
+                        outstation.postAPDU(apdu_to_post);
+                        master.postSPDU(outstation.getSPDU());
+                        REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+                    }
+
+                    THEN( "The Outstation will reject an incoming SecureMessage as unexpected" ) {
+                        master.postAPDU(apdu_to_post);
+				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
+                        outstation.postSPDU(master.getSPDU());
+				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 1 );
+                        REQUIRE( master.getState() == SecurityLayer::active__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::active__ );
                     }
                 }
             }
