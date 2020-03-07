@@ -37,7 +37,7 @@ public :
 	Master& operator=(Master const&) = delete;
 
 protected :
-    virtual Direction getIncomingDirection() const noexcept override { return Direction::monitoring__; };
+    virtual Details::Direction getIncomingDirection() const noexcept override { return Details::Direction::monitoring__; };
 
     virtual void reset() noexcept override;
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept override;

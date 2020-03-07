@@ -48,33 +48,44 @@ Master::Master(
 
 /*virtual */void Master::onPostAPDU(boost::asio::const_buffer const &apdu) noexcept/* override*/
 {
-	switch (getState())
-	{
-	case initial__ :
-		incrementSEQ();
-		sendSessionStartRequest();
-		setState(expect_session_start_response__);
-		break;
-	case expect_session_start_response__ :
-		/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
-		 * the APDUs */
-		break;
-	case expect_session_key_change_response__ :
-		/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
-		 * SessionStartResponse messages, not by APDUs. */
-		break;
-	case active__ :
+	if (getSession().valid(Details::Direction::control__))
 	{
 		incrementSEQ();
-		const_buffer spdu(formatSecureMessage(Direction::controlling__, apdu));
+		const_buffer spdu(formatSecureMessage(Details::Direction::control__, apdu));
 		setOutgoingSPDU(spdu/* no time-out */);
 		// no state change
 		incrementStatistic(Statistics::total_messages_sent__);
-		incrementStatistic(Statistics::authenticated_apdus_sent__);
-		break;
+		incrementStatistic(Statistics::secure_messages_sent_);
+		clearPendingAPDU();
 	}
-	default :
-		assert(!"Unexpected state");
+	else 
+	{
+		if (getState() == active__)
+		{
+			setState(initial__);
+		}
+		else
+		{ /* this is not a case of our session having just expired */ }
+
+		switch (getState())
+		{
+		case initial__ :
+			incrementSEQ();
+			sendSessionStartRequest();
+			setState(expect_session_start_response__);
+			break;
+		case expect_session_start_response__ :
+			/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
+			 * the APDUs */
+			break;
+		case expect_session_key_change_response__ :
+			/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
+			 * SessionStartResponse messages, not by APDUs. */
+			break;
+		case active__ :
+		default :
+			assert(!"Unexpected state");
+		}
 	}
 }
 
@@ -84,6 +95,7 @@ Master::Master(
 	{
 #if defined(OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION) && OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
 	case initial__ :
+	case active__ :
 		incrementSEQ();
 		// fall through
 	case expect_session_start_response__ :
@@ -126,7 +138,6 @@ Master::Master(
 		break;
 #endif
 	case expect_session_key_change_response__ :
-	case active__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;
 	default :
@@ -205,7 +216,7 @@ Master::Master(
         // check whether the incoming MAC size corresponds to the expected MAC size
         assert(expected_mac_size == incoming_mac.size());
         // calculate the MAC with the monitoring-direction session key
-        auto expected_mac(session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__));
+        auto expected_mac(session_builder_.getDigest(Details::Direction::monitoring__));
         assert(expected_mac.size() >= expected_mac_size);
         // compare the MAC received with the one calculated
         if (CRYPTO_memcmp(incoming_mac.data(), expected_mac.data(), expected_mac_size) != 0)

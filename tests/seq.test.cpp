@@ -31,7 +31,7 @@ namespace {
     }
 }
 
-SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]") {
+SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
     unsigned char const request_bytes[] = { 0xC9, 0x01, 0x3C, 0x02, 0x06, 0x3C, 0x03, 0x06, 0x3C, 0x04, 0x06 }; // class 123 poll
     unsigned char const response_bytes[] = { 0xC9, 0x81, 0x00, 0x00 }; // null response
 
@@ -143,7 +143,7 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
 				        REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
-				        REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 1 );	
 				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
                         outstation.postSPDU(old_spdu);
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );
@@ -151,7 +151,7 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
 				        REQUIRE( outstation.getStatistic(Statistics::discarded_messages__) == 1 );
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
-				        REQUIRE( outstation.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 1 );	
                     }
                 }
                 WHEN( "messages from the Outstation arrive at the Master out-of-order" ) {
@@ -169,7 +169,7 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
 				        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
-				        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 1 );	
 				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
                         master.postSPDU(old_spdu);
 				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 3 );
@@ -177,7 +177,7 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[session]")
 				        REQUIRE( master.getStatistic(Statistics::discarded_messages__) == 1 );
 				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
-				        REQUIRE( master.getStatistic(Statistics::authenticated_apdus_sent__) == 1 );	
+				        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 1 );	
                     }
                 }
             }

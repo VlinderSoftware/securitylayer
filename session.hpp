@@ -19,21 +19,32 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "keywrapalgorithm.hpp"
 #include "aeadalgorithm.hpp"
 #include "config.hpp"
-#include <boost/asio/buffer.hpp>
+#include "details/direction.hpp"
+#include <boost/asio.hpp>
 
 namespace DNP3SAv6 { 
 class SessionBuilder;
 class Session
 {
 public :
+    Session(boost::asio::io_context &ioc);
+    Session(Session const &other);
+    Session(Session &&other) = default;
+
+    Session& operator=(Session const &other);
+    Session& operator=(Session &&other) = default;
+
     KeyWrapAlgorithm getKeyWrapAlgorithm() const noexcept;
     AEADAlgorithm getAEADAlgorithm() const noexcept;
 
     boost::asio::const_buffer getControlDirectionSessionKey() const noexcept;
     boost::asio::const_buffer getMonitoringDirectionSessionKey() const noexcept;
 
-    bool valid() const noexcept;
+    bool valid(Details::Direction direction) const noexcept;
     void reset() noexcept;
+
+protected :
+    void start(std::chrono::seconds const &ttl_duration, unsigned int session_key_change_count);
 
 private :
 	KeyWrapAlgorithm key_wrap_algorithm_ = KeyWrapAlgorithm::unknown__;
@@ -45,6 +56,12 @@ private :
     std::size_t monitoring_direction_session_key_size_ = 0;
 
     bool valid_ = false;
+    mutable unsigned int control_direction_session_key_use_count_ = 0;
+    mutable unsigned int monitoring_direction_session_key_use_count_ = 0;
+
+	boost::asio::steady_timer session_timeout_;
+	unsigned int session_key_change_count_ = 0;
+    boost::asio::io_context *io_context_;
 
     friend class SessionBuilder;
 };
