@@ -29,11 +29,6 @@ namespace Details {
 class SessionBuilder : private Session
 {
 public :
-    enum struct Direction {
-          control_direction__
-        , monitoring_direction__
-        };
-
 	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Config const &config);
 	~SessionBuilder() = default;
 	
@@ -54,9 +49,6 @@ public :
 	void setSessionStartResponse(boost::asio::const_buffer const &spdu, boost::asio::const_buffer const &nonce);
 	void setSessionKeyChangeRequest(boost::asio::const_buffer const &spdu);
 
-	void setSessionKeyChangeInterval(std::chrono::seconds const &ttl_duration);
-	void setSessionKeyChangeCount(unsigned int session_key_change_count);
-
     unsigned int getWrappedKeyDataLength() const;
 	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer);
     bool unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data);
@@ -66,7 +58,7 @@ public :
     using Session::getKeyWrapAlgorithm;
     using Session::getAEADAlgorithm;
 
-    boost::asio::const_buffer getDigest(Direction direction) const noexcept;
+    boost::asio::const_buffer getDigest(Details::Direction direction) const noexcept;
 
     std::uint32_t getSEQ() const noexcept;
     void setSEQ(std::uint32_t seq) noexcept;
@@ -82,9 +74,6 @@ private :
 	unsigned int session_start_response_nonce_size_ = 0;
     unsigned char session_key_change_request_message_[Config::max_spdu_size__];
 	unsigned int session_key_change_request_message_size_ = 0;
-
-	boost::asio::steady_timer session_timeout_;
-	unsigned int session_key_change_count_ = 0;
 
 	Details::IRandomNumberGenerator &random_number_generator_;
 

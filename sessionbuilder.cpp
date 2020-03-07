@@ -27,7 +27,7 @@ using namespace boost::asio;
 
 namespace DNP3SAv6 {
 	SessionBuilder::SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Config const &config)
-		: session_timeout_(ioc)
+		: Session(ioc)
 		, random_number_generator_(random_number_generator)
         , config_(config)
 	{
@@ -41,12 +41,13 @@ namespace DNP3SAv6 {
 		session_start_response_message_size_ = 0;
 		session_start_response_nonce_size_ = 0;
 		session_key_change_request_message_size_ = 0;
-		session_key_change_count_ = 0;
 	}
 
 	Session SessionBuilder::getSession() const noexcept
 	{
-		return *this;
+		Session session(*this);
+		session.start(std::chrono::seconds(config_.session_key_change_interval_), config_.session_key_change_count_);
+		return session;
 	}
 
 	void SessionBuilder::setKeyWrapAlgorithm(KeyWrapAlgorithm key_wrap_algorithm)
@@ -83,16 +84,6 @@ namespace DNP3SAv6 {
 		memcpy(session_key_change_request_message_, spdu.data(), spdu.size());
 		session_key_change_request_message_size_ = spdu.size();
     }
-
-	void SessionBuilder::setSessionKeyChangeInterval(std::chrono::seconds const &ttl_duration)
-	{
-		session_timeout_.expires_after(ttl_duration);
-	}
-
-	void SessionBuilder::setSessionKeyChangeCount(unsigned int session_key_change_count)
-	{
-		session_key_change_count_ = session_key_change_count;
-	}
 
     unsigned int SessionBuilder::getWrappedKeyDataLength() const
     {
@@ -142,7 +133,7 @@ namespace DNP3SAv6 {
 			, aead_algorithm_
 			, const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
 			, const_buffer(monitoring_direction_session_key_, sizeof(monitoring_direction_session_key_))
-			, getDigest(Direction::control_direction__)
+			, getDigest(Details::Direction::control__)
 			);
 		valid_ = true;
 
@@ -225,9 +216,9 @@ namespace DNP3SAv6 {
 		return const_buffer(update_key__, sizeof(update_key__));
 	}
 
-	boost::asio::const_buffer SessionBuilder::getDigest(Direction direction) const noexcept
+	boost::asio::const_buffer SessionBuilder::getDigest(Details::Direction direction) const noexcept
 	{
-		if (direction == Direction::control_direction__)
+		if (direction == Details::Direction::control__)
 		{
 			mutable_buffer control_direction_digest_buffer(control_direction_digest_, sizeof(control_direction_digest_));
 			return getDigest(
@@ -237,7 +228,7 @@ namespace DNP3SAv6 {
 		}
 		else
 		{
-			pre_condition(direction == Direction::monitoring_direction__);
+			pre_condition(direction == Details::Direction::monitoring__);
 			mutable_buffer monitoring_direction_digest_buffer(monitoring_direction_digest_, sizeof(monitoring_direction_digest_));
 			return getDigest(
 				  monitoring_direction_digest_buffer
