@@ -1,4 +1,3 @@
-#include "securitylayer.hpp"
 /* Copyright 2019  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -35,6 +34,7 @@ SecurityLayer::SecurityLayer(
 	, random_number_generator_(random_number_generator)
 	, timeout_(io_context)
     , association_id_(association_id)
+	, session_(io_context)
 {
 	memset(statistics_, 0, sizeof(statistics_));
 }
@@ -126,17 +126,31 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
     }
     if (state_ == State::active__)
     {
-        if (outgoing_apdu_.size())
-        {
-            onPostAPDU(outgoing_apdu_);
-            return update();
-        }
-        else
-        { /* no APDU to handle */ }
+		if (!getSession().valid(getOutgoingDirection()))
+		{
+			state_ = State::initial__;
+		}
+		else
+		{
+			if (outgoing_apdu_.size())
+			{
+				onPostAPDU(outgoing_apdu_);
+				return update();
+			}
+			else
+			{ /* no APDU to handle */ }
+		}
     }
     else
     { /* SA protocol is still driving */ }
-    return make_pair(UpdateResult::wait__, timeout_.expires_from_now());
+	if (getSession().valid(getOutgoingDirection()))
+	{
+		return make_pair(UpdateResult::wait__, min(timeout_.expires_from_now(), getSession().getTimeout().expires_from_now()));
+	}
+	else
+	{
+		return make_pair(UpdateResult::wait__, timeout_.expires_from_now());
+	}
 }
 
 /*virtual */bool SecurityLayer::acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept
@@ -147,16 +161,6 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 /*virtual */bool SecurityLayer::acceptMACAlgorithm(AEADAlgorithm incoming_mal) const noexcept
 {
 	return true;
-}
-
-/*virtual */KeyWrapAlgorithm SecurityLayer::getPreferredKeyWrapAlgorithm() const noexcept
-{
-	return KeyWrapAlgorithm::rfc3394_aes256_key_wrap__;
-}
-
-/*virtual */AEADAlgorithm SecurityLayer::getPreferredMACAlgorithm() const noexcept
-{
-	return AEADAlgorithm::hmac_sha_256_truncated_16__;
 }
 
 void SecurityLayer::reset() noexcept
@@ -194,7 +198,7 @@ void SecurityLayer::discardAPDU() noexcept
 	}
 	else
 	{ /* no pending APDU - nothing to increment */ }
-	outgoing_apdu_ = const_buffer();
+	clearPendingAPDU();
 }
 
 void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
@@ -203,9 +207,14 @@ void SecurityLayer::queueAPDU(boost::asio::const_buffer const &apdu) noexcept
 	outgoing_apdu_ = const_buffer(outgoing_apdu_buffer_, apdu.size());
 }
 
-boost::asio::const_buffer SecurityLayer::formatSecureMessage(Direction direction, boost::asio::const_buffer const &apdu) noexcept
+void SecurityLayer::clearPendingAPDU() noexcept
 {
-    invariant(getSession().valid());
+	outgoing_apdu_ = const_buffer();
+}
+
+boost::asio::const_buffer SecurityLayer::formatSecureMessage(Details::Direction direction, boost::asio::const_buffer const &apdu) noexcept
+{
+    pre_condition(getSession().valid(direction));
 
     size_t const needed_space((8/*SPDU header size*/) + sizeof(Messages::SecureMessage) + apdu.size() + getAEADAlgorithmAuthenticationTagSize(session_.getAEADAlgorithm()));
 
@@ -241,7 +250,7 @@ boost::asio::const_buffer SecurityLayer::formatSecureMessage(Direction direction
           encrypt(
               output_buffer
             , getSession().getAEADAlgorithm()
-            , direction == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
+            , direction == Details::Direction::control__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
             , nonce_buffer
             , associated_data_buffer
             , secure_message_serialized_buffer
@@ -255,7 +264,7 @@ boost::asio::const_buffer SecurityLayer::formatSecureMessage(Direction direction
 
 boost::asio::const_buffer SecurityLayer::format(Messages::SessionInitiation const &session_initiation) noexcept
 {
-    invariant(!getSession().valid());
+    invariant(!getSession().valid(Details::Direction::monitoring__));
 
 	static_assert(sizeof(outgoing_spdu_buffer_) >= (8/*SPDU header size*/), "buffer too small");
 	outgoing_spdu_size_ = 0;
@@ -465,7 +474,7 @@ void SecurityLayer::rxSecureMessage(std::uint32_t incoming_seq, boost::asio::con
      *      This means we can receive authenticated APDUs while a new session is being built.
      *      Whether the other side is actually capable of sending them in the current state
      *      is another matter. */
-    if (!getSession().valid())
+    if (!getSession().valid(getIncomingDirection()))
     {
         incrementStatistic(Statistics::unexpected_messages__);
         return;
@@ -497,7 +506,7 @@ void SecurityLayer::rxSecureMessage(std::uint32_t incoming_seq, boost::asio::con
           decrypt(
               mutable_buffer(incoming_apdu_buffer_, sizeof(incoming_apdu_buffer_))
             , getSession().getAEADAlgorithm()
-            , getIncomingDirection() == Direction::controlling__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
+            , getIncomingDirection() == Details::Direction::control__ ? getSession().getControlDirectionSessionKey() : getSession().getMonitoringDirectionSessionKey()
             , incoming_nonce
             , incoming_associated_data
             , incoming_payload

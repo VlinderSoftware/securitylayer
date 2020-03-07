@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
 #include "wrappedkeydata.hpp"
-#include "exceptions/contract.hpp"
-#include "details/rfc3394aes256keywrap.hpp"
-#include "config.hpp"
+#include "../exceptions/contract.hpp"
+#include "../details/rfc3394aes256keywrap.hpp"
+#include "../config.hpp"
 
 using namespace boost::asio;
 
-namespace DNP3SAv6 {
+namespace DNP3SAv6 { namespace Messages {
 	namespace {
 		template < KeyWrapAlgorithm kwa, AEADAlgorithm mal, typename KeyWrapAlgorithm >
         struct Wrapper
@@ -153,5 +153,5 @@ bool unwrap(
 		throw std::logic_error("Unknown key-wrap algorithm");
 	}
 }
-}
+}}
 

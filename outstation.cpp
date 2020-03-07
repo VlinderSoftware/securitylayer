@@ -40,20 +40,28 @@ Outstation::Outstation(
 /*virtual */void Outstation::onPostAPDU(boost::asio::const_buffer const &apdu) noexcept/* override*/
 {
     /* NOTE we don't check the state here: if we have a valid session, we use it.
-     *      This means we can send authenticated APDUs while a new session is being built. 
-     *      The Master may or may not accept those APDUs, according to its own state, but 
+     *      This means we can send secure messages while a new session is being built. 
+     *      The Master may or may not accept those messages, according to its own state, but 
      *      we don't care at this point. If it doesn't accept the APDUs, they'll just time 
      *      out. */
-    if (getSession().valid())
+    if (getSession().valid(Details::Direction::monitoring__))
     {
 		incrementSEQ();
-        setOutgoingSPDU(formatSecureMessage(Direction::monitoring__, apdu), std::chrono::seconds(config_.session_key_change_interval_));
-        incrementStatistic(Statistics::authenticated_apdus_sent__);
+        setOutgoingSPDU(formatSecureMessage(Details::Direction::monitoring__, apdu), std::chrono::seconds(config_.session_key_change_interval_));
+        incrementStatistic(Statistics::secure_messages_sent_);
         incrementStatistic(Statistics::total_messages_sent__);
+		clearPendingAPDU();
     }
     else
     {
-	    switch (getState())
+		if (getState() == active__)
+		{
+			setState(initial__);
+		}
+		else
+		{ /* this is not a case of our session having just expired */ }
+
+		switch (getState())
 	    {
 	    case initial__ :
 		    incrementSEQ();
@@ -187,18 +195,18 @@ Outstation::Outstation(
             response_spdu = format(
 				  session_builder_.getSEQ()
 				, Messages::SessionKeyChangeResponse()
-				, session_builder_.getDigest(SessionBuilder::Direction::monitoring_direction__)
+				, session_builder_.getDigest(Details::Direction::monitoring__)
 				, getAEADAlgorithmAuthenticationTagSize(session_builder_.getAEADAlgorithm())
 				);
             setOutgoingSPDU(response_spdu, std::chrono::seconds(config_.session_key_change_interval_));
             incrementStatistic(Statistics::total_messages_sent__);
-            if (getSession().valid())
+            if (getSession().valid(Details::Direction::monitoring__))
             { //TODO if we set up a second (replacement) session, we won't use it until the Master has sent us an authenticated APDU using it, or the old one times out
             }
             else
             {
-                assert(session_builder_.getSession().valid());
-                setSession(session_builder_.getSession());
+				auto session(session_builder_.getSession());
+                setSession(session);
                 setSEQ(0);
                 seq_validator_.reset();
             }

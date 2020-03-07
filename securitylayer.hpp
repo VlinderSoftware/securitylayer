@@ -24,6 +24,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "aeadalgorithm.hpp"
 #include "session.hpp"
 #include "details/seqvalidator.hpp"
+#include "details/direction.hpp"
 
 namespace DNP3SAv6 {
 namespace Details {
@@ -109,17 +110,9 @@ protected:
 	virtual bool acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept;
 	virtual bool acceptMACAlgorithm(AEADAlgorithm incoming_mal) const noexcept;
 
-	virtual KeyWrapAlgorithm getPreferredKeyWrapAlgorithm() const noexcept;
-	virtual AEADAlgorithm getPreferredMACAlgorithm() const noexcept;
-
 protected :
-    //TODO unify with the equivalent enum in the session builder 
-    enum struct Direction {
-          monitoring__
-        , controlling__
-    };
-
-    virtual Direction getIncomingDirection() const noexcept = 0;
+    virtual Details::Direction getIncomingDirection() const noexcept = 0;
+    virtual Details::Direction getOutgoingDirection() const noexcept = 0;
 
 	virtual void reset() noexcept = 0;
 
@@ -131,6 +124,7 @@ protected :
 
 	void discardAPDU() noexcept;
 	void queueAPDU(boost::asio::const_buffer const &apdu) noexcept;
+	void clearPendingAPDU() noexcept;
 
 	virtual void onPostAPDU(boost::asio::const_buffer const &apdu) noexcept = 0;
 
@@ -138,7 +132,7 @@ protected :
 	std::uint32_t getSEQ() const noexcept { return seq_; }
 	void setSEQ(std::uint32_t seq) noexcept { seq_ = seq; }
 
-	boost::asio::const_buffer formatSecureMessage(Direction direction, boost::asio::const_buffer const &apdu) noexcept;
+	boost::asio::const_buffer formatSecureMessage(Details::Direction direction, boost::asio::const_buffer const &apdu) noexcept;
 	boost::asio::const_buffer format(Messages::SessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
@@ -157,7 +151,7 @@ protected :
     virtual void rxSecureMessage(std::uint32_t incoming_seq, boost::asio::const_buffer const& incoming_nonce, boost::asio::const_buffer const& incoming_associated_data, boost::asio::const_buffer const& incoming_payload, boost::asio::const_buffer const& incoming_spdu) noexcept;
 
     void setSession(Session const &session) noexcept { session_ = session; }
-    Session getSession() const noexcept { return session_; }
+    Session& getSession() noexcept { return session_; }
 
 	Config const config_;
 	Details::IRandomNumberGenerator &random_number_generator_;
