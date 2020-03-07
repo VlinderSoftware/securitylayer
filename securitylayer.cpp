@@ -126,17 +126,31 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
     }
     if (state_ == State::active__)
     {
-        if (outgoing_apdu_.size())
-        {
-            onPostAPDU(outgoing_apdu_);
-            return update();
-        }
-        else
-        { /* no APDU to handle */ }
+		if (!getSession().valid(getOutgoingDirection()))
+		{
+			state_ = State::initial__;
+		}
+		else
+		{
+			if (outgoing_apdu_.size())
+			{
+				onPostAPDU(outgoing_apdu_);
+				return update();
+			}
+			else
+			{ /* no APDU to handle */ }
+		}
     }
     else
     { /* SA protocol is still driving */ }
-    return make_pair(UpdateResult::wait__, timeout_.expires_from_now());
+	if (getSession().valid(getOutgoingDirection()))
+	{
+		return make_pair(UpdateResult::wait__, min(timeout_.expires_from_now(), getSession().getTimeout().expires_from_now()));
+	}
+	else
+	{
+		return make_pair(UpdateResult::wait__, timeout_.expires_from_now());
+	}
 }
 
 /*virtual */bool SecurityLayer::acceptKeyWrapAlgorithm(KeyWrapAlgorithm incoming_kwa) const noexcept
