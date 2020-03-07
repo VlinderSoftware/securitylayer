@@ -43,6 +43,8 @@ public :
     bool valid(Details::Direction direction) const noexcept;
     void reset() noexcept;
 
+    boost::asio::steady_timer const& getTimeout() const noexcept { return session_timeout_; }
+
 protected :
     void start(std::chrono::seconds const &ttl_duration, unsigned int session_key_change_count);
 

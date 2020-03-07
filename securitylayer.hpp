@@ -112,6 +112,7 @@ protected:
 
 protected :
     virtual Details::Direction getIncomingDirection() const noexcept = 0;
+    virtual Details::Direction getOutgoingDirection() const noexcept = 0;
 
 	virtual void reset() noexcept = 0;
 
