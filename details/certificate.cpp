@@ -1,5 +1,3 @@
-//!!! Some error checking is missing in this code!
-
 /* Copyright 2020  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -101,35 +99,44 @@ namespace DNP3SAv6 { namespace Details {
     // sign it all with our own private key
     sign(x509.get(), options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get(), options.sha_);
 
-    return Certificate(x509.release(), options.rsa_bits_ ? rsa_private_key.release() : ecdsa_private_key.release());
+    return Certificate(x509.release(), options.rsa_bits_ ? rsa_private_key.release() : ecdsa_private_key.release(), ecdh_private_key.release());
 }
 
 /*static */Certificate Certificate::load(std::string const& filename)
 {
     auto bio(openFile(filename, true));
+    if (!bio.get()) throw runtime_error("failed to open file");
     X509 *x509(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
-    return Certificate(x509, nullptr);
+    if (x509) throw runtime_error("failed to read file");
+    return Certificate(x509, nullptr, nullptr);
 }
 
 /*static */Certificate Certificate::load(std::string const& filename, std::string const& passkey)
 {
     auto bio(openFile(filename, true));
+    if (!bio.get()) throw runtime_error("failed to open file");
     X509 *x509(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
-    EVP_PKEY *privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, const_cast< void* >(reinterpret_cast< void const * >(passkey.c_str()))));
-    return Certificate(x509, privkey);
+    if (x509) throw runtime_error("failed to read file");
+    EVP_PKEY *signature_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, const_cast< void* >(reinterpret_cast< void const * >(passkey.c_str()))));
+    if (signature_privkey) throw runtime_error("failed to read private key");
+    EVP_PKEY *ecdh_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, const_cast< void* >(reinterpret_cast< void const * >(passkey.c_str()))));
+    if (ecdh_privkey) throw runtime_error("failed to read private key");
+    return Certificate(x509, signature_privkey, ecdh_privkey);
 }
 
 /*static */Certificate Certificate::decode(std::vector< unsigned char > const& serialized_certificate)
 {
     unsigned char const *p(&serialized_certificate[0]);
     X509 *x509(d2i_X509(nullptr, &p, serialized_certificate.size()));
-    return Certificate(x509, nullptr);
+    if (x509) throw runtime_error("failed to read file");
+    return Certificate(x509, nullptr, nullptr);
 }
 
 void Certificate::store(std::string const& filename, bool include_human_readable/* = false*/) const
 {
     pre_condition(x509_);
     auto bio(openFile(filename, false));
+    if (!bio.get()) throw runtime_error("failed to open file");
     outputCertificate(bio.get(), x509_);
     if (include_human_readable) outputX509Info(bio.get(), x509_);
 }
@@ -137,10 +144,13 @@ void Certificate::store(std::string const& filename, bool include_human_readable
 void Certificate::store(std::string const& filename, std::string const& passkey, bool include_human_readable/* = false*/) const
 {
     pre_condition(x509_);
-    pre_condition(private_key_);
+    pre_condition(signature_private_key_);
+    pre_condition(ecdh_private_key_);
     auto bio(openFile(filename, false));
+    if (!bio.get()) throw runtime_error("failed to open file");
     outputCertificate(bio.get(), x509_);
-    outputPrivateKey(bio.get(), private_key_, passkey);
+    outputPrivateKey(bio.get(), signature_private_key_, passkey);
+    outputPrivateKey(bio.get(), ecdh_private_key_, passkey);
     if (include_human_readable) outputX509Info(bio.get(), x509_);
 }
 
@@ -167,14 +177,26 @@ std::vector< unsigned char > Certificate::encode() const
     return retval;
 }
 
-Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
+PublicKey Certificate::getECDHPublicKey() const
+{
+    return PublicKey();
+}
+
+PrivateKey Certificate::getECDHPrivateKey() const
+{
+    return PrivateKey();
+}
+
+Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *ecdh_private_key)
     : x509_(x509)
-    , private_key_(private_key)
+    , signature_private_key_(signature_private_key)
+    , ecdh_private_key_(ecdh_private_key)
 { /* no-op */ }
 
 /*virtual */Certificate::~Certificate()
 {
-    EVP_PKEY_free(private_key_);
+    EVP_PKEY_free(ecdh_private_key_);
+    EVP_PKEY_free(signature_private_key_);
     X509_free(x509_);
 }
 
@@ -182,6 +204,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
 {
     auto asn1_integer_deleter([](ASN1_INTEGER *v){ ASN1_INTEGER_free(v); });
     unique_ptr< ASN1_INTEGER, decltype(asn1_integer_deleter) > serial_number(ASN1_INTEGER_new(), asn1_integer_deleter);
+    if (!serial_number.get()) throw std::bad_alloc();
 
     auto bignum_deleter([](BIGNUM *b){ BN_free(b); });
     unique_ptr< BIGNUM, decltype(bignum_deleter) > bn_temp(BN_new(), bignum_deleter);
@@ -209,6 +232,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
     int ecc_group(OBJ_txt2nid(curve.c_str()));
     auto ec_key_deleter([](EC_KEY *k){ EC_KEY_free(k); });
     unique_ptr< EC_KEY, decltype(ec_key_deleter) > ecc(EC_KEY_new_by_curve_name(ecc_group), ec_key_deleter);
+    if (!ecc.get()) throw std::bad_alloc();
     EC_KEY_set_asn1_flag(ecc.get(), OPENSSL_EC_NAMED_CURVE); // needed to sign with
     if (!EC_KEY_generate_key(ecc.get()))
     {
@@ -218,6 +242,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
     { /* all is well */ }
     auto evp_pkey_deleter([](EVP_PKEY *k){ EVP_PKEY_free(k); });
     unique_ptr< EVP_PKEY, decltype(evp_pkey_deleter) > pkey(EVP_PKEY_new(), evp_pkey_deleter);
+    if (!pkey.get()) throw std::bad_alloc();
     if (!EVP_PKEY_assign_EC_KEY(pkey.get(), ecc.get()))
     {
         throw runtime_error("Failed to assign key to pkey");
@@ -259,6 +284,7 @@ static int BNGenCallback(int, int, BN_GENCB *)
 
     auto evp_pkey_deleter([](EVP_PKEY *k){ EVP_PKEY_free(k); });
     unique_ptr< EVP_PKEY, decltype(evp_pkey_deleter) > pkey(EVP_PKEY_new(), evp_pkey_deleter);
+    if (!pkey.get()) throw std::bad_alloc();
     if (!EVP_PKEY_assign_RSA(pkey.get(), rsa.get()))
     {
         throw runtime_error("Failed to assign key to pkey");
@@ -273,6 +299,7 @@ static int BNGenCallback(int, int, BN_GENCB *)
 {
     auto x509_req_deleter([](X509_REQ *req){ X509_REQ_free(req); });
     unique_ptr< X509_REQ, decltype(x509_req_deleter) > req(X509_REQ_new(), x509_req_deleter);
+    if (!req.get()) throw std::bad_alloc();
 
     // we will be using version 1 certificates. The parameter to X509_REQ_set_version is "one less than the version", so we need to set 0
     if (!X509_REQ_set_version(req.get(), 0/* version 1 */))
@@ -338,6 +365,7 @@ static int BNGenCallback(int, int, BN_GENCB *)
     { /* all is well */ }
     auto x509_name_deleter([](X509_NAME *name){ X509_NAME_free(name); });
     unique_ptr< X509_NAME, decltype(x509_name_deleter) > name(X509_NAME_new(), x509_name_deleter);
+    if (!name.get()) throw std::bad_alloc();
     for (auto entry : parse_result.first.elements_)
     {
         if (
@@ -390,6 +418,7 @@ static int BNGenCallback(int, int, BN_GENCB *)
     { /* all is well */ }
     auto evp_md_ctx_deleter([](EVP_MD_CTX *ctx){ EVP_MD_CTX_free(ctx); });
     unique_ptr< EVP_MD_CTX, decltype(evp_md_ctx_deleter) > md_context(EVP_MD_CTX_new(), evp_md_ctx_deleter);
+    if (!md_context.get()) throw std::bad_alloc();
     int default_nid;
     switch (EVP_PKEY_get_default_digest_nid(private_key, &default_nid))
     {
