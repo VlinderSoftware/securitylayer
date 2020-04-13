@@ -24,13 +24,80 @@ namespace DNP3SAv6 { namespace Details {
 	class Certificate
 	{
 	public :
+        struct Options
+        {
+            enum KeyScheme {
+                  rsa_plus_ecdh
+                , ecdsa_plus_ecdh
+                , single_key
+                };
+
+            Options(
+                  unsigned int certificate_ttl_days
+                , std::string ecc_curve
+                , std::string sha
+                )
+                : key_scheme_(single_key)
+                , certificate_ttl_days_(certificate_ttl_days)
+                , ecdsa_curve_(ecc_curve)
+                , ecdh_curve_(ecc_curve)
+                , sha_(sha)
+            { /* no-op */ }
+            Options(
+                  unsigned int certificate_ttl_days
+                , unsigned int rsa_bits
+                , std::string ecdh_curve
+                , std::string sha
+                )
+                : key_scheme_(rsa_plus_ecdh)
+                , certificate_ttl_days_(certificate_ttl_days)
+                , rsa_bits_(rsa_bits)
+                , ecdh_curve_(ecdh_curve)
+                , sha_(sha)
+            { /* no-op */ }
+            Options(
+                  unsigned int certificate_ttl_days
+                , std::string ecdsa_curve
+                , std::string ecdh_curve
+                , std::string sha
+                )
+                : key_scheme_(ecdsa_plus_ecdh)
+                , certificate_ttl_days_(certificate_ttl_days)
+                , ecdsa_curve_(ecdsa_curve)
+                , ecdh_curve_(ecdh_curve)
+                , sha_(sha)
+            { /* no-op */ }
+
+            KeyScheme key_scheme_;
+            unsigned int certificate_ttl_days_;
+            unsigned int rsa_bits_ = 0;
+            std::string ecdsa_curve_;
+            std::string ecdh_curve_;
+            std::string sha_;
+        };
+
 		virtual ~Certificate();
 
+        static Options makeOptions(
+              unsigned int certificate_ttl_days
+            , std::string ecc_curve
+            , std::string sha
+            );
+        static Options makeOptions(
+              unsigned int certificate_ttl_days
+            , unsigned int rsa_bits
+            , std::string ecdh_curve
+            , std::string sha
+            );
+        static Options makeOptions(
+              unsigned int certificate_ttl_days
+            , std::string ecdsa_curve
+            , std::string ecdh_curve
+            , std::string sha
+            );
         static Certificate generate(
               std::string const &subject_distinguished_name
-            , unsigned int ttl_days
-            , std::string const &curve
-            , std::string const &sha
+            , Options const &options
             );
         static Certificate load(std::string const &filename);
         static Certificate load(std::string const &filename, std::string const &passkey); // if a private key is there, load it using the passkey
@@ -51,8 +118,9 @@ namespace DNP3SAv6 { namespace Details {
         Certificate(X509 *x509, EVP_PKEY *private_key);
 
         static std::unique_ptr< ASN1_INTEGER, std::function< void(ASN1_INTEGER*) > > generateRandomSerial();
-        static std::unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > generatePrivateKey(std::string const &curve);
-        static std::unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > generateRequest(EVP_PKEY *private_key, std::string const &subject_distinguished_name);
+        static std::unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > generateECCPrivateKey(std::string const &curve);
+        static std::unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > generateRSAPrivateKey(unsigned int bits);
+        static std::unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > generateRequest(EVP_PKEY *private_signing_key, EVP_PKEY *private_ecdh_key, std::string const &subject_distinguished_name);
         static void setSubject(X509_REQ *req, std::string const &subject_distinguished_name);
         static void setExpiryTimes(X509 *x509, unsigned int days);
         static void sign(X509 *x509, EVP_PKEY *private_key, std::string const &sha);

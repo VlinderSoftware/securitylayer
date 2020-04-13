@@ -20,15 +20,41 @@
 #include "../exceptions/contract.hpp"
 #include "distinguishednameparser.hpp"
 #include <openssl/pem.h>
+#include <openssl/rand.h>
 
 using namespace std;
 
 namespace DNP3SAv6 { namespace Details { 
+/*static */Certificate::Options Certificate::makeOptions(
+      unsigned int certificate_ttl_days
+    , std::string ecc_curve
+    , std::string sha
+    )
+{
+    return Options(certificate_ttl_days, ecc_curve, sha);
+}
+/*static */Certificate::Options Certificate::makeOptions(
+      unsigned int certificate_ttl_days
+    , unsigned int rsa_bits
+    , std::string ecdh_curve
+    , std::string sha
+    )
+{
+    return Options(certificate_ttl_days, rsa_bits, ecdh_curve, sha);
+}
+/*static */Certificate::Options Certificate::makeOptions(
+      unsigned int certificate_ttl_days
+    , std::string ecdsa_curve
+    , std::string ecdh_curve
+    , std::string sha
+    )
+{
+    return Options(certificate_ttl_days, ecdsa_curve, ecdh_curve, sha);
+}
+
 /*static */Certificate Certificate::generate(
       string const &subject_distinguished_name
-    , unsigned int ttl_days
-    , string const &curve
-    , string const &sha
+    , Options const &options
     )
 {
     auto x509_deleter([](X509 *v){ X509_free(v); });
@@ -42,17 +68,22 @@ namespace DNP3SAv6 { namespace Details {
     }
     else
     { /* no-op */ }
-    auto private_key(generatePrivateKey(curve));
-    // generate the req (see openssl/apps/req.c lines 757 and further)
-    auto request(generateRequest(private_key.get(), subject_distinguished_name));
-    // fill out the x509 (see openssl/apps/x509.c lines 640 and further)
+    auto rsa_private_key(options.rsa_bits_ ? generateRSAPrivateKey(options.rsa_bits_) : decltype(generateRSAPrivateKey(options.rsa_bits_))());
+    auto ecdsa_private_key(generateECCPrivateKey(options.ecdsa_curve_));
+    auto ecdh_private_key((options.key_scheme_ != Options::single_key) ? generateECCPrivateKey(options.ecdh_curve_) : decltype(generateECCPrivateKey(options.ecdh_curve_))());
+    auto request(generateRequest(options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get(), ecdh_private_key.get(), subject_distinguished_name));
     if (!X509_set_issuer_name(x509.get(), X509_REQ_get_subject_name(request.get())))
     {
         throw runtime_error("Failed to set issuer name");
     }
     else
     { /* all is well */ }
-    setExpiryTimes(x509.get(), ttl_days);
+    if (options.certificate_ttl_days_)
+    {
+        setExpiryTimes(x509.get(), options.certificate_ttl_days_);
+    }
+    else
+    { /* never expires */ }
     if (!X509_set_subject_name(x509.get(), X509_REQ_get_subject_name(request.get())))
     {
         throw runtime_error("Failed to set the subject name");
@@ -68,9 +99,9 @@ namespace DNP3SAv6 { namespace Details {
     { /* all is well */ }
 
     // sign it all with our own private key
-    sign(x509.get(), private_key.get(), sha);
+    sign(x509.get(), options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get(), options.sha_);
 
-    return Certificate(x509.release(), private_key.release());
+    return Certificate(x509.release(), options.rsa_bits_ ? rsa_private_key.release() : ecdsa_private_key.release());
 }
 
 /*static */Certificate Certificate::load(std::string const& filename)
@@ -171,8 +202,10 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
 
     return serial_number;
 }
-/*static */unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > Certificate::generatePrivateKey(string const &curve)
+/*static */unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > Certificate::generateECCPrivateKey(string const &curve)
 {
+    if (curve.empty()) return unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > >();
+    pre_condition(RAND_status());
     int ecc_group(OBJ_txt2nid(curve.c_str()));
     auto ec_key_deleter([](EC_KEY *k){ EC_KEY_free(k); });
     unique_ptr< EC_KEY, decltype(ec_key_deleter) > ecc(EC_KEY_new_by_curve_name(ecc_group), ec_key_deleter);
@@ -195,7 +228,48 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
 
     return pkey;
 }
-/*static */unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > Certificate::generateRequest(EVP_PKEY *private_key, string const &subject_distinguished_name)
+static int BNGenCallback(int, int, BN_GENCB *)
+{
+    return 1;
+}
+/*static */unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > Certificate::generateRSAPrivateKey(unsigned int bits)
+{
+    pre_condition(RAND_status());
+    auto rsa_deleter([](RSA *rsa){ RSA_free(rsa); });
+    unique_ptr< RSA, decltype(rsa_deleter) > rsa(RSA_new(), rsa_deleter);
+    if (!rsa.get()) throw bad_alloc();
+    auto bn_deleter([](BIGNUM *bn){ BN_free(bn); });
+    unique_ptr< BIGNUM, decltype(bn_deleter) > exponent(BN_new(), bn_deleter);
+    if (!exponent.get()) throw bad_alloc();
+    BN_set_word(exponent.get(), RSA_F4);
+    auto bn_gencb_deleter([](BN_GENCB *cb){ BN_GENCB_free(cb); });
+    unique_ptr< BN_GENCB, decltype(bn_gencb_deleter) > cb(BN_GENCB_new(), bn_gencb_deleter);
+    if (!cb.get()) throw bad_alloc();
+
+    BN_GENCB_set(cb.get(), BNGenCallback, nullptr);
+
+    unsigned int const primes(
+          bits < 1024 ? 2
+        : bits < 4096 ? 3
+        : bits < 8192 ? 4
+        : 5
+        );
+
+    if (1 != RSA_generate_multi_prime_key(rsa.get(), bits, primes, exponent.get(), cb.get())) throw runtime_error("Something more eloquent here");
+
+    auto evp_pkey_deleter([](EVP_PKEY *k){ EVP_PKEY_free(k); });
+    unique_ptr< EVP_PKEY, decltype(evp_pkey_deleter) > pkey(EVP_PKEY_new(), evp_pkey_deleter);
+    if (!EVP_PKEY_assign_RSA(pkey.get(), rsa.get()))
+    {
+        throw runtime_error("Failed to assign key to pkey");
+    }
+    else
+    { /* all is well */ }
+    rsa.release();
+
+    return pkey;
+}
+/*static */unique_ptr< X509_REQ, std::function< void(X509_REQ*) > > Certificate::generateRequest(EVP_PKEY *private_signing_key, EVP_PKEY *private_ecdh_key, string const &subject_distinguished_name)
 {
     auto x509_req_deleter([](X509_REQ *req){ X509_REQ_free(req); });
     unique_ptr< X509_REQ, decltype(x509_req_deleter) > req(X509_REQ_new(), x509_req_deleter);
@@ -208,12 +282,47 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *private_key)
     else
     { /* all is well */ }
     setSubject(req.get(), subject_distinguished_name);
-    if (!X509_REQ_set_pubkey(req.get(), private_key))
+    if (!X509_REQ_set_pubkey(req.get(), private_signing_key))
     {
         throw runtime_error("Failed to set the X509 certificate public key");
     }
     else
     { /* all is well */ }
+    if (private_ecdh_key)
+    {
+        auto stack_of_x509_extension_deleter([](STACK_OF(X509_EXTENSION) *extensions){ sk_X509_EXTENSION_free(extensions); });
+        unique_ptr< STACK_OF(X509_EXTENSION), decltype(stack_of_x509_extension_deleter) > extensions(sk_X509_EXTENSION_new_null(), stack_of_x509_extension_deleter);
+        if (!extensions.get()) throw bad_alloc();
+        auto asn1_object_deleter([](ASN1_OBJECT *object){ ASN1_OBJECT_free(object); });
+        // { iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) vlinder-software(49974) security(0) protocols(0) dnp3-secure-authentication(2) version6(6) enrollment-ecdh-key(0)  }
+        unique_ptr< ASN1_OBJECT, decltype(asn1_object_deleter) > asn1_object(OBJ_txt2obj("1.3.6.1.4.1.49974.0.0.2.6.0", 1), asn1_object_deleter);
+        if (!asn1_object.get()) throw bad_alloc();
+
+        // encode the ECDH public key as an octet string
+        EC_KEY *private_ecdh_key_raw(EVP_PKEY_get0_EC_KEY(private_ecdh_key));
+        assert(private_ecdh_key_raw);
+        int bytes_needed(i2o_ECPublicKey(private_ecdh_key_raw, nullptr));
+        assert(bytes_needed > 0);
+        vector< unsigned char > ec_key_as_octet_string(bytes_needed);
+        unsigned char *ec_key_as_octet_string_ptr(&ec_key_as_octet_string[0]);
+        i2o_ECPublicKey(private_ecdh_key_raw, &ec_key_as_octet_string_ptr);
+
+        // put it in the extension
+        auto asn1_octet_string_deleter([](ASN1_OCTET_STRING *s){ ASN1_OCTET_STRING_free(s); });
+        unique_ptr< ASN1_OCTET_STRING, decltype(asn1_octet_string_deleter) > asn1_octet_string(ASN1_OCTET_STRING_new(), asn1_octet_string_deleter);
+        if (!asn1_octet_string.get()) throw bad_alloc();
+        ASN1_OCTET_STRING_set(asn1_octet_string.get(), &ec_key_as_octet_string[0], ec_key_as_octet_string.size());
+        // transform that octet string to the internal OpenSSL representation of an octet string
+        auto x509_extension_deleter([](X509_EXTENSION *extension){ X509_EXTENSION_free(extension); });
+        unique_ptr< X509_EXTENSION, decltype(x509_extension_deleter) > x509_extension(X509_EXTENSION_create_by_OBJ(nullptr, asn1_object.get(), 0/* not critical */, asn1_octet_string.get()), x509_extension_deleter);
+        if (!x509_extension.get()) throw bad_alloc();
+
+        sk_X509_EXTENSION_push(extensions.get(), x509_extension.get());
+
+        X509_REQ_add_extensions(req.get(), extensions.get());
+    }
+    else
+    { /* nothing to put in an extension */ }
 
     return req;
 }
