@@ -19,6 +19,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "privatekey.hpp"
+#include "publickey.hpp"
 
 namespace DNP3SAv6 { namespace Details { 
 	class Certificate
@@ -78,6 +80,11 @@ namespace DNP3SAv6 { namespace Details {
 
 		virtual ~Certificate();
 
+        Certificate(Certificate const&) = delete;
+		Certificate(Certificate &&) = default;
+		Certificate& operator=(Certificate const&) = delete;
+		Certificate& operator=(Certificate &&) = default;
+
         static Options makeOptions(
               unsigned int certificate_ttl_days
             , std::string ecc_curve
@@ -107,15 +114,13 @@ namespace DNP3SAv6 { namespace Details {
         void store(std::string const &filename, std::string const &passkey, bool include_human_readable = false) const; // includes the private key in PKCS#12 format
         std::vector< unsigned char > encode() const;
 
-		Certificate(Certificate const&) = delete;
-		Certificate(Certificate &&) = default;
-		Certificate& operator=(Certificate const&) = delete;
-		Certificate& operator=(Certificate &&) = default;
+        PublicKey getECDHPublicKey() const;
+        PrivateKey getECDHPrivateKey() const;
 
 	protected :
 
 	private :
-        Certificate(X509 *x509, EVP_PKEY *private_key);
+        Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *ecdh_private_key);
 
         static std::unique_ptr< ASN1_INTEGER, std::function< void(ASN1_INTEGER*) > > generateRandomSerial();
         static std::unique_ptr< EVP_PKEY, std::function< void(EVP_PKEY*) > > generateECCPrivateKey(std::string const &curve);
@@ -129,8 +134,10 @@ namespace DNP3SAv6 { namespace Details {
         static void outputPrivateKey(BIO *bio, EVP_PKEY *key, std::string const &passkey);
         static void outputX509Info(BIO *bio, X509 *x509);
 
+
         X509 *x509_ = nullptr;
-        EVP_PKEY *private_key_ = nullptr;
+        EVP_PKEY *signature_private_key_ = nullptr;
+        EVP_PKEY *ecdh_private_key_ = nullptr;
 	};
 }}
 

@@ -83,6 +83,8 @@ set(LIBLAYER_SRC
 	details/certificate.hpp
 	details/distinguishednameparser.cpp
 	details/distinguishednameparser.hpp
+	details/ecdh.cpp
+	details/ecdh.hpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacaeadadapter.hpp
@@ -92,12 +94,18 @@ set(LIBLAYER_SRC
 	details/hmacsha256.hpp
 	details/hmacsha3256.cpp
 	details/hmacsha3256.hpp
+	details/hkdf.cpp
+	details/hkdf.hpp
 	details/iaead.hpp
 	details/ihmac.hpp
 	details/ikeywrap.hpp
 	details/intermediatebufferadapter.cpp
 	details/intermediatebufferadapter.hpp
 	details/irandomnumbergenerator.hpp
+	details/privatekey.cpp
+	details/privatekey.hpp
+	details/publickey.cpp
+	details/publickey.hpp
 	details/randomnumbergenerator.cpp
 	details/randomnumbergenerator.hpp
 	details/rfc3394aes256keywrap.cpp
