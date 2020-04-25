@@ -31,6 +31,8 @@ struct PublicKey
 
 	EVP_PKEY *key_ = nullptr;
 };
+bool operator==(PublicKey const &lhs, PublicKey const &rhs);
+bool operator!=(PublicKey const &lhs, PublicKey const &rhs);
 }}
 
 #endif

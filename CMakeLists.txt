@@ -41,7 +41,7 @@ include(FindThreads)
 set(Boost_USE_STATIC_LIBS       OFF)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package(Boost REQUIRED COMPONENTS date_time regex system)
+find_package(Boost REQUIRED COMPONENTS date_time regex system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${BOOST_LIBRARYDIR})
 
@@ -102,6 +102,8 @@ set(LIBLAYER_SRC
 	details/intermediatebufferadapter.cpp
 	details/intermediatebufferadapter.hpp
 	details/irandomnumbergenerator.hpp
+	details/pbkdf2.cpp
+	details/pbkdf2.hpp
 	details/privatekey.cpp
 	details/privatekey.hpp
 	details/publickey.cpp
@@ -164,6 +166,8 @@ set(GENCERTS_SRC
 	details/certificate.hpp
 	details/distinguishednameparser.cpp
 	details/distinguishednameparser.hpp
+	details/pbkdf2.cpp
+	details/pbkdf2.hpp
 	)
 add_executable(gencerts ${GENCERTS_SRC})
 target_link_libraries(gencerts OpenSSL::Crypto exceptions)
@@ -182,7 +186,7 @@ add_executable(test_libsecureauthentication
 	tests/deterministicrandomnumbergenerator.hpp
 	tests/main.cpp
 	)
-target_link_libraries(test_libsecureauthentication secureauthentication)
+target_link_libraries(test_libsecureauthentication secureauthentication Boost::filesystem)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(test_libsecureauthentication PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
 endif()
@@ -214,7 +218,7 @@ if (SA_PROFILES)
 		add_executable(test_libsecureauthentication-${prof}
 			${TEST_LIBLAYER_SOURCES}
 			)
-		target_link_libraries(test_libsecureauthentication-${prof} secureauthentication-${prof})
+		target_link_libraries(test_libsecureauthentication-${prof} secureauthentication-${prof} Boost::filesystem)
 		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			target_compile_options(test_libsecureauthentication-${prof} PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile-${prof}.hpp)
 		endif()

@@ -11,21 +11,30 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#include "publickey.hpp"
+#ifndef dnp3sav6_details_pbkdf2_hpp
+#define dnp3sav6_details_pbkdf2_hpp
+
+#include <string>
+#include <deque>
+#include <vector>
 
 namespace DNP3SAv6 { namespace Details {
-PublicKey::~PublicKey()
+class PBKDF2
 {
-	if (key_) EVP_PKEY_free(key_);
-}
+public :
+	PBKDF2(std::string const &password, std::vector< unsigned char > const &salt = std::vector< unsigned char >(), unsigned int iteration_count = 1000);
+	~PBKDF2();
+	PBKDF2(PBKDF2 const &) = delete;
+	PBKDF2& operator=(PBKDF2 const &) = delete;
+	PBKDF2(PBKDF2 &&) = default;
+	PBKDF2& operator=(PBKDF2 &&) = default;
 
-bool operator==(PublicKey const &lhs, PublicKey const &rhs)
-{
-    return EVP_PKEY_cmp(lhs.key_, rhs.key_) == 1;
-}
+	std::vector< unsigned char > operator()(size_t n);
 
-bool operator!=(PublicKey const &lhs, PublicKey const &rhs)
-{
-    return EVP_PKEY_cmp(lhs.key_, rhs.key_) != 1;
-}
+private :
+    std::deque< unsigned char > key_;
+};
 }}
+
+#endif
+
