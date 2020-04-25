@@ -476,6 +476,7 @@ void SecurityLayer::rxSecureMessage(std::uint32_t incoming_seq, boost::asio::con
      *      is another matter. */
     if (!getSession().valid(getIncomingDirection()))
     {
+		//TODO ask for session initiation
         incrementStatistic(Statistics::unexpected_messages__);
         return;
     }
