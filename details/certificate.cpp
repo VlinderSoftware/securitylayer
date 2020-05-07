@@ -41,20 +41,25 @@ namespace {
     }
 }
 
+struct AlgorithmIdentifier
+{
+    ASN1_OBJECT *algorithm = nullptr;
+    ECPARAMETERS *parameters = nullptr;
+};
+
+ASN1_SEQUENCE(AlgorithmIdentifier) = {
+    ASN1_SIMPLE(AlgorithmIdentifier, algorithm, ASN1_OBJECT),
+    ASN1_OPT(AlgorithmIdentifier, parameters, ECPARAMETERS)
+} ASN1_SEQUENCE_END(AlgorithmIdentifier);
+
 struct ECDHPublicKey
 {
-    ~ECDHPublicKey()
-    {
-        ::ECPARAMETERS_free(ecParameters);
-    }
-    int32_t version = 0x20200424;
-    ECPARAMETERS *ecParameters = nullptr;
-    ASN1_OCTET_STRING *publicKey = nullptr;
+    AlgorithmIdentifier *algorithm = nullptr;
+    ASN1_BIT_STRING *publicKey = nullptr;
 };
 
 ASN1_SEQUENCE(ECDHPublicKey) = {
-    ASN1_EMBED(ECDHPublicKey, version, INT32),
-    ASN1_SIMPLE(ECDHPublicKey, ecParameters, ECPARAMETERS),
+    ASN1_SIMPLE(ECDHPublicKey, algorithm, AlgorithmIdentifier),
     ASN1_SIMPLE(ECDHPublicKey, publicKey, ASN1_OCTET_STRING)
 } ASN1_SEQUENCE_END(ECDHPublicKey);
 
@@ -241,6 +246,7 @@ struct Certificate::X509Adapter
     unsigned char const *p(&serialized_certificate[0]);
     X509 *x509(d2i_X509(nullptr, &p, serialized_certificate.size()));
     if (x509) throw runtime_error("failed to read file");
+    //TODO verify the cert
     return Certificate(x509, nullptr, nullptr);
 }
 
@@ -315,7 +321,6 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
     , signature_private_key_(signature_private_key)
     , ecdh_private_key_(ecdh_private_key)
 {
-    //TODO check the signature
     if (ecdh_private_key)
     {
         ecdh_public_key_ = ecdh_private_key;
@@ -643,9 +648,12 @@ void Certificate::addECDHPublicKey(X509Adapter *x509, EVP_PKEY *ecdh_public_key)
     EC_KEY *ec_public_key(EVP_PKEY_get0_EC_KEY(ecdh_public_key));
     assert(ec_public_key);
 
+    AlgorithmIdentifier algorithm;
     ECDHPublicKey pubkey_to_encode;
+    pubkey_to_encode.algorithm = &algorithm;
     auto group(EC_KEY_get0_group(ec_public_key));
-    pubkey_to_encode.ecParameters = EC_GROUP_get_ecparameters(group, nullptr);
+    algorithm.algorithm = OBJ_nid2obj(EC_GROUP_get_curve_name(group));
+    algorithm.parameters = EC_GROUP_get_ecparameters(group, nullptr);
 
     // encode the public key into an octet string
     vector< unsigned char > encoded_public_key;
@@ -668,7 +676,7 @@ void Certificate::addECDHPublicKey(X509Adapter *x509, EVP_PKEY *ecdh_public_key)
         { /* all is well */ }
     }
     // combine the body of our object
-    ASN1_OCTET_STRING public_key_as_octet_string;
+    ASN1_BIT_STRING public_key_as_octet_string;
     memset(&public_key_as_octet_string, 0, sizeof(public_key_as_octet_string));
     public_key_as_octet_string.type = V_ASN1_OCTET_STRING;
     public_key_as_octet_string.length = encoded_public_key.size();
