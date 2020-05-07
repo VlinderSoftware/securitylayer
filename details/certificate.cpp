@@ -24,6 +24,11 @@
 #include <openssl/rand.h>
 #include <algorithm>
 
+// NOTE: as there is no consensus within the SATF at the moment to (2020-04-18) encode these ECDH public keys as X.509 extensions, we're using 
+//       a Vlinder Software OID to encode it.
+// DNP3 SAv6 ECDH key { iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) vlinder-software(49974) security(0) protocols(0) dnp3-secure-authentication(2) version(6) ecdh-key(0) }
+#define DNP3_ECDH_EXTENSION_OID "1.3.6.1.4.1.49974.0.0.2.6.0"
+
 using namespace std;
 
 namespace {
@@ -321,6 +326,8 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
     , signature_private_key_(signature_private_key)
     , ecdh_private_key_(ecdh_private_key)
 {
+    auto evp_pkey_deleter([](EVP_PKEY *key){ EVP_PKEY_free(key); });
+    unique_ptr< EVP_PKEY, decltype(evp_pkey_deleter) > ecdh_public_key(nullptr, evp_pkey_deleter);
     if (ecdh_private_key)
     {
         ecdh_public_key_ = ecdh_private_key;
@@ -328,7 +335,140 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
     else
     {
         //TODO at this point, we may be dealing withan X509 certificate that has our extension, or its public key may be an ECC key we use for both ECDH and its signature.
-        ecdh_public_key_ = X509_get0_pubkey(x509);
+        // see if it has our extension
+        auto extensions(X509_get0_extensions(x509));
+        if (extensions)
+        {
+            for (unsigned int i(0); i < (unsigned int)sk_X509_EXTENSION_num(extensions); ++i)
+            {
+                auto asn1_object_deleter([](ASN1_OBJECT *obj){ ASN1_OBJECT_free(obj); });
+                unique_ptr< ASN1_OBJECT, decltype(asn1_object_deleter) > expected_oid(OBJ_txt2obj(DNP3_ECDH_EXTENSION_OID, 1), asn1_object_deleter);
+                if (!expected_oid) throw bad_alloc();
+
+                auto extension(sk_X509_EXTENSION_value(extensions, i));
+                auto critical(X509_EXTENSION_get_critical(extension));
+                auto oid(X509_EXTENSION_get_object(extension));
+                auto data(X509_EXTENSION_get_data(extension));
+                if (OBJ_cmp(expected_oid.get(), oid) == 0)
+                {
+                    unsigned char const *beg(ASN1_STRING_get0_data(data));
+                    auto ecdh_public_key_deleter([](ECDHPublicKey *pubkey){ ECDHPublicKey_free(pubkey); });
+                    unique_ptr< ECDHPublicKey, decltype(ecdh_public_key_deleter) > public_key(d2i_ECDHPublicKey(nullptr, &beg, ASN1_STRING_length(data)), ecdh_public_key_deleter);
+                    if (!public_key || !public_key->algorithm || !public_key->algorithm->algorithm || !public_key->publicKey)
+                    {
+                        throw runtime_error("Error decoding the ECDH public key");
+                    }
+                    else
+                    { /* all is well */ }
+                    /* If we have curve parameters, we should use them regardless of the algorithm OID. We are required 
+                     * to check whether the parameters correspond to the ones used according to the implementation we use 
+                     * for the curve: they should. If they don't, we need to bail out now. */
+                    int curve_nid(OBJ_obj2nid(public_key->algorithm->algorithm));
+                    auto ec_group_deleter([](EC_GROUP *key){ EC_GROUP_free(key); });
+                    unique_ptr< EC_GROUP, decltype(ec_group_deleter) > ec_group(nullptr, ec_group_deleter);
+
+                    if (public_key->algorithm->parameters)
+                    {
+                        ec_group.reset(EC_GROUP_new_from_ecparameters(public_key->algorithm->parameters));
+                        if (!ec_group)
+                        {
+                            throw runtime_error("failed to parse curve parameters");
+                        }
+                        else
+                        { /* all is well */ }
+                    }
+                    else
+                    { /* no parameters provided */ }
+                    if (curve_nid == NID_undef)
+                    {
+                        if (!ec_group)
+                        {
+                            throw runtime_error("Unsupported EC curve and no parameters provided");
+                        }
+                        else
+                        { /* OK, can't check the thing though - warning maybe? */ }
+                    }
+                    else
+                    {
+                        if (ec_group)
+                        {
+                            decltype(ec_group) ec_group_tmp(EC_GROUP_new_by_curve_name(curve_nid), ec_group_deleter);
+                            if (EC_GROUP_cmp(ec_group.get(), ec_group_tmp.get(), nullptr) != 0)
+                            {
+                                throw runtime_error("Mismatched curve parameters");
+                            }
+                            else
+                            { /* all is well */ }
+                        }
+                        else
+                        {
+                            ec_group.reset(EC_GROUP_new_by_curve_name(curve_nid));
+                            if (!ec_group)
+                            {
+                                throw runtime_error("Curve not supported and no parameters provided");
+                            }
+                            else
+                            { /* all is well */ }
+                        }
+                    }
+                    auto ec_point_deleter([](EC_POINT *ec_point){ EC_POINT_free(ec_point); });
+                    unique_ptr< EC_POINT, decltype(ec_point_deleter) > ec_point(EC_POINT_new(ec_group.get()), ec_point_deleter);
+                    if (!ec_point)
+                    {
+                        throw runtime_error("Failed to allocate public key");
+                    }
+                    else
+                    { /* all is well */ }
+                    if (!EC_POINT_oct2point(ec_group.get(), ec_point.get(), ASN1_STRING_data(public_key->publicKey), ASN1_STRING_length(public_key->publicKey), nullptr))
+                    {
+                        throw runtime_error("Failed to decode public key");
+                    }
+                    else
+                    { /* all is well */ }
+
+                    auto ec_key_deleter([](EC_KEY *key){ EC_KEY_free(key); });
+                    unique_ptr< EC_KEY, decltype(ec_key_deleter) > ec_key(EC_KEY_new(), ec_key_deleter);
+                    if (!EC_KEY_set_group(ec_key.get(), ec_group.get()))
+                    {
+                        throw runtime_error("Failed to set key group (curve)");
+                    }
+                    else
+                    { /* all is well */ }
+                    if (!EC_KEY_set_public_key(ec_key.get(), ec_point.get()))
+                    {
+                        throw runtime_error("failed to set public key");
+                    }
+                    else
+                    { /* all is well */ }
+                    ecdh_public_key.reset(EVP_PKEY_new());
+                    if (!ecdh_public_key)
+                    {
+                        throw bad_alloc();
+                    }
+                    else
+                    { /* all is well */ }
+                    if (!EVP_PKEY_set1_EC_KEY(ecdh_public_key.get(), ec_key.get()))
+                    {
+                        throw runtime_error("failed to set public key");
+                    }
+                    else
+                    { /* no-op */ }
+                }
+                else
+                { /* this is not the OID you're looking for */ }
+            }
+        }
+        else
+        { /* no extensions */ }
+        if (!ecdh_public_key_ && !ecdh_public_key)
+        {
+            ecdh_public_key_ = X509_get0_pubkey(x509);
+            //TODO check that it's really an ECDH public key. Otherwise, throw an exception
+        }
+        else
+        { /* already have our public key */ }
+
+        if (!ecdh_public_key_) ecdh_public_key_ = ecdh_public_key.release();
     }
 }
 
@@ -638,10 +778,7 @@ void Certificate::outputPrivateKey(BIO *bio, EVP_PKEY *key, std::vector< unsigne
 void Certificate::addECDHPublicKey(X509Adapter *x509, EVP_PKEY *ecdh_public_key)
 {
     auto asn1_object_deleter([](ASN1_OBJECT *obj){ ASN1_OBJECT_free(obj); });
-    // NOTE: as there is no consensus within the SATF at the moment to (2020-04-18) encode these ECDH public keys as X.509 extensions, we're using 
-    //       a Vlinder Software OID to encode it.
-    // DNP3 SAv6 ECDH key { iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) vlinder-software(49974) security(0) protocols(0) dnp3-secure-authentication(2) version(6) ecdh-key(0) }
-    unique_ptr< ASN1_OBJECT, decltype(asn1_object_deleter) > asn1(OBJ_txt2obj("1.3.6.1.4.1.49974.0.0.2.6.0", 1), asn1_object_deleter);
+    unique_ptr< ASN1_OBJECT, decltype(asn1_object_deleter) > asn1(OBJ_txt2obj(DNP3_ECDH_EXTENSION_OID, 1), asn1_object_deleter);
     if (!asn1) throw bad_alloc();
 
     // get the ECC key out of the EVP key
