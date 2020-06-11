@@ -11,17 +11,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_details_distinguishednameparser_hpp
-#define dnp3sav6_details_distinguishednameparser_hpp
+#include "icertificatestore.hpp"
+#include "distinguishednameparser.hpp"
 
-#include "distinguishedname.hpp"
-#include <string>
-#include <utility>
-
-namespace DNP3SAv6 { namespace Details { 
-std::pair< DistinguishedName, bool > parse(std::string const &subject_distinguished_name);
+namespace DNP3SAv6 { namespace Details {
+/*virtual */void ICertificateStore::remove(std::string const &name)
+{
+    auto distinguished_name(parse(name));
+    if (!distinguished_name.second)
+    {
+        throw "Failed to parse distinguished name";
+    }
+    else
+    { /* all is well */ }
+    remove(distinguished_name.first);
+}
 }}
-
-#endif
-
-

@@ -19,11 +19,13 @@
 #include "distinguishednameparser.hpp"
 #include "pbkdf2.hpp"
 #include <openssl/asn1.h>
-#include <openssl/asn1t.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <algorithm>
 #include <cstring>
+#include "icertificatestore.hpp"
+#include "constants.hpp"
+#include "ecdhpublickey.hpp"
 
 // NOTE: as there is no consensus within the SATF at the moment to (2020-04-18) encode these ECDH public keys as X.509 extensions, we're using 
 //       a Vlinder Software OID to encode it.
@@ -46,30 +48,6 @@ namespace {
         return key->size();
     }
 }
-
-struct AlgorithmIdentifier
-{
-    ASN1_OBJECT *algorithm = nullptr;
-    ECPARAMETERS *parameters = nullptr;
-};
-
-ASN1_SEQUENCE(AlgorithmIdentifier) = {
-    ASN1_SIMPLE(AlgorithmIdentifier, algorithm, ASN1_OBJECT),
-    ASN1_OPT(AlgorithmIdentifier, parameters, ECPARAMETERS)
-} ASN1_SEQUENCE_END(AlgorithmIdentifier);
-
-struct ECDHPublicKey
-{
-    AlgorithmIdentifier *algorithm = nullptr;
-    ASN1_BIT_STRING *publicKey = nullptr;
-};
-
-ASN1_SEQUENCE(ECDHPublicKey) = {
-    ASN1_SIMPLE(ECDHPublicKey, algorithm, AlgorithmIdentifier),
-    ASN1_SIMPLE(ECDHPublicKey, publicKey, ASN1_OCTET_STRING)
-} ASN1_SEQUENCE_END(ECDHPublicKey);
-
-IMPLEMENT_ASN1_FUNCTIONS(ECDHPublicKey);
 
 namespace DNP3SAv6 { namespace Details { 
 struct Certificate::X509Adapter
@@ -142,74 +120,22 @@ struct Certificate::X509Adapter
     return Options(certificate_ttl_days, ecdsa_curve, ecdh_curve, sha);
 }
 
-/*static */Certificate Certificate::generate(
-      string const &subject_distinguished_name
-    , Options const &options
-    )
+/*static */Certificate Certificate::generate(string const &subject_distinguished_name, Options const &options)
 {
-    auto x509_deleter([](X509 *v){ X509_free(v); });
-    unique_ptr< X509, decltype(x509_deleter) > x509(X509_new(), x509_deleter);
-    if (!x509) throw bad_alloc();
-    
-    // we will be using version 3 certificates. The parameter to X509_REQ_set_version is "one less than the version", so we need to set 2
-    if (!X509_set_version(x509.get(), 2/* version 3 */))
-    {
-        throw runtime_error("Failed to set the X509 certificate version");
-    }
-    else
-    { /* all is well */ }
-
-    auto serial_number(generateRandomSerial());
-    if (!X509_set_serialNumber(x509.get(), serial_number.get()))
-    {
-        throw runtime_error("Failed to set certificate serial number");
-    }
-    else
-    { /* no-op */ }
     auto rsa_private_key(options.rsa_bits_ ? generateRSAPrivateKey(options.rsa_bits_) : decltype(generateRSAPrivateKey(options.rsa_bits_))());
     auto ecdsa_private_key(generateECCPrivateKey(options.ecdsa_curve_));
     auto ecdh_private_key((options.key_scheme_ != Options::single_key) ? generateECCPrivateKey(options.ecdh_curve_) : decltype(generateECCPrivateKey(options.ecdh_curve_))());
     auto name(makeName(subject_distinguished_name));
-//    auto request(generateRequest(options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get(), ecdh_private_key.get(), name.get()));
-    if (!X509_set_issuer_name(x509.get(), name.get()))
-    {
-        throw runtime_error("Failed to set issuer name");
-    }
-    else
-    { /* all is well */ }
-    if (options.certificate_ttl_days_)
-    {
-        setExpiryTimes(x509.get(), options.certificate_ttl_days_);
-    }
-    else
-    { /* never expires */ }
-    if (!X509_set_subject_name(x509.get(), name.get()))
-    {
-        throw runtime_error("Failed to set the subject name");
-    }
-    else
-    { /* all is well */ }
-    if (!X509_set_pubkey(x509.get(), options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get()))
-    {
-        throw runtime_error("Failed to set public key");
-    }
-    else
-    { /* all is well */ }
 
-    if (ecdh_private_key)
-    {
-        X509Adapter adapter(x509.get());
-        addECDHPublicKey(&adapter, ecdh_private_key.get());
-    }
-    else
-    { /* nothing to put in an extension */ }
-
-
-    // sign it all with our own private key
-    sign(x509.get(), options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get(), options.sha_);
-
-    Certificate retval(x509.get(), options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get(), !!ecdh_private_key ? ecdh_private_key.get() : ecdsa_private_key.get());
-    x509.release();
+    Certificate retval(generate(
+          true
+        , options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get()
+        , options.rsa_bits_ ? rsa_private_key.get() : ecdsa_private_key.get()
+        , ecdh_private_key.get()
+        , name.get()
+        , name.get()
+        , options
+        ));
     rsa_private_key.release();
     ecdsa_private_key.release();
     ecdh_private_key.release();
@@ -242,18 +168,25 @@ struct Certificate::X509Adapter
 
     EVP_PKEY *signature_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, passkeyCallback__, &signature_passkey));
     if (!signature_privkey) throw runtime_error("failed to read private key");
-    EVP_PKEY *ecdh_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, passkeyCallback__, &ecdh_passkey));
-    if (!ecdh_privkey) throw runtime_error("failed to read private key");
+    EVP_PKEY *ecdh_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, passkeyCallback__, &ecdh_passkey)); // allowed to fail
+
     return Certificate(x509, signature_privkey, ecdh_privkey);
 }
 
-/*static */Certificate Certificate::decode(std::vector< unsigned char > const &serialized_certificate)
+/*static */Certificate Certificate::decode(std::vector< unsigned char > const &serialized_certificate, ICertificateStore *store_to_verify_with)
 {
     unsigned char const *p(&serialized_certificate[0]);
     X509 *x509(d2i_X509(nullptr, &p, serialized_certificate.size()));
     if (x509) throw runtime_error("failed to read file");
-    //TODO verify the cert
-    return Certificate(x509, nullptr, nullptr);
+    Certificate retval(x509, nullptr, nullptr);
+    if (!store_to_verify_with || store_to_verify_with->verify(retval))
+    {
+        return retval;
+    }
+    else
+    {
+        throw runtime_error("Certificate verification failed");
+    }
 }
 
 void Certificate::store(std::string const &filename, bool include_human_readable/* = false*/) const
@@ -269,7 +202,6 @@ void Certificate::store(std::string const &filename, std::string const &passkey,
 {
     pre_condition(x509_);
     pre_condition(signature_private_key_);
-    pre_condition(ecdh_private_key_);
     auto bio(openFile(filename, false));
     if (!bio) throw runtime_error("failed to open file");
 
@@ -283,7 +215,12 @@ void Certificate::store(std::string const &filename, std::string const &passkey,
 
     outputCertificate(bio.get(), x509_);
     outputPrivateKey(bio.get(), signature_private_key_, signature_passkey);
-    outputPrivateKey(bio.get(), ecdh_private_key_, ecdh_passkey);
+    if (ecdh_private_key_)
+    {
+        outputPrivateKey(bio.get(), ecdh_private_key_, ecdh_passkey);
+    }
+    else
+    { /* no ECDH private key */ }
     if (include_human_readable) outputX509Info(bio.get(), x509_);
 }
 
@@ -322,11 +259,76 @@ PrivateKey Certificate::getECDHPrivateKey() const
     return PrivateKey();
 }
 
+namespace {
+    DistinguishedName X509_NAME_to_DistinguishedName(X509_NAME *name)
+    {
+        DistinguishedName retval;
+
+        for (int entry_location(0); entry_location < X509_NAME_entry_count(name); ++entry_location)
+        {
+            auto entry(X509_NAME_get_entry(name, entry_location));
+            auto type(X509_NAME_ENTRY_get_object(entry));
+            auto short_name(OBJ_nid2sn(OBJ_obj2nid(type)));
+            auto data(X509_NAME_ENTRY_get_data(entry));
+            DistinguishedName::Element element(string(short_name), string((char*)ASN1_STRING_data(data), ASN1_STRING_length(data)));
+            retval.elements_.push_back(element);
+        }
+    
+        return retval;
+    }
+}
+
+DistinguishedName Certificate::getSubjectName() const
+{
+    auto name(X509_get_subject_name(x509_));
+    return X509_NAME_to_DistinguishedName(name);
+}
+DistinguishedName Certificate::getIssuerName() const
+{
+    auto name(X509_get_issuer_name(x509_));
+    return X509_NAME_to_DistinguishedName(name);
+}
+
+CertificateSignRequest Certificate::getCertificateSignRequest() const
+{
+    return CertificateSignRequest(generateRequest(signature_private_key_, ecdh_private_key_, X509_get_subject_name(x509_)));
+}
+
+Certificate Certificate::sign(CertificateSignRequest const& request, Options const &options) const
+{
+    auto evp_pkey_deleter([](EVP_PKEY *key){ EVP_PKEY_free(key); });
+    unique_ptr< EVP_PKEY, decltype(evp_pkey_deleter) > temp_evp_pkey(EVP_PKEY_new(), evp_pkey_deleter);
+    if (!temp_evp_pkey)
+    {
+        throw bad_alloc();
+    }
+    else
+    { /* all is well */ }
+    EVP_PKEY_set1_EC_KEY(temp_evp_pkey.get(), request.getECDHPublicKey().get());
+
+    return generate(
+          false
+        , signature_private_key_
+        , request.getSubjectPublicKey()
+        , request.getECDHPublicKey().get() ? temp_evp_pkey.get() : nullptr
+        , request.getSubjectName()
+        , X509_get_subject_name(x509_)
+        , options
+        );
+}
+
+bool Certificate::verify(Certificate const& signed_certificate) const
+{
+    return (X509_verify(signed_certificate.x509_, signature_public_key_) == 1);
+}
+
 Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *ecdh_private_key)
     : x509_(x509)
     , signature_private_key_(signature_private_key)
+    , signature_public_key_(signature_private_key_ ? signature_private_key_ : X509_get0_pubkey(x509_))
     , ecdh_private_key_(ecdh_private_key)
 {
+    pre_condition(x509);
     auto evp_pkey_deleter([](EVP_PKEY *key){ EVP_PKEY_free(key); });
     unique_ptr< EVP_PKEY, decltype(evp_pkey_deleter) > ecdh_public_key(nullptr, evp_pkey_deleter);
     if (ecdh_private_key)
@@ -484,15 +486,32 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
     EVP_PKEY_free(signature_private_key_);
     X509_free(x509_);
 }
+Certificate::Certificate(Certificate const& other)
+    : x509_(other.x509_)
+    , signature_private_key_(other.signature_private_key_)
+    , signature_public_key_(other.signature_public_key_)
+    , ecdh_private_key_(other.ecdh_private_key_)
+    , ecdh_public_key_(other.ecdh_public_key_)
+{
+    if (x509_) X509_up_ref(x509_);
+    if (ecdh_private_key_ && (ecdh_private_key_ != signature_private_key_)) EVP_PKEY_up_ref(ecdh_private_key_);
+    if (signature_private_key_) EVP_PKEY_up_ref(signature_private_key_);
+}
 Certificate::Certificate(Certificate &&other)
     : x509_(other.x509_)
     , signature_private_key_(other.signature_private_key_)
+    , signature_public_key_(other.signature_public_key_)
     , ecdh_private_key_(other.ecdh_private_key_)
     , ecdh_public_key_(other.ecdh_public_key_)
 {
     other.x509_ = nullptr;
     other.signature_private_key_ = nullptr;
     other.ecdh_private_key_ = nullptr;
+}
+Certificate& Certificate::operator=(Certificate const &other)
+{
+    Certificate temp(other);
+    return swap(temp);
 }
 Certificate& Certificate::operator=(Certificate &&other)
 {
@@ -507,6 +526,76 @@ Certificate& Certificate::swap(Certificate &other)
     std::swap(ecdh_private_key_, other.ecdh_private_key_);
 
     return *this;
+}
+
+/*static */Certificate Certificate::generate(
+      bool own
+    , EVP_PKEY *signature_private_key
+    , EVP_PKEY *subject_public_key
+    , EVP_PKEY *ecdh_public_key
+    , X509_NAME *subject_name
+    , X509_NAME *issuer_name
+    , Options const &options
+    )
+{
+    auto x509_deleter([](X509 *v){ X509_free(v); });
+    unique_ptr< X509, decltype(x509_deleter) > x509(X509_new(), x509_deleter);
+    if (!x509) throw bad_alloc();
+
+    // we will be using version 3 certificates. The parameter to X509_REQ_set_version is "one less than the version", so we need to set 2
+    if (!X509_set_version(x509.get(), 2/* version 3 */))
+    {
+        throw runtime_error("Failed to set the X509 certificate version");
+    }
+    else
+    { /* all is well */ }
+
+    auto serial_number(generateRandomSerial());
+    if (!X509_set_serialNumber(x509.get(), serial_number.get()))
+    {
+        throw runtime_error("Failed to set certificate serial number");
+    }
+    else
+    { /* no-op */ }
+    if (!X509_set_issuer_name(x509.get(), issuer_name))
+    {
+        throw runtime_error("Failed to set issuer name");
+    }
+    else
+    { /* all is well */ }
+    if (options.certificate_ttl_days_)
+    {
+        setExpiryTimes(x509.get(), options.certificate_ttl_days_);
+    }
+    else
+    { /* never expires */ }
+    if (!X509_set_subject_name(x509.get(), subject_name))
+    {
+        throw runtime_error("Failed to set the subject name");
+    }
+    else
+    { /* all is well */ }
+    if (!X509_set_pubkey(x509.get(), subject_public_key))
+    {
+        throw runtime_error("Failed to set public key");
+    }
+    else
+    { /* all is well */ }
+
+    if (ecdh_public_key)
+    {
+        X509Adapter adapter(x509.get());
+        addECDHPublicKey(&adapter, ecdh_public_key);
+    }
+    else
+    { /* nothing to put in an extension */ }
+
+    // sign it all with our own private key
+    sign(x509.get(), signature_private_key, options.sha_);
+
+    Certificate retval(x509.get(), own ? signature_private_key : nullptr, own ? ecdh_public_key : nullptr);
+    x509.release();
+    return retval;
 }
 
 /*static */unique_ptr< ASN1_INTEGER, std::function< void(ASN1_INTEGER*) > > Certificate::generateRandomSerial()

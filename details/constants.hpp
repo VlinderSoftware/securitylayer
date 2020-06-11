@@ -11,17 +11,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_details_distinguishednameparser_hpp
-#define dnp3sav6_details_distinguishednameparser_hpp
+#ifndef dnp3sav6_details_constants_hpp
+#define dnp3sav6_details_constants_hpp
 
-#include "distinguishedname.hpp"
-#include <string>
-#include <utility>
-
-namespace DNP3SAv6 { namespace Details { 
-std::pair< DistinguishedName, bool > parse(std::string const &subject_distinguished_name);
-}}
+// NOTE: as there is no consensus within the SATF at the moment to (2020-04-18) encode these ECDH public keys as X.509 extensions, we're using 
+//       a Vlinder Software OID to encode it.
+// DNP3 SAv6 ECDH key { iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) vlinder-software(49974) security(0) protocols(0) dnp3-secure-authentication(2) version(6) ecdh-key(0) }
+#define DNP3_ECDH_EXTENSION_OID "1.3.6.1.4.1.49974.0.0.2.6.0"
 
 #endif
-
-

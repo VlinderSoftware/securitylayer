@@ -50,6 +50,7 @@ include(GNUInstallDirs)
 set(LAYER_PUBLIC_HEADERS
 	aeadalgorithm.hpp
 	config.hpp
+	details/icertificatestore.hpp
 	exceptions.hpp
 	keywrapalgorithm.hpp
 	master.hpp
@@ -81,10 +82,18 @@ set(LIBLAYER_SRC
 	details/aesgcm.hpp
 	details/certificate.cpp
 	details/certificate.hpp
+	details/certificatesignrequest.cpp
+	details/certificatesignrequest.hpp
+	details/certificatestore.cpp
+	details/certificatestore.hpp
+	details/distinguishedname.cpp
+	details/distinguishedname.hpp
 	details/distinguishednameparser.cpp
 	details/distinguishednameparser.hpp
 	details/ecdh.cpp
 	details/ecdh.hpp
+	details/ecdhpublickey.cpp
+	details/ecdhpublickey.hpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacaeadadapter.hpp
@@ -97,6 +106,8 @@ set(LIBLAYER_SRC
 	details/hkdf.cpp
 	details/hkdf.hpp
 	details/iaead.hpp
+	details/icertificatestore.cpp
+	details/icertificatestore.hpp
 	details/ihmac.hpp
 	details/ikeywrap.hpp
 	details/intermediatebufferadapter.cpp
@@ -164,8 +175,12 @@ set(GENCERTS_SRC
 	tests/gencerts.cpp
 	details/certificate.cpp
 	details/certificate.hpp
+	details/certificatesignrequest.cpp
+	details/certificatesignrequest.hpp
 	details/distinguishednameparser.cpp
 	details/distinguishednameparser.hpp
+	details/ecdhpublickey.cpp
+	details/ecdhpublickey.hpp
 	details/pbkdf2.cpp
 	details/pbkdf2.hpp
 	)
