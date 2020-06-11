@@ -11,17 +11,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#ifndef dnp3sav6_details_distinguishednameparser_hpp
-#define dnp3sav6_details_distinguishednameparser_hpp
+#include "ecdhpublickey.hpp"
 
-#include "distinguishedname.hpp"
-#include <string>
-#include <utility>
+ASN1_SEQUENCE(AlgorithmIdentifier) = {
+    ASN1_SIMPLE(AlgorithmIdentifier, algorithm, ASN1_OBJECT),
+    ASN1_OPT(AlgorithmIdentifier, parameters, ECPARAMETERS)
+} ASN1_SEQUENCE_END(AlgorithmIdentifier);
+IMPLEMENT_ASN1_FUNCTIONS(AlgorithmIdentifier);
 
-namespace DNP3SAv6 { namespace Details { 
-std::pair< DistinguishedName, bool > parse(std::string const &subject_distinguished_name);
-}}
-
-#endif
-
+ASN1_SEQUENCE(ECDHPublicKey) = {
+    ASN1_SIMPLE(ECDHPublicKey, algorithm, AlgorithmIdentifier),
+    ASN1_SIMPLE(ECDHPublicKey, publicKey, ASN1_OCTET_STRING)
+} ASN1_SEQUENCE_END(ECDHPublicKey);
+IMPLEMENT_ASN1_FUNCTIONS(ECDHPublicKey);
 

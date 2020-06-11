@@ -25,7 +25,7 @@ namespace DNP3SAv6 { namespace Details {
 // escaped-string ::= ([^/=] | escaped-character)+
 // escaped-character ::= (('\' '/') | ('\' '=') | ('\' '\'))
 template < typename Iterator >
-struct DistinguishedNameElementParser : qi::grammar< Iterator, DistinguishedNameElement() >
+struct DistinguishedNameElementParser : qi::grammar< Iterator, DistinguishedName::Element() >
 {
     DistinguishedNameElementParser()
         : DistinguishedNameElementParser::base_type(start_)
@@ -52,7 +52,7 @@ struct DistinguishedNameElementParser : qi::grammar< Iterator, DistinguishedName
     qi::rule< Iterator, std::string() > escaped_string_;
     qi::rule< Iterator, std::string() > value_;
     qi::rule< Iterator, std::string() > type_;
-    qi::rule< Iterator, DistinguishedNameElement() > start_;
+    qi::rule< Iterator, DistinguishedName::Element() > start_;
 };
 
 template < typename Iterator >
@@ -71,7 +71,7 @@ struct DistinguishedNameParser : qi::grammar< Iterator, DistinguishedName() >
     }
 
     DistinguishedNameElementParser< Iterator > element_;
-    qi::rule< Iterator, std::vector< DistinguishedNameElement >() > elements_;
+    qi::rule< Iterator, std::vector< DistinguishedName::Element >() > elements_;
     qi::rule< Iterator, DistinguishedName() > start_;
 };
 
@@ -89,13 +89,13 @@ std::pair< DistinguishedName, bool > parse(std::string const &subject_distinguis
 }}
 
 BOOST_FUSION_ADAPT_STRUCT(
-    DNP3SAv6::Details::DistinguishedNameElement,
+    DNP3SAv6::Details::DistinguishedName::Element,
     (std::string, type_)
     (std::string, value_)
     )
 BOOST_FUSION_ADAPT_STRUCT(
     DNP3SAv6::Details::DistinguishedName,
-    (std::vector< DNP3SAv6::Details::DistinguishedNameElement >, elements_)
+    (std::vector< DNP3SAv6::Details::DistinguishedName::Element >, elements_)
     )
 
 
