@@ -25,11 +25,12 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 namespace DNP3SAv6 {
 namespace Details {
 	class IRandomNumberGenerator;
+	class IUpdateKeyStore;
 }
 class SessionBuilder : private Session
 {
 public :
-	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Config const &config);
+	SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Details::IUpdateKeyStore &update_keys_tore, Config const &config);
 	~SessionBuilder() = default;
 	
 	SessionBuilder(SessionBuilder &&other) noexcept = default;
@@ -53,8 +54,6 @@ public :
 	boost::asio::mutable_buffer createWrappedKeyData(boost::asio::mutable_buffer buffer);
     bool unwrapKeyData(boost::asio::const_buffer const& incoming_key_wrap_data);
 
-    boost::asio::const_buffer getUpdateKey() const;
-
     using Session::getKeyWrapAlgorithm;
     using Session::getAEADAlgorithm;
 
@@ -76,6 +75,7 @@ private :
 	unsigned int session_key_change_request_message_size_ = 0;
 
 	Details::IRandomNumberGenerator &random_number_generator_;
+	Details::IUpdateKeyStore &update_key_store_;
 
     mutable unsigned char control_direction_digest_[Config::max_digest_size__];
     mutable unsigned char monitoring_direction_digest_[Config::max_digest_size__];

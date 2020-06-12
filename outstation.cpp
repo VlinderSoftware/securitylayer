@@ -28,9 +28,10 @@ Outstation::Outstation(
     , std::uint16_t association_id
 	, Config config
 	, Details::IRandomNumberGenerator &random_number_generator
+	, Details::IUpdateKeyStore &update_key_store
 	)
 	: SecurityLayer(io_context, association_id, config, random_number_generator)
-	, session_builder_(io_context, random_number_generator, config)
+	, session_builder_(io_context, random_number_generator, update_key_store, config)
 { /* no-op */ }
 
 /*virtual */void Outstation::reset() noexcept/* override*/

@@ -16,6 +16,7 @@
 #include "../master.hpp"
 #include "deterministicrandomnumbergenerator.hpp"
 #include "../exceptions/contract.hpp"
+#include "updatekeystorestub.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -39,8 +40,9 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
 		io_context ioc;
 		Config default_config;
 		Tests::DeterministicRandomNumberGenerator rng;
-		Master master(ioc, 0/* association ID */, default_config, rng);
-		Outstation outstation(ioc, 0/* association ID */, default_config, rng);
+        Tests::UpdateKeyStoreStub update_key_store;
+		Master master(ioc, 0/* association ID */, default_config, rng, update_key_store);
+		Outstation outstation(ioc, 0/* association ID */, default_config, rng, update_key_store);
 
         WHEN( "A session is set up and an APDU pushed through" ) {
             master.postAPDU(const_buffer(request_bytes, sizeof(request_bytes)));
