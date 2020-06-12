@@ -16,6 +16,7 @@
 #include "sessionbuilder.hpp"
 #include "exceptions/contract.hpp"
 #include "details/irandomnumbergenerator.hpp"
+#include "details/iupdatekeystore.hpp"
 #include "hmac.hpp"
 #include "messages/wrappedkeydata.hpp"
 #include <openssl/crypto.h>
@@ -26,9 +27,15 @@ using namespace std;
 using namespace boost::asio;
 
 namespace DNP3SAv6 {
-	SessionBuilder::SessionBuilder(boost::asio::io_context &ioc, Details::IRandomNumberGenerator &random_number_generator, Config const &config)
+	SessionBuilder::SessionBuilder(
+		  boost::asio::io_context &ioc
+		, Details::IRandomNumberGenerator &random_number_generator
+		, Details::IUpdateKeyStore &update_key_store
+		, Config const &config
+		)
 		: Session(ioc)
 		, random_number_generator_(random_number_generator)
+		, update_key_store_(update_key_store)
         , config_(config)
 	{
         pre_condition(config.session_key_change_count_ <= OPTION_MAX_SESSION_KEY_CHANGE_COUNT);
@@ -128,7 +135,7 @@ namespace DNP3SAv6 {
 		// encode it all into the mutable buffer
 		wrap(
 			  buffer
-			, getUpdateKey()
+			, update_key_store_.getUpdateKey(config_.master_outstation_association_name_)
 			, key_wrap_algorithm_
 			, aead_algorithm_
 			, const_buffer(control_direction_session_key_, sizeof(control_direction_session_key_))
@@ -163,7 +170,7 @@ namespace DNP3SAv6 {
 			, incoming_monitoring_direction_session_key_buffer
 			, incoming_digest_value_buffer
 			, incoming_digest_value_size
-			, getUpdateKey()
+			, update_key_store_.getUpdateKey(config_.master_outstation_association_name_)
 			, key_wrap_algorithm_
 			, aead_algorithm_
 			, incoming_key_wrap_data
@@ -205,15 +212,6 @@ namespace DNP3SAv6 {
 		}
 
 		return false;
-	}
-
-	boost::asio::const_buffer SessionBuilder::getUpdateKey() const
-	{   //TODO get this from somewhere
-		static unsigned char const update_key__[] = {
-			  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-			, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
-			};
-		return const_buffer(update_key__, sizeof(update_key__));
 	}
 
 	boost::asio::const_buffer SessionBuilder::getDigest(Details::Direction direction) const noexcept

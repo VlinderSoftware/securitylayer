@@ -14,6 +14,7 @@
 #include "catch.hpp"
 #include "../outstation.hpp"
 #include "../details/randomnumbergenerator.hpp"
+#include "updatekeystorestub.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -23,7 +24,8 @@ TEST_CASE( "Outstation: try to create an instance", "[outstation]" ) {
 	boost::asio::io_context io_context;
 	Config config;
 	Details::RandomNumberGenerator rng;
-	Outstation outstation(io_context, 0/* association ID */, config, rng);
+	Tests::UpdateKeyStoreStub update_key_store;
+	Outstation outstation(io_context, 0/* association ID */, config, rng, update_key_store);
 }
 
 //TODO add a test with an overloaded Outstation with accept* functions that may return false

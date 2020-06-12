@@ -28,13 +28,14 @@ Master::Master(
     , std::uint16_t association_id
 	, Config config
 	, Details::IRandomNumberGenerator &random_number_generator
+	, Details::IUpdateKeyStore &update_key_store
 	)
 	: SecurityLayer(io_context, association_id, config, random_number_generator)
 #if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
 	, kwa_index_(0)
 	, mal_index_(0)
 #endif
-	, session_builder_(io_context, random_number_generator, config)
+	, session_builder_(io_context, random_number_generator, update_key_store, config)
 { /* no-op */ }
 
 /*virtual */void Master::reset() noexcept/* override*/

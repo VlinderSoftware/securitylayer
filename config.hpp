@@ -15,6 +15,7 @@
 #define dnp3sav6_config_hpp
 
 #include <cstdint>
+#include "details/masteroutstationassociationname.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -39,6 +40,8 @@ namespace DNP3SAv6 {
 		std::uint16_t max_acceptable_session_key_change_count_ = 32767;
 
 		std::uint8_t nonce_size_ = 4; // bytes
+
+		Details::MasterOutstationAssociationName master_outstation_association_name_;
 
 		static unsigned int const max_key_wrap_data_size__ = 128; // some reasonable size for key-wrap data (it's currently 88 bytes). Note that a buffer for this is allocated on the stack, so we need this to be small
 

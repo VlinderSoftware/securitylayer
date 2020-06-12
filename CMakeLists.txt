@@ -113,6 +113,9 @@ set(LIBLAYER_SRC
 	details/intermediatebufferadapter.cpp
 	details/intermediatebufferadapter.hpp
 	details/irandomnumbergenerator.hpp
+	details/iupdatekeystore.hpp
+	details/masteroutstationassociationname.cpp
+	details/masteroutstationassociationname.hpp
 	details/pbkdf2.cpp
 	details/pbkdf2.hpp
 	details/privatekey.cpp
@@ -200,6 +203,8 @@ add_executable(test_libsecureauthentication
 	tests/deterministicrandomnumbergenerator.cpp
 	tests/deterministicrandomnumbergenerator.hpp
 	tests/main.cpp
+	tests/updatekeystorestub.cpp
+	tests/updatekeystorestub.hpp
 	)
 target_link_libraries(test_libsecureauthentication secureauthentication Boost::filesystem)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

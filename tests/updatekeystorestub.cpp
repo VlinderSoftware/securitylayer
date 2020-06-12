@@ -1,4 +1,4 @@
-/* Copyright 2019  Ronald Landheer-Cieslak
+/* Copyright 2020  Ronald Landheer-Cieslak
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
@@ -11,19 +11,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. */
-#include "catch.hpp"
-#include "../master.hpp"
-#include "../details/randomnumbergenerator.hpp"
 #include "updatekeystorestub.hpp"
 
-static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
+using namespace boost::asio;
 
-using namespace DNP3SAv6;
-
-TEST_CASE( "Master: try to create an instance", "[master]" ) {
-	boost::asio::io_context io_context;
-	Config config;
-	Details::RandomNumberGenerator rng;
-	Tests::UpdateKeyStoreStub update_key_store;
-	Master master(io_context, 0/* association ID */, config, rng, update_key_store);
+namespace DNP3SAv6 { namespace Tests {
+/*virtual */const_buffer UpdateKeyStoreStub::getUpdateKey(Details::MasterOutstationAssociationName const &master_outstation_association_name) const/* override = 0*/
+{
+	static unsigned char const update_key__[] = {
+		  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+		, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+		};
+	return const_buffer(update_key__, sizeof(update_key__));
 }
+}}
