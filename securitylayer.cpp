@@ -26,14 +26,12 @@ using namespace boost::asio;
 namespace DNP3SAv6 {
 SecurityLayer::SecurityLayer(
 	  boost::asio::io_context &io_context
-    , std::uint16_t association_id
 	, Config config
 	, Details::IRandomNumberGenerator &random_number_generator
 	)
 	: config_(config)
 	, random_number_generator_(random_number_generator)
 	, timeout_(io_context)
-    , association_id_(association_id)
 	, session_(io_context)
 {
 	memset(statistics_, 0, sizeof(statistics_));
@@ -226,9 +224,9 @@ boost::asio::const_buffer SecurityLayer::formatSecureMessage(Details::Direction 
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::secure_message__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
 
     const_buffer associated_data_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 
@@ -273,9 +271,9 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionInitiation cons
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_initiation__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
 
     static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
@@ -295,9 +293,9 @@ boost::asio::const_buffer SecurityLayer::format(Messages::SessionStartRequest co
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_start_request__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
     
     static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
@@ -322,9 +320,9 @@ boost::asio::const_buffer SecurityLayer::format(std::uint32_t seq, Messages::Ses
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_start_response__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
 
 	static_assert(sizeof(seq) == sizeof(seq_), "wrong size (type) for seq");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
@@ -353,9 +351,9 @@ const_buffer SecurityLayer::format(Messages::SessionKeyChangeRequest const &sess
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change_request__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
 
 	static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
@@ -384,9 +382,9 @@ boost::asio::const_buffer SecurityLayer::format(std::uint32_t seq, Messages::Ses
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_key_change_response__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
 
     static_assert(sizeof(seq) == sizeof(seq_), "wrong size (type) for seq");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
@@ -419,9 +417,9 @@ boost::asio::const_buffer SecurityLayer::format(std::uint32_t seq, Messages::Err
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
 	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::session_initiation__);
 
-    static_assert(sizeof(association_id_) == 2, "wrong size (type) for association_id_");
-	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &association_id_, sizeof(association_id_));
-	outgoing_spdu_size_ += sizeof(association_id_);
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
 
 	static_assert(sizeof(seq) == sizeof(seq_), "wrong size (type) for seq");
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
@@ -590,7 +588,9 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     memcpy(&incoming_association_id, curr, sizeof(incoming_association_id));
     curr += 2;
 
-    if (incoming_association_id != association_id_)
+    if (
+		   ((incoming_association_id != 0) && (incoming_association_id != config_.master_outstation_association_name_.association_id_))
+		)
     {   //TODO stat? log? just ignore?
         return;
     }

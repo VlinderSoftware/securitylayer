@@ -23,7 +23,7 @@ struct MasterOutstationAssociationName
     MasterOutstationAssociationName(
           std::string const &master_name
         , std::string const &outstation_name
-        , unsigned int association_id
+        , std::uint16_t association_id
         )
         : master_name_(master_name)
         , outstation_name_(outstation_name)
@@ -38,7 +38,7 @@ struct MasterOutstationAssociationName
 
     std::string master_name_;
     std::string outstation_name_;
-    unsigned int association_id_ = 0;
+    std::uint16_t association_id_ = 0;
 };
 }}
 

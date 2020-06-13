@@ -39,10 +39,11 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
     GIVEN( "A new Master and a new Outstation" ) {
 		io_context ioc;
 		Config default_config;
+		default_config.master_outstation_association_name_.association_id_ = 1;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, 0/* association ID */, default_config, rng, update_key_store);
-		Outstation outstation(ioc, 0/* association ID */, default_config, rng, update_key_store);
+		Master master(ioc, default_config, rng, update_key_store);
+		Outstation outstation(ioc, default_config, rng, update_key_store);
 
         WHEN( "A session is set up and an APDU pushed through" ) {
             master.postAPDU(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -100,10 +101,10 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
                         auto apdu_carrying_spdu(outstation.getSPDU());
                         unsigned char const *apdu_carrying_spdu_bytes(static_cast< unsigned char const * >(apdu_carrying_spdu.data()));
                         unsigned char const expected[] = {
-                              0xc0, 0x80, 0x40, 0x06, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00
+                              0xc0, 0x80, 0x40, 0x06, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00 
                             , 0x04, 0x00
-                            , 0xc9, 0x81, 0x00, 0x00
-                            , 0x63, 0x13, 0x9d, 0x7b, 0x09, 0x30, 0xbe, 0x02, 0xaa, 0x64, 0x54, 0x8a, 0xe7, 0x49, 0x07, 0xef
+                            , 0xc9, 0x81, 0x00, 0x00 
+                            , 0xa9, 0x00, 0xc9, 0x1d, 0x15, 0x57, 0x13, 0x01, 0x73, 0xc8, 0xdf, 0xac, 0x6c, 0x32, 0x9c, 0xaf 
                             };
                         REQUIRE( memcmp(apdu_carrying_spdu_bytes, expected, sizeof(expected)) == 0 );
 

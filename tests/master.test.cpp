@@ -25,5 +25,5 @@ TEST_CASE( "Master: try to create an instance", "[master]" ) {
 	Config config;
 	Details::RandomNumberGenerator rng;
 	Tests::UpdateKeyStoreStub update_key_store;
-	Master master(io_context, 0/* association ID */, config, rng, update_key_store);
+	Master master(io_context, config, rng, update_key_store);
 }
