@@ -27,7 +27,6 @@ class Outstation : public SecurityLayer
 public :
 	Outstation(
 		  boost::asio::io_context &io_context
-        , std::uint16_t association_id
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		, Details::IUpdateKeyStore &update_key_store

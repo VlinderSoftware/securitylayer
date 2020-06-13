@@ -28,11 +28,12 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
     GIVEN( "A new Master and a new Outstation, configured for up to 1000 messages in either direction" ) {
 		io_context ioc;
 		Config default_config;
+		default_config.master_outstation_association_name_.association_id_ = 1;
         default_config.session_key_change_count_ = 1000;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, 0/* association ID */, default_config, rng, update_key_store);
-		Outstation outstation(ioc, 0/* association ID */, default_config, rng, update_key_store);
+		Master master(ioc, default_config, rng, update_key_store);
+		Outstation outstation(ioc, default_config, rng, update_key_store);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -350,12 +351,14 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
     GIVEN( "A new Master and a new Outstation, configured for a session duration of up to five seconds on the Master" ) {
 		io_context ioc;
 		Config master_config;
+        master_config.master_outstation_association_name_.association_id_ = 1;
 		master_config.session_key_change_interval_ = 5;
 		Config outstation_config;
+        outstation_config.master_outstation_association_name_.association_id_ = 1;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, 0/* association ID */, master_config, rng, update_key_store);
-		Outstation outstation(ioc, 0/* association ID */, outstation_config, rng, update_key_store);
+		Master master(ioc, master_config, rng, update_key_store);
+		Outstation outstation(ioc, outstation_config, rng, update_key_store);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -419,12 +422,14 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
     GIVEN( "A new Master and a new Outstation, configured for a session duration of up to five seconds on the outstation" ) {
 		io_context ioc;
 		Config master_config;
+        master_config.master_outstation_association_name_.association_id_ = 1;
 		Config outstation_config;
+        outstation_config.master_outstation_association_name_.association_id_ = 1;
 		outstation_config.session_key_change_interval_ = 5;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, 0/* association ID */, master_config, rng, update_key_store);
-		Outstation outstation(ioc, 0/* association ID */, outstation_config, rng, update_key_store);
+		Master master(ioc, master_config, rng, update_key_store);
+		Outstation outstation(ioc, outstation_config, rng, update_key_store);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));

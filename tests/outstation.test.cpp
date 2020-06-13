@@ -25,7 +25,7 @@ TEST_CASE( "Outstation: try to create an instance", "[outstation]" ) {
 	Config config;
 	Details::RandomNumberGenerator rng;
 	Tests::UpdateKeyStoreStub update_key_store;
-	Outstation outstation(io_context, 0/* association ID */, config, rng, update_key_store);
+	Outstation outstation(io_context, config, rng, update_key_store);
 }
 
 //TODO add a test with an overloaded Outstation with accept* functions that may return false

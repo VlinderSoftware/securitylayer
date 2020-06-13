@@ -25,12 +25,11 @@ using namespace boost::asio;
 namespace DNP3SAv6 {
 Outstation::Outstation(
 	  boost::asio::io_context &io_context
-    , std::uint16_t association_id
 	, Config config
 	, Details::IRandomNumberGenerator &random_number_generator
 	, Details::IUpdateKeyStore &update_key_store
 	)
-	: SecurityLayer(io_context, association_id, config, random_number_generator)
+	: SecurityLayer(io_context, config, random_number_generator)
 	, session_builder_(io_context, random_number_generator, update_key_store, config)
 { /* no-op */ }
 
