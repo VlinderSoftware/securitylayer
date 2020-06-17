@@ -54,22 +54,15 @@ Outstation::Outstation(
     }
     else
     {
-		if (getState() == active__)
-		{
-			setState(initial__);
-		}
-		else
-		{ /* this is not a case of our session having just expired */ }
-
 		switch (getState())
 	    {
-	    case initial__ :
+	    case normal_operation__ :
 		    incrementSEQ();
-	    case expect_session_start_request__ :
+	    case wait_for_session_start_request__ :
 		    sendSessionInitiation();
-		    setState(expect_session_start_request__);
+		    setState(wait_for_session_start_request__);
 		    break;
-	    case expect_session_key_change_request__ :
+	    case wait_for_session_key_change_request__ :
 		    /* no-op: sending SessionStartResponse is drive by its time-out or receiving 
 		     * SessionStartRequest messages, not by APDUs */
 		    break;
@@ -86,10 +79,9 @@ Outstation::Outstation(
 	const_buffer response_spdu;
 	switch (getState())
 	{
-	case initial__ :
-	case active__ :
+	case normal_operation__ :
 		session_builder_.reset();
-	case expect_session_start_request__ :
+	case wait_for_session_start_request__ :
 	{
         session_builder_.setSEQ(incoming_seq);
 		// check the values in the session start request to see if I can live with them
@@ -123,12 +115,12 @@ Outstation::Outstation(
 		response_spdu = format(session_builder_.getSEQ(), response, nonce_buffer);
 		
 		session_builder_.setSessionStartResponse(response_spdu, nonce_buffer);
-		setState(State::expect_session_key_change_request__);
+		setState(State::wait_for_session_key_change_request__);
 		setOutgoingSPDU(response_spdu, std::chrono::milliseconds(config_.session_start_response_timeout_));
 		incrementStatistic(Statistics::total_messages_sent__);
 		return;
 	}
-	case expect_session_key_change_request__ :
+	case wait_for_session_key_change_request__ :
 		//TODO if the sequence number is the same, re-send our response -- make sure to use the same nonce
 		//     if the sequence number is one higher, and values for the KWA and the MAL from the Master are hints, treat them 
 		//     otherwise increment appropriate statistics and ignore
@@ -152,17 +144,15 @@ Outstation::Outstation(
     const_buffer response_spdu;
     switch (getState())
     {
-    case initial__:
+    case normal_operation__:
         // fall through
-    case active__:
-        // fall through
-    case expect_session_start_request__:
+    case wait_for_session_start_request__:
         response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unexpected_spdu__));
         setOutgoingSPDU(response_spdu);
         incrementStatistic(Statistics::error_messages_sent__);
         incrementStatistic(Statistics::total_messages_sent__);
         return;
-    case expect_session_key_change_request__:
+    case wait_for_session_key_change_request__:
     {
 		if (acceptKeyWrapAlgorithm(static_cast< KeyWrapAlgorithm >(incoming_skcr.key_wrap_algorithm_)))
 		{
@@ -210,7 +200,7 @@ Outstation::Outstation(
                 setSEQ(0);
                 seq_validator_.reset();
             }
-            setState(State::active__);
+            setState(State::normal_operation__);
         }
         else
         {

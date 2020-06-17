@@ -89,12 +89,11 @@ public :
 
 public : // public API for testing purposes
 	enum State {
-		  initial__
-		, expect_session_start_request__
-		, expect_session_start_response__
-		, expect_session_key_change_request__
-		, expect_session_key_change_response__
-		, active__
+		  normal_operation__
+		, wait_for_session_start_request__
+		, wait_for_session_start_response__
+		, wait_for_session_key_change_request__
+		, wait_for_session_key_change_response__
 		};
 
 	State getState() const noexcept { return state_; }
@@ -159,7 +158,7 @@ protected :
 private :
 	void parseIncomingSPDU() noexcept;
 
-	State state_ = initial__;
+	State state_ = normal_operation__;
 	boost::asio::const_buffer outgoing_apdu_;
 	boost::asio::const_buffer outgoing_spdu_;
 	boost::asio::const_buffer incoming_apdu_;

@@ -53,14 +53,13 @@ void SecurityLayer::cancelPendingAPDU() noexcept
 {
 	switch (state_)
 	{
-	case initial__ :
-	case expect_session_start_request__ :
+	case wait_for_session_start_request__ :
 		reset();
 		break;
-	case expect_session_start_response__ :
-	case expect_session_key_change_request__ :
-	case expect_session_key_change_response__ :
-	case active__ :
+	case wait_for_session_start_response__ :
+	case wait_for_session_key_change_request__ :
+	case wait_for_session_key_change_response__ :
+	case normal_operation__ :
 		discardAPDU();
 		// no state change
 		break;
@@ -122,25 +121,19 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
     {
         return make_pair(UpdateResult::apdu_ready__, boost::asio::steady_timer::duration(0));
     }
-    if (state_ == State::active__)
-    {
-		if (!getSession().valid(getOutgoingDirection()))
+	if (getSession().valid(getOutgoingDirection()))
+	{
+		if (outgoing_apdu_.size())
 		{
-			state_ = State::initial__;
+			onPostAPDU(outgoing_apdu_);
+			return update();
 		}
 		else
-		{
-			if (outgoing_apdu_.size())
-			{
-				onPostAPDU(outgoing_apdu_);
-				return update();
-			}
-			else
-			{ /* no APDU to handle */ }
-		}
+		{ /* no APDU to handle */ }
     }
     else
-    { /* SA protocol is still driving */ }
+	{ /* no valid session */ }
+
 	if (getSession().valid(getOutgoingDirection()))
 	{
 		return make_pair(UpdateResult::wait__, min(timeout_.expires_from_now(), getSession().getTimeout().expires_from_now()));
@@ -164,7 +157,7 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 void SecurityLayer::reset() noexcept
 {
 	discardAPDU();
-	state_ = initial__;
+	state_ = normal_operation__;
 	incoming_apdu_ = const_buffer();
 	incoming_spdu_ = const_buffer();
 	outgoing_apdu_ = const_buffer();

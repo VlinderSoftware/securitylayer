@@ -51,8 +51,8 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
             master.postSPDU(outstation.getSPDU());
             outstation.postSPDU(master.getSPDU());
             master.postSPDU(outstation.getSPDU());
-            REQUIRE( master.getState() == Master::active__ );
-            REQUIRE( outstation.getState() == Outstation::active__ );
+            REQUIRE( master.getState() == Master::normal_operation__ );
+            REQUIRE( outstation.getState() == Outstation::normal_operation__ );
 
             uint32_t expected_seq(1);
 
@@ -91,8 +91,8 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
                         master.postSPDU(outstation.getSPDU());
                         outstation.postSPDU(master.getSPDU());
                         master.postSPDU(outstation.getSPDU());
-                        REQUIRE( master.getState() == Master::active__ );
-                        REQUIRE( outstation.getState() == Outstation::active__ );
+                        REQUIRE( master.getState() == Master::normal_operation__ );
+                        REQUIRE( outstation.getState() == Outstation::normal_operation__ );
                     }
                     THEN( "While a session is re-initialized, if an APDU is sent by the Outstation application layer, it will get through the Outstation" ) {
                         outstation.postSPDU(master.getSPDU());
@@ -110,8 +110,8 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
 
                         outstation.postSPDU(master.getSPDU());
                         master.postSPDU(outstation.getSPDU());
-                        REQUIRE( master.getState() == Master::active__ );
-                        REQUIRE( outstation.getState() == Outstation::active__ );
+                        REQUIRE( master.getState() == Master::normal_operation__ );
+                        REQUIRE( outstation.getState() == Outstation::normal_operation__ );
                     }
                 }
                 WHEN( "The Outstation sends a few unsolicited responses (that don't necessarily arrive at the Master), the sequence number will go up as expected" ) {

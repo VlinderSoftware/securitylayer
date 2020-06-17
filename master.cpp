@@ -60,29 +60,21 @@ Master::Master(
 	}
 	else 
 	{
-		if (getState() == active__)
-		{
-			setState(initial__);
-		}
-		else
-		{ /* this is not a case of our session having just expired */ }
-
 		switch (getState())
 		{
-		case initial__ :
+		case normal_operation__ :
 			incrementSEQ();
 			sendSessionStartRequest();
-			setState(expect_session_start_response__);
+			setState(wait_for_session_start_response__);
 			break;
-		case expect_session_start_response__ :
+		case wait_for_session_start_response__ :
 			/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
 			 * the APDUs */
 			break;
-		case expect_session_key_change_response__ :
+		case wait_for_session_key_change_response__ :
 			/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
 			 * SessionStartResponse messages, not by APDUs. */
 			break;
-		case active__ :
 		default :
 			assert(!"Unexpected state");
 		}
@@ -94,16 +86,15 @@ Master::Master(
 	switch (getState())
 	{
 #if defined(OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION) && OPTION_IGNORE_OUTSTATION_SEQ_ON_REQUEST_SESSION_INITIATION
-	case initial__ :
-	case active__ :
+	case normal_operation__ :
 		incrementSEQ();
 		// fall through
-	case expect_session_start_response__ :
+	case wait_for_session_start_response__ :
 		sendSessionStartRequest();
-		setState(expect_session_start_response__);
+		setState(wait_for_session_start_response__);
 		break;
 #else
-	case expect_session_start_response__ :
+	case wait_for_session_start_response__ :
 		/* If the Outstation requested a session initiation and its SEQ is different than 
 		 * ours, we ignore it and let the time-out handle re-sends. Otherwise, we re-send 
 		 * and reset the time-out. Note that other than resetting the time-out, and 
@@ -117,7 +108,7 @@ Master::Master(
 		else
 		{ /* SEQ is OK */ }
 		sendSessionStartRequest();
-		setState(expect_session_start_response__);
+		setState(wait_for_session_start_response__);
 		break;
 	case initial__ :
 		/* If the incoming SEQ is smaller than or equal to our own, we can't use it, but we 
@@ -134,10 +125,10 @@ Master::Master(
 			incrementSEQ();
 		}
 		sendSessionStartRequest();
-		setState(expect_session_start_response__);
+		setState(wait_for_session_start_response__);
 		break;
 #endif
-	case expect_session_key_change_response__ :
+	case wait_for_session_key_change_response__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;
 	default :
@@ -154,7 +145,7 @@ Master::Master(
 {
 	switch (getState())
 	{
-	case expect_session_start_response__ :
+	case wait_for_session_start_response__ :
 	{
         if (incoming_seq != session_builder_.getSEQ())
         {   //TODO increment statistics
@@ -176,16 +167,15 @@ Master::Master(
 		post_condition(session_key_change_request.key_wrap_data_length_ == static_cast< decltype(session_key_change_request.key_wrap_data_length_) >(wrapped_key_data.size()));
 		const_buffer const spdu(format(session_key_change_request, wrapped_key_data));
 		setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.set_session_keys_timeout_));
-		setState(expect_session_key_change_response__);
+		setState(wait_for_session_key_change_response__);
         incrementStatistic(Statistics::total_messages_sent__);
 		break;
 	}
-	case expect_session_key_change_response__ :
+	case wait_for_session_key_change_response__ :
         //TODO
 		/* This is probably the response we got previously. Check if it it's identical and, if so, repeat the response. 
 		 * Otherwise, it's an unexpected message. */
-	case initial__ :
-	case active__ :
+	case normal_operation__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;
 	default :
@@ -197,7 +187,7 @@ Master::Master(
 {
 	switch (getState())
 	{
-	case expect_session_key_change_response__ :
+	case wait_for_session_key_change_response__ :
     {
         if (incoming_seq != session_builder_.getSEQ())
         {   //TODO increment statistics
@@ -226,16 +216,15 @@ Master::Master(
         }
 
 		// if they're the same, go to active state
-        setState(State::active__);
+        setState(State::normal_operation__);
         setSession(session_builder_.getSession());
         setSEQ(0);
         seq_validator_.reset();
 
         break;
     }
-	case expect_session_start_response__ :
-	case initial__ :
-	case active__ :
+	case wait_for_session_start_response__ :
+	case normal_operation__ :
 		incrementStatistic(Statistics::unexpected_messages__);
 		break;
 	default :
