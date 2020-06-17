@@ -42,8 +42,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             auto outstation_update_result(outstation.update());
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::initial__ );
-            REQUIRE( outstation.getState() == SecurityLayer::initial__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
             
             master.postAPDU(apdu_to_post);
 
@@ -51,8 +51,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::initial__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
             
             outstation.postSPDU(master.getSPDU());
 
@@ -60,8 +60,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
 
             master.postSPDU(outstation.getSPDU());
 
@@ -69,8 +69,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_key_change_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
 
             outstation.postSPDU(master.getSPDU());
 
@@ -78,8 +78,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_key_change_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
             master.postSPDU(outstation.getSPDU());
 
@@ -87,8 +87,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::active__ );
-            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
             outstation.postSPDU(master.getSPDU());
 
@@ -96,8 +96,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::apdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::active__ );
-            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
             auto received_apdu(outstation.getAPDU());
 
@@ -108,8 +108,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                     outstation_update_result = outstation.update();
                     REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                    REQUIRE( master.getState() == SecurityLayer::active__ );
-                    REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                    REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                    REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                     master.postAPDU(apdu_to_post);
 
@@ -117,8 +117,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
                     outstation_update_result = outstation.update();
                     REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                    REQUIRE( master.getState() == SecurityLayer::active__ );
-                    REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                    REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                    REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                     outstation.postSPDU(master.getSPDU());
 
@@ -126,8 +126,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                     outstation_update_result = outstation.update();
                     REQUIRE( outstation_update_result.first == SecurityLayer::apdu_ready__ );
-                    REQUIRE( master.getState() == ((i == 998) ? SecurityLayer::initial__ : SecurityLayer::active__) );
-                    REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                    REQUIRE( master.getState() == ((i == 998) ? SecurityLayer::normal_operation__ : SecurityLayer::normal_operation__) );
+                    REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                     received_apdu = outstation.getAPDU();
                 }
@@ -138,8 +138,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                         REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                         outstation_update_result = outstation.update();
                         REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                        REQUIRE( master.getState() == SecurityLayer::initial__ );
-                        REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                        REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                         master.postAPDU(apdu_to_post);
 
@@ -147,8 +147,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                         REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
                         outstation_update_result = outstation.update();
                         REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                        REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                        REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                        REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                         auto the_spdu(master.getSPDU());
                         outstation.postSPDU(the_spdu);
@@ -158,8 +158,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                             outstation_update_result = outstation.update();
                             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-                            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+                            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
                             
                             // simulate a bug in the surrounding code: it should have fetched the SPDU. This also simulates a dropped SPDU. We don't care for this test
                             outstation.postAPDU(apdu_to_post);
@@ -168,8 +168,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                             outstation_update_result = outstation.update();
                             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-                            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+                            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
 
                             master.postSPDU(outstation.getSPDU());
 
@@ -177,8 +177,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master_update_result.first == SecurityLayer::apdu_ready__ );
                             outstation_update_result = outstation.update();
                             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+                            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
                         }
                     }
                 }
@@ -191,8 +191,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             auto outstation_update_result(outstation.update());
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::initial__ );
-            REQUIRE( outstation.getState() == SecurityLayer::initial__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
             
             outstation.postAPDU(apdu_to_post);
 
@@ -200,8 +200,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::initial__ );
-            REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
             
             master.postSPDU(outstation.getSPDU());
 
@@ -209,8 +209,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
 
             outstation.postSPDU(master.getSPDU());
 
@@ -218,8 +218,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
 
             master.postSPDU(outstation.getSPDU());
 
@@ -227,8 +227,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_key_change_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
 
             outstation.postSPDU(master.getSPDU());
 
@@ -236,8 +236,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::expect_session_key_change_response__ );
-            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+            REQUIRE( master.getState() == SecurityLayer::wait_for_session_key_change_response__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
             master.postSPDU(outstation.getSPDU());
 
@@ -245,8 +245,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-            REQUIRE( master.getState() == SecurityLayer::active__ );
-            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
             master.postSPDU(outstation.getSPDU());
 
@@ -254,8 +254,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
             REQUIRE( master_update_result.first == SecurityLayer::apdu_ready__ );
             outstation_update_result = outstation.update();
             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-            REQUIRE( master.getState() == SecurityLayer::active__ );
-            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
             auto received_apdu(master.getAPDU());
 
@@ -266,8 +266,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                     outstation_update_result = outstation.update();
                     REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                    REQUIRE( master.getState() == SecurityLayer::active__ );
-                    REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                    REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                    REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                     outstation.postAPDU(apdu_to_post);
 
@@ -275,8 +275,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                     outstation_update_result = outstation.update();
                     REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-                    REQUIRE( master.getState() == SecurityLayer::active__ );
-                    REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                    REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                    REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                     master.postSPDU(outstation.getSPDU());
 
@@ -284,8 +284,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     REQUIRE( master_update_result.first == SecurityLayer::apdu_ready__ );
                     outstation_update_result = outstation.update();
                     REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                    REQUIRE( master.getState() == SecurityLayer::active__ );
-                    REQUIRE( outstation.getState() == ((i == 998) ? SecurityLayer::initial__ : SecurityLayer::active__) );
+                    REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                    REQUIRE( outstation.getState() == ((i == 998) ? SecurityLayer::normal_operation__ : SecurityLayer::normal_operation__) );
 
                     received_apdu = master.getAPDU();
                 }
@@ -296,8 +296,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                         REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                         outstation_update_result = outstation.update();
                         REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                        REQUIRE( master.getState() == SecurityLayer::active__ );
-                        REQUIRE( outstation.getState() == SecurityLayer::initial__ );
+                        REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
 
                         outstation.postAPDU(apdu_to_post);
 
@@ -305,8 +305,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                         REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                         outstation_update_result = outstation.update();
                         REQUIRE( outstation_update_result.first == SecurityLayer::spdu_ready__ );
-                        REQUIRE( master.getState() == SecurityLayer::active__ );
-                        REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+                        REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
 
                         auto the_spdu(outstation.getSPDU());
                         master.postSPDU(the_spdu);
@@ -316,8 +316,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
                             outstation_update_result = outstation.update();
                             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+                            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
                             
                             // simulate a bug in the surrounding code: it should have fetched the SPDU. This also simulates a dropped SPDU. We don't care for this test
                             master.postAPDU(apdu_to_post);
@@ -326,8 +326,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master_update_result.first == SecurityLayer::spdu_ready__ );
                             outstation_update_result = outstation.update();
                             REQUIRE( outstation_update_result.first == SecurityLayer::wait__ );
-                            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+                            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
 
                             outstation.postSPDU(master.getSPDU());
 
@@ -335,8 +335,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             REQUIRE( master_update_result.first == SecurityLayer::wait__ );
                             outstation_update_result = outstation.update();
                             REQUIRE( outstation_update_result.first == SecurityLayer::apdu_ready__ );
-                            REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+                            REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
                         }
                     }
                 }
@@ -383,8 +383,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             master.postAPDU(apdu_to_post);
                             outstation.postSPDU(master.getSPDU());
                             received_apdu = outstation.getAPDU();
-                            REQUIRE( master.getState() == SecurityLayer::active__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
                             pump_timer.expires_at(pump_timer.expires_at() + std::chrono::milliseconds(100));
                         }
                     });
@@ -400,8 +400,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     THEN( "The Master will send a SessionStartRequest when a new new APDU comes in" ) {
                         master.postAPDU(apdu_to_post);
                         outstation.postSPDU(master.getSPDU());
-                        REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                        REQUIRE( outstation.getState() == SecurityLayer::expect_session_key_change_request__ );
+                        REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_key_change_request__ );
                     }
 
                     THEN( "The Master will reject an incoming SecureMessage as unexpected" ) {
@@ -454,8 +454,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                             master.postAPDU(apdu_to_post);
                             outstation.postSPDU(master.getSPDU());
                             received_apdu = outstation.getAPDU();
-                            REQUIRE( master.getState() == SecurityLayer::active__ );
-                            REQUIRE( outstation.getState() == SecurityLayer::active__ );
+                            REQUIRE( master.getState() == SecurityLayer::normal_operation__ );
+                            REQUIRE( outstation.getState() == SecurityLayer::normal_operation__ );
                             pump_timer.expires_at(pump_timer.expires_at() + std::chrono::milliseconds(100));
                         }
                     });
@@ -471,8 +471,8 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
                     THEN( "The Outstation will send a SessionInitiation when a new new APDU comes in" ) {
                         outstation.postAPDU(apdu_to_post);
                         master.postSPDU(outstation.getSPDU());
-                        REQUIRE( master.getState() == SecurityLayer::expect_session_start_response__ );
-                        REQUIRE( outstation.getState() == SecurityLayer::expect_session_start_request__ );
+                        REQUIRE( master.getState() == SecurityLayer::wait_for_session_start_response__ );
+                        REQUIRE( outstation.getState() == SecurityLayer::wait_for_session_start_request__ );
                     }
 
                     THEN( "The Outstation will reject an incoming SecureMessage as unexpected" ) {
