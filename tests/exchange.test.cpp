@@ -64,7 +64,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			}
 			WHEN( "The Master receives it" ) {
 				Master master(ioc, default_config, rng, update_key_store);
@@ -82,7 +83,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				    REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				    REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				    REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				    REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			    }
 				THEN( "The Master should not present anything as an APDU" ) {
 					REQUIRE( !master.pollAPDU() );
@@ -118,7 +120,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			        }
 					THEN( "The Outstation should not present an APDU" ) {
 						REQUIRE( !outstation.pollAPDU() );
@@ -151,7 +154,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+					        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			            }
                     }
 					WHEN( "The Master receives the SessionStartResponse" ) {
@@ -167,7 +171,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				            REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				            REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				            REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+					        REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			            }
 				        THEN( "The Master should not present anything as an APDU" ) {
 					        REQUIRE( !master.pollAPDU() );
@@ -210,7 +215,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+						        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                }
                             THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                                 REQUIRE( outstation.pollSPDU() );
@@ -259,7 +265,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                    REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                    REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                    REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+							        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                    }
                                 WHEN( "The Master receives it" ) {
                                     master.postSPDU(spdu);
@@ -273,7 +280,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+								        REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                        }
 				                    THEN( "The Master should not present anything as an APDU" ) {
 					                    REQUIRE( !master.pollAPDU() );
@@ -308,7 +316,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				                            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 1 );	
-				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+											REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                            }
                                         WHEN( "The Master receives it" ) {
                                             master.postSPDU(spdu);
@@ -359,7 +368,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 			REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 			REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 			REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-			static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+			static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 		}
 		THEN( "The Master should not present anything as an APDU" ) {
 			REQUIRE( !master.pollAPDU() );
@@ -392,7 +402,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				    REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				    REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				    REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				    REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			    }
 			    THEN( "The Outstation should not present an APDU" ) {
 				    REQUIRE( !outstation.pollAPDU() );
@@ -420,7 +431,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			        }
                 }
 			    WHEN( "The Master receives the SessionStartResponse" ) {
@@ -436,7 +448,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				        REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			        }
 				    THEN( "The Master should not present anything as an APDU" ) {
 					    REQUIRE( !master.pollAPDU() );
@@ -468,7 +481,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+					        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			            }
                         THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                             REQUIRE( outstation.pollSPDU() );
@@ -490,7 +504,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				                REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+						        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                }
                             WHEN( "The Master receives it" ) {
                                 master.postSPDU(spdu);
@@ -504,7 +519,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				                    REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                    REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                    REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+							        REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                    }
 				                THEN( "The Master should not present anything as an APDU" ) {
 					                REQUIRE( !master.pollAPDU() );
@@ -525,7 +541,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				                        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 1 );	
-				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+								        REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                        }
                                     WHEN( "the outstation receives it" ) {
                                         outstation.postSPDU(spdu);
@@ -542,7 +559,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 				                            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+											REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                            }
                                     }
                                 }
@@ -597,7 +615,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			}
 			WHEN( "The Master receives it" ) {
 				Master master(ioc, default_config, rng, update_key_store);
@@ -615,7 +634,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				    REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				    REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				    REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				    REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+					static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			    }
 				THEN( "The Master should not present anything as an APDU" ) {
 					REQUIRE( !master.pollAPDU() );
@@ -651,7 +671,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+					    REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			        }
 					THEN( "The Outstation should not present an APDU" ) {
 						REQUIRE( !outstation.pollAPDU() );
@@ -684,7 +705,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+						    REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			            }
                     }
 					WHEN( "The Master receives the SessionStartResponse" ) {
@@ -700,7 +722,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				            REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				            REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				            REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+						    REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			            }
 				        THEN( "The Master should not present anything as an APDU" ) {
 					        REQUIRE( !master.pollAPDU() );
@@ -737,7 +760,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				                REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+							    REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				                static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                }
                             THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                                 REQUIRE( outstation.pollSPDU() );
@@ -775,7 +799,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				                    REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                    REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                    REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+									REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                    }
                                 WHEN( "The Master receives it" ) {
                                     master.postSPDU(spdu);
@@ -789,7 +814,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				                        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+										REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                        }
 				                    THEN( "The Master should not present anything as an APDU" ) {
 					                    REQUIRE( !master.pollAPDU() );
@@ -824,7 +850,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				                            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 1 );	
-				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+											REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                            }
                                         WHEN( "The Master receives it" ) {
                                             master.postSPDU(spdu);
@@ -876,7 +903,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 			REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 			REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 			REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-			static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+			REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );
+			static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 		}
 		THEN( "The Master should not present anything as an APDU" ) {
 			REQUIRE( !master.pollAPDU() );
@@ -909,7 +937,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				    REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				    REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				    REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+					REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			    }
 			    THEN( "The Outstation should not present an APDU" ) {
 				    REQUIRE( !outstation.pollAPDU() );
@@ -937,7 +966,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+						REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			        }
                 }
 			    WHEN( "The Master receives the SessionStartResponse" ) {
@@ -953,7 +983,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+						REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );
+						static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			        }
 				    THEN( "The Master should not present anything as an APDU" ) {
 					    REQUIRE( !master.pollAPDU() );
@@ -985,7 +1016,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+							REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			            }
                         THEN( "The Outstation will attempt to send a SessionKeyChangeResponse message" ) {
                             REQUIRE( outstation.pollSPDU() );
@@ -1007,7 +1039,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				                REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+								REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                }
                             WHEN( "The Master receives it" ) {
                                 master.postSPDU(spdu);
@@ -1021,7 +1054,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				                    REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                    REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                    REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+									REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                    static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                    }
 				                THEN( "The Master should not present anything as an APDU" ) {
 					                REQUIRE( !master.pollAPDU() );
@@ -1042,7 +1076,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				                        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 1 );	
-				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+										REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                        }
                                     WHEN( "the outstation receives it" ) {
                                         outstation.postSPDU(spdu);
@@ -1059,7 +1094,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
 				                            REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				                            REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 0 );	
-				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+											REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );
+				                            static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			                            }
                                     }
                                 }
