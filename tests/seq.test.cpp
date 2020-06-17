@@ -148,7 +148,8 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
 				        REQUIRE( outstation.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( outstation.getStatistic(Statistics::secure_messages_sent_) == 1 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				        REQUIRE( outstation.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
                         outstation.postSPDU(old_spdu);
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_sent__) == 3 );
 				        REQUIRE( outstation.getStatistic(Statistics::total_messages_received__) == 5 );
@@ -174,7 +175,8 @@ SCENARIO( "Master sets up a session, then exchanges a few messages" "[seq]") {
 				        REQUIRE( master.getStatistic(Statistics::error_messages_sent__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::unexpected_messages__) == 0 );
 				        REQUIRE( master.getStatistic(Statistics::secure_messages_sent_) == 1 );	
-				        static_assert(static_cast< int >(Statistics::statistics_count__) == 6, "New statistic added?");
+				        REQUIRE( master.getStatistic(Statistics::wrong_association_id__) == 0 );	
+				        static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
                         master.postSPDU(old_spdu);
 				        REQUIRE( master.getStatistic(Statistics::total_messages_sent__) == 3 );
 				        REQUIRE( master.getStatistic(Statistics::total_messages_received__) == 5 );

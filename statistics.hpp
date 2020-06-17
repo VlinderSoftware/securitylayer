@@ -24,6 +24,7 @@ namespace DNP3SAv6 {
 		, error_messages_sent__
 		, unexpected_messages__
 		, secure_messages_sent_
+		, wrong_association_id__
 
 		// INSERT NEW ONES ABOVE
 		, statistics_count__

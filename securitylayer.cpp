@@ -584,7 +584,8 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     if (
 		   ((incoming_association_id != 0) && (incoming_association_id != config_.master_outstation_association_name_.association_id_))
 		)
-    {   //TODO stat? log? just ignore?
+    {
+		incrementStatistic(Statistics::wrong_association_id__);
         return;
     }
     else
