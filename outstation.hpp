@@ -19,6 +19,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 #include "securitylayer.hpp"
 #include "keywrapalgorithm.hpp"
 #include "aeadalgorithm.hpp"
+#include "associationbuilder.hpp"
 #include "sessionbuilder.hpp"
 
 namespace DNP3SAv6 {
@@ -30,6 +31,7 @@ public :
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		, Details::IUpdateKeyStore &update_key_store
+		, Details::ICertificateStore &certificate_store
 		);
 	virtual ~Outstation() = default;
 	
@@ -47,13 +49,16 @@ protected :
 
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept override;
     virtual void rxSessionKeyChangeRequest(std::uint32_t incoming_seq, Messages::SessionKeyChangeRequest const& incoming_skcr, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept override;
+	virtual void rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept override;
 
 private :
 	void sendSessionInitiation() noexcept;
 
 	unsigned char buffer_[Config::max_spdu_size__];
 	unsigned char nonce_[Config::max_nonce_size__];
+	AssociationBuilder association_builder_;
 	SessionBuilder session_builder_;
+
 };
 }
 

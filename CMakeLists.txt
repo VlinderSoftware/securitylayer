@@ -56,12 +56,17 @@ set(LAYER_PUBLIC_HEADERS
 	master.hpp
 	messages.hpp
 	messages/error.hpp
+	messages/associationinitiation.hpp
+	messages/associationrequest.hpp
+	messages/associationresponse.hpp
 	messages/securemessage.hpp
 	messages/sessioninitiation.hpp
 	messages/sessionkeychangerequest.hpp
 	messages/sessionkeychangeresponse.hpp
 	messages/sessionstartrequest.hpp
 	messages/sessionstartresponse.hpp
+	messages/updatekeychangerequest.hpp
+	messages/updatekeychangeresponse.hpp
 	messages/wrappedkeydata.hpp
 	outstation.hpp
 	profile.hpp
@@ -77,6 +82,8 @@ set(LIBLAYER_SRC
 	aead.cpp
 	aead.hpp
 	aeadalgorithm.cpp
+	associationbuilder.cpp
+	associationbuilder.hpp
 	details/aeadhmacadapter.hpp
 	details/aesgcm.cpp
 	details/aesgcm.hpp
@@ -200,6 +207,8 @@ file(GLOB TEST_LIBLAYER_SOURCES tests/*.test.cpp)
 add_executable(test_libsecureauthentication
 	${TEST_LIBLAYER_SOURCES}
 	tests/catch.hpp
+	tests/certificatestorestub.cpp
+	tests/certificatestorestub.hpp
 	tests/deterministicrandomnumbergenerator.cpp
 	tests/deterministicrandomnumbergenerator.hpp
 	tests/main.cpp

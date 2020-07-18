@@ -16,6 +16,7 @@
 #include "../master.hpp"
 #include "deterministicrandomnumbergenerator.hpp"
 #include "updatekeystorestub.hpp"
+#include "certificatestorestub.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -32,7 +33,8 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 		default_config.master_outstation_association_name_.association_id_ = 1;
 		Tests::DeterministicRandomNumberGenerator rng;
 		Tests::UpdateKeyStoreStub update_key_store;
-		Outstation outstation(ioc, default_config, rng, update_key_store);
+		Tests::CertificateStoreStub certificate_store;
+		Outstation outstation(ioc, default_config, rng, update_key_store, certificate_store);
 
 		THEN( "The Outstation will be in the INITIAL state" ) {
 			REQUIRE( outstation.getState() == Outstation::normal_operation__ );
@@ -68,7 +70,7 @@ SCENARIO( "Outstation sends an initial unsolicited response" "[unsol]") {
 				static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			}
 			WHEN( "The Master receives it" ) {
-				Master master(ioc, default_config, rng, update_key_store);
+				Master master(ioc, default_config, rng, update_key_store, certificate_store);
 				REQUIRE( master.getState() == Master::normal_operation__ );
 				
 				auto spdu(outstation.getSPDU());
@@ -351,7 +353,8 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
 		default_config.master_outstation_association_name_.association_id_ = 1;
 		Tests::DeterministicRandomNumberGenerator rng;
 		Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, default_config, rng, update_key_store);
+		Tests::CertificateStoreStub certificate_store;
+		Master master(ioc, default_config, rng, update_key_store, certificate_store);
 		REQUIRE( master.getState() == Master::normal_operation__ );
 		unsigned char apdu_buffer[2048];
 		mutable_buffer apdu(apdu_buffer, sizeof(apdu_buffer));
@@ -386,7 +389,7 @@ SCENARIO( "Master sends an initial poll" "[master-init]") {
             REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
 		}
         GIVEN( "A newly booted Outstation" ) {
-            Outstation outstation(ioc, default_config, rng, update_key_store);
+            Outstation outstation(ioc, default_config, rng, update_key_store, certificate_store);
             REQUIRE( outstation.getState() == Outstation::normal_operation__ );
 
 		    WHEN( "The Outstation receives the Master's request" ) {
@@ -583,7 +586,8 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
         default_config.aead_algorithm_ = (decltype(default_config.aead_algorithm_))(AEADAlgorithm::aes256_gcm__);
 		Tests::DeterministicRandomNumberGenerator rng;
 		Tests::UpdateKeyStoreStub update_key_store;
-		Outstation outstation(ioc, default_config, rng, update_key_store);
+		Tests::CertificateStoreStub certificate_store;
+		Outstation outstation(ioc, default_config, rng, update_key_store, certificate_store);
 
 		THEN( "The Outstation will be in the INITIAL state" ) {
 			REQUIRE( outstation.getState() == Outstation::normal_operation__ );
@@ -619,7 +623,7 @@ SCENARIO( "Outstation sends an initial unsolicited response, using encryption" "
 				static_assert(static_cast< int >(Statistics::statistics_count__) == 7, "New statistic added?");
 			}
 			WHEN( "The Master receives it" ) {
-				Master master(ioc, default_config, rng, update_key_store);
+				Master master(ioc, default_config, rng, update_key_store, certificate_store);
 				REQUIRE( master.getState() == Master::normal_operation__ );
 				
 				auto spdu(outstation.getSPDU());
@@ -886,7 +890,8 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
         default_config.aead_algorithm_ = (decltype(default_config.aead_algorithm_))(AEADAlgorithm::aes256_gcm__);
 		Tests::DeterministicRandomNumberGenerator rng;
 		Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, default_config, rng, update_key_store);
+		Tests::CertificateStoreStub certificate_store;
+		Master master(ioc, default_config, rng, update_key_store, certificate_store);
 		REQUIRE( master.getState() == Master::normal_operation__ );
 		unsigned char apdu_buffer[2048];
 		mutable_buffer apdu(apdu_buffer, sizeof(apdu_buffer));
@@ -921,7 +926,7 @@ SCENARIO( "Master sends an initial poll, using encryption" "[master-init]") {
             REQUIRE( memcmp(spdu_bytes, expected_header_bytes, sizeof(expected_header_bytes)) == 0 );
 		}
         GIVEN( "A newly booted Outstation" ) {
-            Outstation outstation(ioc, default_config, rng, update_key_store);
+            Outstation outstation(ioc, default_config, rng, update_key_store, certificate_store);
             REQUIRE( outstation.getState() == Outstation::normal_operation__ );
 
 		    WHEN( "The Outstation receives the Master's request" ) {

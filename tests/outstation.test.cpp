@@ -15,6 +15,7 @@
 #include "../outstation.hpp"
 #include "../details/randomnumbergenerator.hpp"
 #include "updatekeystorestub.hpp"
+#include "certificatestorestub.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -25,7 +26,8 @@ TEST_CASE( "Outstation: try to create an instance", "[outstation]" ) {
 	Config config;
 	Details::RandomNumberGenerator rng;
 	Tests::UpdateKeyStoreStub update_key_store;
-	Outstation outstation(io_context, config, rng, update_key_store);
+	Tests::CertificateStoreStub certificate_store;
+	Outstation outstation(io_context, config, rng, update_key_store, certificate_store);
 }
 
 //TODO add a test with an overloaded Outstation with accept* functions that may return false

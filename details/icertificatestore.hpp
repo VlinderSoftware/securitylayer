@@ -35,6 +35,8 @@ namespace DNP3SAv6 { namespace Details {
         virtual void remove(DistinguishedName const &name) = 0;
         virtual bool verify(Certificate const &certificate) const = 0;
 
+		virtual std::vector< unsigned char > encode(DistinguishedName const &certificate_name, bool encode_chain) const = 0;
+
 	private :
 	};
 }}

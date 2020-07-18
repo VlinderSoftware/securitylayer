@@ -29,10 +29,17 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 namespace DNP3SAv6 {
 namespace Details {
 	class IRandomNumberGenerator;
+	class IUpdateKeyStore;
+	class ICertificateStore;
 }
 namespace Messages {
 	struct Error;
 	struct SecureMessage;
+	struct AssociationInitiation;
+	struct UpdateKeyChangeRequest;
+	struct UpdateKeyChangeResponse;
+	struct AssociationRequest;
+	struct AssociationResponse;
 	struct SessionInitiation;
 	struct SessionKeyChangeRequest;
 	struct SessionKeyChangeResponse;
@@ -46,6 +53,8 @@ public :
 		  boost::asio::io_context &io_context
 		, Config config
 		, Details::IRandomNumberGenerator &random_number_generator
+		, Details::IUpdateKeyStore &update_key_store
+		, Details::ICertificateStore &certificate_store
 		);
 	virtual ~SecurityLayer() = default;
 	
@@ -90,6 +99,10 @@ public :
 public : // public API for testing purposes
 	enum State {
 		  normal_operation__
+		, wait_for_association_request__
+		, wait_for_association_response__
+		, wait_for_update_key_change_request__
+		, wait_for_update_key_change_response__
 		, wait_for_session_start_request__
 		, wait_for_session_start_response__
 		, wait_for_session_key_change_request__
@@ -112,6 +125,8 @@ protected :
     virtual Details::Direction getIncomingDirection() const noexcept = 0;
     virtual Details::Direction getOutgoingDirection() const noexcept = 0;
 
+	boost::asio::const_buffer getUpdateKey() const;
+
 	virtual void reset() noexcept = 0;
 
 	void setOutgoingSPDU(
@@ -131,6 +146,11 @@ protected :
 	void setSEQ(std::uint32_t seq) noexcept { seq_ = seq; }
 
 	boost::asio::const_buffer formatSecureMessage(Details::Direction direction, boost::asio::const_buffer const &apdu) noexcept;
+	boost::asio::const_buffer format(Messages::AssociationInitiation const &message) noexcept;
+	boost::asio::const_buffer format(Messages::AssociationRequest const &message) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::AssociationResponse const &message, boost::asio::const_buffer const &certificates, boost::asio::const_buffer const &nonce) noexcept;
+	boost::asio::const_buffer format(Messages::UpdateKeyChangeRequest const &message) noexcept;
+	boost::asio::const_buffer format(Messages::UpdateKeyChangeResponse const &message) noexcept;
 	boost::asio::const_buffer format(Messages::SessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
 	boost::asio::const_buffer format(std::uint32_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
@@ -141,6 +161,11 @@ protected :
 
 	void incrementStatistic(Statistics statistics) noexcept;
 
+	virtual void rxAssociationInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxAssociationResponse(std::uint32_t incoming_seq, Messages::AssociationResponse const &incoming_ar, boost::asio::const_buffer const &incoming_outstation_certificate, boost::asio::const_buffer const &incoming_outstation_random_data, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxUpdateKeyChangeRequest(std::uint32_t incoming_seq, Messages::UpdateKeyChangeRequest const &incoming_ukcr, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxUpdateKeyChangeResponse(std::uint32_t incoming_seq, Messages::UpdateKeyChangeResponse const &incoming_ukcr, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxSessionStartResponse(std::uint32_t incoming_seq, Messages::SessionStartResponse const &incoming_ssr, boost::asio::const_buffer const &nonce, boost::asio::const_buffer const &incoming_spdu) noexcept;
@@ -154,6 +179,7 @@ protected :
 	Config const config_;
 	Details::IRandomNumberGenerator &random_number_generator_;
     Details::SEQValidator seq_validator_;
+	Details::ICertificateStore &certificate_store_;
 
 private :
 	void parseIncomingSPDU() noexcept;
@@ -177,6 +203,7 @@ private :
 	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];
 
     Session session_;
+	Details::IUpdateKeyStore &update_key_store_;
 };
 }
 

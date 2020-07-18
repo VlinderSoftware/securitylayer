@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include "details/masteroutstationassociationname.hpp"
+#include "details/distinguishedname.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -23,6 +24,7 @@ namespace DNP3SAv6 {
 	struct Config
 	{
 		unsigned int request_session_initiation_timeout_ = 5000; // milliseconds
+		unsigned int association_request_timeout_ = 5000; // milliseconds
 		unsigned int session_start_request_timeout_ = 5000; // milliseconds
 		unsigned int session_start_response_timeout_ = 5000; // milliseconds
 		unsigned int set_session_keys_timeout_ = 5000; // milliseconds
@@ -39,9 +41,13 @@ namespace DNP3SAv6 {
 		std::uint32_t max_acceptable_session_key_change_interval_ = 3600/*one hour*/;
 		std::uint16_t max_acceptable_session_key_change_count_ = 32767;
 
-		std::uint8_t nonce_size_ = 4; // bytes
+		std::uint8_t association_handshake_nonce_size_ = 4; // bytes
+		std::uint8_t session_handshake_nonce_size_ = 4; // bytes
 
 		Details::MasterOutstationAssociationName master_outstation_association_name_;
+
+		Details::DistinguishedName certificate_name_;
+		bool include_certificate_chain_ = true;
 
 		static unsigned int const max_key_wrap_data_size__ = 128; // some reasonable size for key-wrap data (it's currently 88 bytes). Note that a buffer for this is allocated on the stack, so we need this to be small
 

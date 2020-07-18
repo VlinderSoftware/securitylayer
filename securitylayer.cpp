@@ -17,6 +17,7 @@
 #include "messages.hpp"
 #include "hmac.hpp"
 #include "aead.hpp"
+#include "details/iupdatekeystore.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -28,11 +29,15 @@ SecurityLayer::SecurityLayer(
 	  boost::asio::io_context &io_context
 	, Config config
 	, Details::IRandomNumberGenerator &random_number_generator
+	, Details::IUpdateKeyStore &update_key_store
+	, Details::ICertificateStore &certificate_store
 	)
 	: config_(config)
 	, random_number_generator_(random_number_generator)
+	, certificate_store_(certificate_store)
 	, timeout_(io_context)
 	, session_(io_context)
+	, update_key_store_(update_key_store)
 {
 	memset(statistics_, 0, sizeof(statistics_));
 }
@@ -133,7 +138,6 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
     }
     else
 	{ /* no valid session */ }
-
 	if (getSession().valid(getOutgoingDirection()))
 	{
 		return make_pair(UpdateResult::wait__, min(timeout_.expires_from_now(), getSession().getTimeout().expires_from_now()));
@@ -152,6 +156,11 @@ std::pair< SecurityLayer::UpdateResult, boost::asio::steady_timer::duration> Sec
 /*virtual */bool SecurityLayer::acceptMACAlgorithm(AEADAlgorithm incoming_mal) const noexcept
 {
 	return true;
+}
+
+boost::asio::const_buffer SecurityLayer::getUpdateKey() const
+{
+	return update_key_store_.getUpdateKey(config_.master_outstation_association_name_);
 }
 
 void SecurityLayer::reset() noexcept
@@ -251,6 +260,83 @@ boost::asio::const_buffer SecurityLayer::formatSecureMessage(Details::Direction 
     outgoing_spdu_size_ += encrypt_result.size();
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
+}
+
+const_buffer SecurityLayer::format(Messages::AssociationInitiation const &message) noexcept
+{
+	return const_buffer();
+}
+
+boost::asio::const_buffer SecurityLayer::format(Messages::AssociationRequest const &message) noexcept
+{
+	static_assert(sizeof(outgoing_spdu_buffer_) >= (10/*SPDU header size*/) + sizeof(message), "buffer too small");
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::association_request__);
+
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
+    
+    static_assert(sizeof(seq_) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq_, sizeof(seq_));
+	outgoing_spdu_size_ += sizeof(seq_);
+	
+    assert(outgoing_spdu_size_ == (10/*SPDU header size*/));
+
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &message, sizeof(message));
+	outgoing_spdu_size_ += sizeof(message);
+	assert(outgoing_spdu_size_ == (10/*SPDU header size*/) + sizeof(message));
+
+	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
+}
+
+boost::asio::const_buffer SecurityLayer::format(uint32_t seq, Messages::AssociationResponse const& message, const_buffer const &certificates, const_buffer const &nonce) noexcept
+{
+	static_assert(sizeof(outgoing_spdu_buffer_) >= (10/*SPDU header size*/) + sizeof(message), "buffer too small");
+	outgoing_spdu_size_ = 0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0xC0;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x80;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = 0x40;
+	outgoing_spdu_buffer_[outgoing_spdu_size_++] = static_cast< unsigned char >(Message::association_response__);
+
+    static_assert(sizeof(config_.master_outstation_association_name_.association_id_) == 2, "wrong size (type) for association_id_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &config_.master_outstation_association_name_.association_id_, sizeof(config_.master_outstation_association_name_.association_id_));
+	outgoing_spdu_size_ += sizeof(config_.master_outstation_association_name_.association_id_);
+    
+    static_assert(sizeof(seq) == 4, "wrong size (type) for seq_");
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &seq, sizeof(seq));
+	outgoing_spdu_size_ += sizeof(seq);
+	
+    assert(outgoing_spdu_size_ == (10/*SPDU header size*/));
+
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &message, sizeof(message));
+	outgoing_spdu_size_ += sizeof(message);
+	assert(outgoing_spdu_size_ == (10/*SPDU header size*/) + sizeof(message));
+
+	assert(outgoing_spdu_size_ + certificates.size() <= sizeof(outgoing_spdu_buffer_));
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, certificates.data(), certificates.size());
+	outgoing_spdu_size_ += certificates.size();
+	assert(outgoing_spdu_size_ == (10/*SPDU header size*/) + sizeof(message) + certificates.size());
+
+	assert(outgoing_spdu_size_ + nonce.size() <= sizeof(outgoing_spdu_buffer_));
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, nonce.data(), nonce.size());
+	outgoing_spdu_size_ += nonce.size();
+	assert(outgoing_spdu_size_ == (10/*SPDU header size*/) + sizeof(message) + certificates.size() + nonce.size());
+
+	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
+}
+
+boost::asio::const_buffer SecurityLayer::format(Messages::UpdateKeyChangeRequest const& message) noexcept
+{
+	return boost::asio::const_buffer();
+}
+
+boost::asio::const_buffer SecurityLayer::format(Messages::UpdateKeyChangeResponse const& message) noexcept
+{
+	return boost::asio::const_buffer();
 }
 
 boost::asio::const_buffer SecurityLayer::format(Messages::SessionInitiation const &session_initiation) noexcept
@@ -437,6 +523,26 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 	return statistics_[static_cast< int >(statistic)];
 }
 
+/*virtual */void SecurityLayer::rxAssociationInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
+/*virtual */void SecurityLayer::rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
+/*virtual */void SecurityLayer::rxAssociationResponse(uint32_t incoming_seq, Messages::AssociationResponse const &incoming_ar, const_buffer const &incoming_outstation_certificate, const_buffer const &incoming_outstation_random_data, const_buffer const &incoming_spdu) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
+/*virtual */void SecurityLayer::rxUpdateKeyChangeRequest(std::uint32_t incoming_seq, Messages::UpdateKeyChangeRequest const &incoming_ukcr, boost::asio::const_buffer const &incoming_spdu) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
+/*virtual */void SecurityLayer::rxUpdateKeyChangeResponse(std::uint32_t incoming_seq, Messages::UpdateKeyChangeResponse const &incoming_ukcr, boost::asio::const_buffer const &incoming_spdu) noexcept
+{
+	incrementStatistic(Statistics::unexpected_messages__);
+}
 /*virtual */void SecurityLayer::rxSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
@@ -583,6 +689,7 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 
     if (
 		   ((incoming_association_id != 0) && (incoming_association_id != config_.master_outstation_association_name_.association_id_))
+		|| ((incoming_association_id == 0) && (incoming_function_code != static_cast< uint8_t >(Message::association_request__)))
 		)
     {
 		incrementStatistic(Statistics::wrong_association_id__);
@@ -748,6 +855,92 @@ void SecurityLayer::parseIncomingSPDU() noexcept
         }
 		break;
     }
+	case static_cast< uint8_t >(Message::association_initiation__) :
+	{
+		rxAssociationInitiation(incoming_seq, incoming_spdu_);
+		break;
+	}
+	case static_cast< uint8_t >(Message::association_request__) :
+	{
+		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
+		// if so, parse into a SessionStartRequest object and call rxSessionStartRequest(incoming_seq, incoming_ssr);
+		if (incoming_spdu_.size() == sizeof(Messages::AssociationRequest) + (10/*header size*/))
+		{
+			Messages::AssociationRequest incoming_ar;
+			assert(distance(curr, end) == sizeof(incoming_ar));
+			incoming_ar.version_ = *curr++;
+			if (incoming_ar.version_ != 6)
+			{
+				const_buffer response_spdu(format(Messages::Error(Messages::Error::unsupported_version__)));
+				setOutgoingSPDU(response_spdu);
+				incrementStatistic(Statistics::error_messages_sent__);
+				incrementStatistic(Statistics::total_messages_sent__);
+				break;
+			}
+			else
+			{ /* all is well as far as the version is concerned */ }
+ 			incoming_ar.flags_ = *curr++;
+   			assert(curr == end);
+			rxAssociationRequest(incoming_seq, incoming_ar, incoming_spdu_);
+		}
+		else
+		{
+			const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+		}
+		break;
+	}
+	case static_cast< uint8_t >(Message::association_response__) :
+	{
+		// first, check that the incoming SPDU is at least large enough to hold the association response's non-variable parts
+		if (incoming_spdu_.size() < sizeof(Messages::AssociationResponse) + (10 /* header size */))
+		{
+			const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+			break;
+		}
+		else
+		{ /* OK so far */ }
+		assert(distance(curr, end) >= sizeof(Messages::AssociationResponse));
+		// read the non-variable parts
+		Messages::AssociationResponse incoming_ar;
+		static_assert(sizeof(incoming_ar) == 4, "Unexpected size for AssociationResponse type");
+		memcpy(&incoming_ar, curr, sizeof(incoming_ar));
+		// check that the incoming SPDU is the expected size
+		unsigned int const expected_total_size((10 /* header size */) + sizeof(incoming_ar) + incoming_ar.outstation_certificate_length_ + incoming_ar.outstation_random_data_length_);
+		if (expected_total_size != incoming_spdu_.size())
+		{
+			const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+			break;
+		}
+		else
+		{ /* OK so far */ }
+		// carve out the certs and the random data
+		const_buffer incoming_outstation_certificate(curr, incoming_ar.outstation_certificate_length_);
+		curr += incoming_ar.outstation_certificate_length_;
+		assert(curr < end);
+		const_buffer incoming_outstation_random_data(curr, incoming_ar.outstation_random_data_length_);
+		curr += incoming_ar.outstation_random_data_length_;
+		assert(curr == end);
+		// pass it all to the RX function
+		rxAssociationResponse(incoming_seq, incoming_ar, incoming_outstation_certificate, incoming_outstation_random_data, incoming_spdu_);
+		break;
+	}
+	case static_cast< uint8_t >(Message::update_key_change_request__) :
+	{
+		break;
+	}
+	case static_cast< uint8_t >(Message::update_key_change_response__) :
+	{
+		break;
+	}
 	case static_cast< uint8_t >(Message::error__) :
         //TODO
 		// check the SPDU size to see if it's big enough to hold an Error message

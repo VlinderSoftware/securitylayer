@@ -18,6 +18,7 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 
 #include "securitylayer.hpp"
 #include "sessionbuilder.hpp"
+#include "associationbuilder.hpp"
 
 namespace DNP3SAv6 {
 class Master : public SecurityLayer
@@ -28,6 +29,7 @@ public :
         , Config config
 		, Details::IRandomNumberGenerator &random_number_generator
 		, Details::IUpdateKeyStore &update_key_store
+		, Details::ICertificateStore &certificate_store
 		);
 	virtual ~Master() = default;
 	
@@ -48,6 +50,7 @@ protected :
     virtual void rxSessionKeyChangeResponse(std::uint32_t incoming_seq, Messages::SessionKeyChangeResponse const &incoming_skcr, boost::asio::const_buffer const &incoming_mac, boost::asio::const_buffer const& spdu) noexcept override;
 
 private :
+	void sendAssociationRequest() noexcept;
 	void sendSessionStartRequest() noexcept;
 
 	unsigned char buffer_[Config::max_spdu_size__];
@@ -56,6 +59,7 @@ private :
 	unsigned int mal_index_;
 #endif
 	SessionBuilder session_builder_;
+	AssociationBuilder association_builder_;
 };
 }
 

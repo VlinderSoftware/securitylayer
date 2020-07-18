@@ -1,5 +1,8 @@
 #include "certificatestore.hpp"
 #include "certificate.hpp"
+#include <set>
+#include <stack>
+#include "opaque.hpp"
 
 using namespace std;
 
@@ -14,7 +17,7 @@ namespace DNP3SAv6 { namespace Details {
 }
 /*virtual */void CertificateStore::remove(DistinguishedName const &name)/* override = 0*/
 {
-    auto which(find_if(certificates_.begin(), certificates_.end(), [name](Certificate const &certificate){ return certificate.getSubjectName() == name; }));
+    auto which(find(name));
     if (which != certificates_.end())
     {
         certificates_.erase(which);
@@ -31,7 +34,7 @@ namespace DNP3SAv6 { namespace Details {
     bool retval(false);
     // find the certificate of the issuer
     auto issuer(certificate.getIssuerName());
-    auto issuer_certificate(find_if(certificates_.begin(), certificates_.end(), [=](Certificate const &certificate){ return certificate.getSubjectName() == issuer; }));
+    auto issuer_certificate(find(issuer));
 
     if (issuer_certificate != certificates_.end())
     {
@@ -42,5 +45,56 @@ namespace DNP3SAv6 { namespace Details {
     { /* not found, won't verify */ }
 
     return retval;
+}
+/*virtual */std::vector< unsigned char > CertificateStore::encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/
+{
+    std::stack< Certificates::const_iterator > certificates;
+    std::set< DistinguishedName > names;
+
+    // find the certificate
+    certificates.push(find(certificate_name));
+    if (certificates.top() == certificates_.end())
+    {
+        throw std::runtime_error("Certificate not found");
+    }
+    else
+    { /* all is well */ }
+    names.insert(certificates.top()->getSubjectName());
+    // if we encode the chain, find the issuers until we loop
+    bool done(false);
+    while (done)
+    {
+        auto issuer_name(certificates.top()->getIssuerName());
+        done = (names.find(issuer_name) != names.end());
+        if (!done)
+        {
+            auto issuer_certificate(find(issuer_name));
+            if (issuer_certificate != certificates_.end())
+            {
+                certificates.push(issuer_certificate);
+            }
+            else
+            {
+                done = true;
+            }
+        }
+        else
+        { /* we're done */ }
+    }
+    
+    std::deque< Opaque > encoded_certificates;
+    while (!certificates.empty())
+    {
+        Opaque encoded_certificate(certificates.top()->encode());
+    }
+}
+
+CertificateStore::Certificates::const_iterator CertificateStore::find(DistinguishedName const &name) const
+{
+    return find_if(certificates_.begin(), certificates_.end(), [=](Certificate const &certificate){ return certificate.getSubjectName() == name; });
+}
+CertificateStore::Certificates::iterator CertificateStore::find(DistinguishedName const &name)
+{
+    return find_if(certificates_.begin(), certificates_.end(), [=](Certificate const &certificate){ return certificate.getSubjectName() == name; });
 }
 }}
