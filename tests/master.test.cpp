@@ -15,6 +15,7 @@
 #include "../master.hpp"
 #include "../details/randomnumbergenerator.hpp"
 #include "updatekeystorestub.hpp"
+#include "certificatestorestub.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -25,5 +26,6 @@ TEST_CASE( "Master: try to create an instance", "[master]" ) {
 	Config config;
 	Details::RandomNumberGenerator rng;
 	Tests::UpdateKeyStoreStub update_key_store;
-	Master master(io_context, config, rng, update_key_store);
+	Tests::CertificateStoreStub certificate_store;
+	Master master(io_context, config, rng, update_key_store, certificate_store);
 }

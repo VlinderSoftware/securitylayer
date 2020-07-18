@@ -28,8 +28,9 @@ Master::Master(
 	, Config config
 	, Details::IRandomNumberGenerator &random_number_generator
 	, Details::IUpdateKeyStore &update_key_store
+	, Details::ICertificateStore &certificate_store
 	)
-	: SecurityLayer(io_context, config, random_number_generator)
+	: SecurityLayer(io_context, config, random_number_generator, update_key_store, certificate_store)
 #if defined(OPTION_ITERATE_KWA_AND_MAL) && OPTION_ITERATE_KWA_AND_MAL
 	, kwa_index_(0)
 	, mal_index_(0)
@@ -64,8 +65,17 @@ Master::Master(
 		{
 		case normal_operation__ :
 			incrementSEQ();
-			sendSessionStartRequest();
-			setState(wait_for_session_start_response__);
+			// check if we have an Update Key. If we don't, we need to start enrollment
+			if (!getUpdateKey().size())
+			{
+				sendAssociationRequest();
+				setState(wait_for_association_response__);
+			}
+			else
+			{
+				sendSessionStartRequest();
+				setState(wait_for_session_start_response__);
+			}
 			break;
 		case wait_for_session_start_response__ :
 			/* no-op: re-sending the SessionStartRequest message is driven by its time-out, not
@@ -74,6 +84,14 @@ Master::Master(
 		case wait_for_session_key_change_response__ :
 			/* no-op: re-sending SetSessionKeys messages is driven by its time-out and receiving
 			 * SessionStartResponse messages, not by APDUs. */
+			break;
+		case wait_for_association_response__ :
+			/* no-op: re-sending AssociationRequest messages is driven by its time-out and receiving
+			 * AssocationResponse messages, not by APDUs. */
+			break;
+		case wait_for_update_key_change_response__ :
+			/* no-op: re-sending UpdateKeyChangeRequest messages is driven by its time-out and receiving
+			 * UpdateKeyChangeResponse messages, not by APDUs. */
 			break;
 		default :
 			assert(!"Unexpected state");
@@ -230,6 +248,19 @@ Master::Master(
 	default :
 		assert(!"Unexpected state");
 	}
+}
+
+void Master::sendAssociationRequest() noexcept
+{
+	Messages::AssociationRequest ar;
+	assert(ar.version_ == 6);
+	assert(ar.flags_ == 0);
+
+	const_buffer const spdu(format(ar));
+	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.association_request_timeout_));
+    association_builder_.setSEQ(getSEQ());
+	association_builder_.setAssociationRequest(spdu);
+	incrementStatistic(Statistics::total_messages_sent__);
 }
 
 void Master::sendSessionStartRequest() noexcept

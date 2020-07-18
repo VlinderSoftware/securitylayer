@@ -60,6 +60,8 @@
 // TO DISCUSS: Broadcast messages could be done using asymmetric keys, as discussed by the SATF
 //             on 2019-06-26.
 #undef OPTION_IMPLEMENT_ASYMMETRIC_BROADCAST
+// TO DISCUSS: 
+#undef OPTION_PERMIT_NO_CERTIFICATE_IN_ASSOCIATION_RESPONSE
 
 #define OPTION_MAX_SESSION_KEY_CHANGE_COUNT 32767
 // WORK-AROUND: This works around OpenSSL issue #8615. If your implementations works with this

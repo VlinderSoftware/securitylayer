@@ -81,6 +81,13 @@ namespace DNP3SAv6 { namespace Details {
             std::string sha_;
         };
 
+        // As in RFC 8446
+        enum CertificateType : std::uint8_t {
+              x509 = 0
+            , raw_public_key = 1
+            , other = 255
+            };
+
 		virtual ~Certificate();
 
         Certificate(Certificate const &other);

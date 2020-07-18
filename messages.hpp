@@ -18,12 +18,17 @@ static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included
 
 #include <cstdint>
 #include "messages/error.hpp"
+#include "messages/associationinitiation.hpp"
+#include "messages/associationrequest.hpp"
+#include "messages/associationresponse.hpp"
+#include "messages/securemessage.hpp"
 #include "messages/sessioninitiation.hpp"
 #include "messages/sessionkeychangerequest.hpp"
 #include "messages/sessionkeychangeresponse.hpp"
 #include "messages/sessionstartrequest.hpp"
 #include "messages/sessionstartresponse.hpp"
-#include "messages/securemessage.hpp"
+#include "messages/updatekeychangerequest.hpp"
+#include "messages/updatekeychangeresponse.hpp"
 
 namespace DNP3SAv6 {
 	enum struct Message : std::uint8_t
@@ -34,10 +39,11 @@ namespace DNP3SAv6 {
 		, session_key_change_request__                      = 0x04
 		, session_key_change_response__                     = 0x05
 		, secure_message__			                        = 0x06
-        , enrollment_initiation__                           = 0x07
-        , enrollment_request__                              = 0x08
-        , enrollment_response__                             = 0x09
-        , enrollment_confirmation__                         = 0x0a
+        , association_initiation__                          = 0x07
+        , association_request__                             = 0x08
+        , association_response__                            = 0x09
+        , update_key_change_request__                       = 0x0a
+		, update_key_change_response__						= 0x0b
 		, error__						                    = 0x20 // must be 0x20 to be able to mimic IIN2.5
 	};
 }

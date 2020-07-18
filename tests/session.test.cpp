@@ -17,6 +17,7 @@
 #include "deterministicrandomnumbergenerator.hpp"
 #include "../exceptions/contract.hpp"
 #include "updatekeystorestub.hpp"
+#include "certificatestorestub.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -32,8 +33,9 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
         default_config.session_key_change_count_ = 1000;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, default_config, rng, update_key_store);
-		Outstation outstation(ioc, default_config, rng, update_key_store);
+        Tests::CertificateStoreStub certificate_store;
+		Master master(ioc, default_config, rng, update_key_store, certificate_store);
+		Outstation outstation(ioc, default_config, rng, update_key_store, certificate_store);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -357,8 +359,9 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
         outstation_config.master_outstation_association_name_.association_id_ = 1;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, master_config, rng, update_key_store);
-		Outstation outstation(ioc, outstation_config, rng, update_key_store);
+        Tests::CertificateStoreStub certificate_store;
+		Master master(ioc, master_config, rng, update_key_store, certificate_store);
+		Outstation outstation(ioc, outstation_config, rng, update_key_store, certificate_store);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -428,8 +431,9 @@ SCENARIO( "Master sets up a session, then exchanges messages until the keys expi
 		outstation_config.session_key_change_interval_ = 5;
 		Tests::DeterministicRandomNumberGenerator rng;
         Tests::UpdateKeyStoreStub update_key_store;
-		Master master(ioc, master_config, rng, update_key_store);
-		Outstation outstation(ioc, outstation_config, rng, update_key_store);
+        Tests::CertificateStoreStub certificate_store;
+		Master master(ioc, master_config, rng, update_key_store, certificate_store);
+		Outstation outstation(ioc, outstation_config, rng, update_key_store, certificate_store);
 
         WHEN( "A session is set up and an APDU pushed through by the Master" ) {
             auto apdu_to_post(const_buffer(request_bytes, sizeof(request_bytes)));
