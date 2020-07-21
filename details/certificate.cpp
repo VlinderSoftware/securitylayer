@@ -15,6 +15,7 @@
 #include <new>
 #include <memory>
 #include <stdexcept>
+#include <cstring>
 #include "../exceptions/contract.hpp"
 #include "distinguishednameparser.hpp"
 #include "pbkdf2.hpp"
@@ -156,9 +157,9 @@ struct Certificate::X509Adapter
     auto signature_salt(salt_kdf(16));
     auto ecdh_salt(salt_kdf(16));
     PBKDF2 signature_kdf(passkey, signature_salt);
-    auto signature_passkey(signature_kdf{32});
+    auto signature_passkey(signature_kdf(32));
     PBKDF2 ecdh_kdf(passkey, ecdh_salt);
-    auto ecdh_passkey(ecdh_kdf{32});
+    auto ecdh_passkey(ecdh_kdf(32));
 
     EVP_PKEY *signature_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, passkeyCallback__, &signature_passkey));
     if (!signature_privkey) throw runtime_error("failed to read private key");
@@ -203,9 +204,9 @@ void Certificate::store(std::string const &filename, std::string const &passkey,
     auto signature_salt(salt_kdf(16));
     auto ecdh_salt(salt_kdf(16));
     PBKDF2 signature_kdf(passkey, signature_salt);
-    auto signature_passkey(signature_kdf{32});
+    auto signature_passkey(signature_kdf(32));
     PBKDF2 ecdh_kdf(passkey, ecdh_salt);
-    auto ecdh_passkey(ecdh_kdf{32});
+    auto ecdh_passkey(ecdh_kdf(32));
 
     outputCertificate(bio.get(), x509_);
     outputPrivateKey(bio.get(), signature_private_key_, signature_passkey);
@@ -264,7 +265,7 @@ namespace {
             auto type(X509_NAME_ENTRY_get_object(entry));
             auto short_name(OBJ_nid2sn(OBJ_obj2nid(type)));
             auto data(X509_NAME_ENTRY_get_data(entry));
-            DistinguishedName::Element element(string(short_name), string((char*)ASN1_STRING_data(data), ASN1_STRING_length(data)));
+            DistinguishedName::Element element(string(short_name), string((char*)ASN1_STRING_get0_data(data), ASN1_STRING_length(data)));
             retval.elements_.push_back(element);
         }
     
@@ -416,7 +417,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
                     }
                     else
                     { /* all is well */ }
-                    if (!EC_POINT_oct2point(ec_group.get(), ec_point.get(), ASN1_STRING_data(public_key->publicKey), ASN1_STRING_length(public_key->publicKey), nullptr))
+                    if (!EC_POINT_oct2point(ec_group.get(), ec_point.get(), ASN1_STRING_get0_data(public_key->publicKey), ASN1_STRING_length(public_key->publicKey), nullptr))
                     {
                         throw runtime_error("Failed to decode public key");
                     }
