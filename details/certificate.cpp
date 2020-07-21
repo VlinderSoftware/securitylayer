@@ -23,6 +23,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <algorithm>
+#include <cstring>
 
 using namespace std;
 
@@ -230,9 +231,9 @@ struct Certificate::X509Adapter
     auto signature_salt(salt_kdf(16));
     auto ecdh_salt(salt_kdf(16));
     PBKDF2 signature_kdf(passkey, signature_salt);
-    auto signature_passkey(signature_kdf{32});
+    auto signature_passkey(signature_kdf(32));
     PBKDF2 ecdh_kdf(passkey, ecdh_salt);
-    auto ecdh_passkey(ecdh_kdf{32});
+    auto ecdh_passkey(ecdh_kdf(32));
 
     EVP_PKEY *signature_privkey(PEM_read_bio_PrivateKey(bio.get(), nullptr, passkeyCallback__, &signature_passkey));
     if (!signature_privkey) throw runtime_error("failed to read private key");
@@ -271,9 +272,9 @@ void Certificate::store(std::string const &filename, std::string const &passkey,
     auto signature_salt(salt_kdf(16));
     auto ecdh_salt(salt_kdf(16));
     PBKDF2 signature_kdf(passkey, signature_salt);
-    auto signature_passkey(signature_kdf{32});
+    auto signature_passkey(signature_kdf(32));
     PBKDF2 ecdh_kdf(passkey, ecdh_salt);
-    auto ecdh_passkey(ecdh_kdf{32});
+    auto ecdh_passkey(ecdh_kdf(32));
 
     outputCertificate(bio.get(), x509_);
     outputPrivateKey(bio.get(), signature_private_key_, signature_passkey);
