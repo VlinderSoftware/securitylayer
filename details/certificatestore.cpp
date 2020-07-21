@@ -1,5 +1,6 @@
 #include "certificatestore.hpp"
 #include "certificate.hpp"
+#include <algorithm>
 
 using namespace std;
 
