@@ -15,6 +15,7 @@
 #include <new>
 #include <memory>
 #include <stdexcept>
+#include <cstring>
 #include "../exceptions/contract.hpp"
 #include "distinguishednameparser.hpp"
 #include "pbkdf2.hpp"
@@ -270,7 +271,7 @@ namespace {
             auto type(X509_NAME_ENTRY_get_object(entry));
             auto short_name(OBJ_nid2sn(OBJ_obj2nid(type)));
             auto data(X509_NAME_ENTRY_get_data(entry));
-            DistinguishedName::Element element(string(short_name), string((char*)ASN1_STRING_data(data), ASN1_STRING_length(data)));
+            DistinguishedName::Element element(string(short_name), string((char*)ASN1_STRING_get0_data(data), ASN1_STRING_length(data)));
             retval.elements_.push_back(element);
         }
     
@@ -422,7 +423,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
                     }
                     else
                     { /* all is well */ }
-                    if (!EC_POINT_oct2point(ec_group.get(), ec_point.get(), ASN1_STRING_data(public_key->publicKey), ASN1_STRING_length(public_key->publicKey), nullptr))
+                    if (!EC_POINT_oct2point(ec_group.get(), ec_point.get(), ASN1_STRING_get0_data(public_key->publicKey), ASN1_STRING_length(public_key->publicKey), nullptr))
                     {
                         throw runtime_error("Failed to decode public key");
                     }
