@@ -4,6 +4,7 @@
 #include <set>
 #include <stack>
 #include "opaque.hpp"
+#include <algorithm>
 
 using namespace std;
 
