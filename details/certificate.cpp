@@ -366,7 +366,13 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
                     { /* all is well */ }
                     /* If we have curve parameters, we should use them regardless of the algorithm OID. We are required 
                      * to check whether the parameters correspond to the ones used according to the implementation we use 
-                     * for the curve: they should. If they don't, we need to bail out now. */
+                     * for the curve: they should. If they don't, we need to bail out now.
+		     * That is all well and good, but OpenSSL's EC_GROUP_cmd has been broken since version 1.0.2a:
+		     * creating a curve from the NID vs. creating it from the parameters, while it renders the same 
+		     * curve functionally, does not give two equal curves for which EC_GROUOP_cmd consistently 
+		     * returns equality. We will therefore obey OPTION_REQUIRE_CURVE_IOD_AND_PARAMETERS_TO_MATCH
+		     * to avoid running into trouble at run-time with well-defined curves. Worst cse, the 
+		     * ECDH fails later. */
                     int curve_nid(OBJ_obj2nid(public_key->algorithm->algorithm));
                     auto ec_group_deleter([](EC_GROUP *key){ EC_GROUP_free(key); });
                     unique_ptr< EC_GROUP, decltype(ec_group_deleter) > ec_group(nullptr, ec_group_deleter);
@@ -396,6 +402,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
                     {
                         if (ec_group)
                         {
+#if defined(OPTION_REQUIRE_CURVE_IOD_AND_PARAMETERS_TO_MATCH) && OPTION_REQUIRE_CURVE_IOD_AND_PARAMETERS_TO_MATCH
                             decltype(ec_group) ec_group_tmp(EC_GROUP_new_by_curve_name(curve_nid), ec_group_deleter);
                             if (EC_GROUP_cmp(ec_group.get(), ec_group_tmp.get(), nullptr) != 0)
                             {
@@ -403,6 +410,7 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
                             }
                             else
                             { /* all is well */ }
+#endif
                         }
                         else
                         {
