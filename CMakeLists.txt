@@ -41,7 +41,7 @@ include(FindThreads)
 set(Boost_USE_STATIC_LIBS       OFF)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package(Boost REQUIRED COMPONENTS date_time regex system)
+find_package(Boost REQUIRED COMPONENTS date_time regex system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${BOOST_LIBRARYDIR})
 
@@ -79,6 +79,12 @@ set(LIBLAYER_SRC
 	details/aeadhmacadapter.hpp
 	details/aesgcm.cpp
 	details/aesgcm.hpp
+	details/certificate.cpp
+	details/certificate.hpp
+	details/distinguishednameparser.cpp
+	details/distinguishednameparser.hpp
+	details/ecdh.cpp
+	details/ecdh.hpp
 	details/hmac.cpp
 	details/hmac.hpp
 	details/hmacaeadadapter.hpp
@@ -88,12 +94,20 @@ set(LIBLAYER_SRC
 	details/hmacsha256.hpp
 	details/hmacsha3256.cpp
 	details/hmacsha3256.hpp
+	details/hkdf.cpp
+	details/hkdf.hpp
 	details/iaead.hpp
 	details/ihmac.hpp
 	details/ikeywrap.hpp
 	details/intermediatebufferadapter.cpp
 	details/intermediatebufferadapter.hpp
 	details/irandomnumbergenerator.hpp
+	details/pbkdf2.cpp
+	details/pbkdf2.hpp
+	details/privatekey.cpp
+	details/privatekey.hpp
+	details/publickey.cpp
+	details/publickey.hpp
 	details/randomnumbergenerator.cpp
 	details/randomnumbergenerator.hpp
 	details/rfc3394aes256keywrap.cpp
@@ -146,6 +160,24 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	target_compile_options(less PRIVATE -D_WIN32_WINNT=0x0601 /FI "${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp" /wd4996)
 endif()
 
+set(GENCERTS_SRC
+	tests/gencerts.cpp
+	details/certificate.cpp
+	details/certificate.hpp
+	details/distinguishednameparser.cpp
+	details/distinguishednameparser.hpp
+	details/pbkdf2.cpp
+	details/pbkdf2.hpp
+	)
+add_executable(gencerts ${GENCERTS_SRC})
+target_link_libraries(gencerts OpenSSL::Crypto exceptions)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(less PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
+endif()
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_options(less PRIVATE -D_WIN32_WINNT=0x0601 /FI "${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp" /wd4996)
+endif()
+
 file(GLOB TEST_LIBLAYER_SOURCES tests/*.test.cpp)
 add_executable(test_libsecureauthentication
 	${TEST_LIBLAYER_SOURCES}
@@ -154,7 +186,7 @@ add_executable(test_libsecureauthentication
 	tests/deterministicrandomnumbergenerator.hpp
 	tests/main.cpp
 	)
-target_link_libraries(test_libsecureauthentication secureauthentication)
+target_link_libraries(test_libsecureauthentication secureauthentication Boost::filesystem)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(test_libsecureauthentication PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
 endif()
@@ -186,7 +218,7 @@ if (SA_PROFILES)
 		add_executable(test_libsecureauthentication-${prof}
 			${TEST_LIBLAYER_SOURCES}
 			)
-		target_link_libraries(test_libsecureauthentication-${prof} secureauthentication-${prof})
+		target_link_libraries(test_libsecureauthentication-${prof} secureauthentication-${prof} Boost::filesystem)
 		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			target_compile_options(test_libsecureauthentication-${prof} PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile-${prof}.hpp)
 		endif()

@@ -135,11 +135,11 @@ protected :
 	boost::asio::const_buffer formatSecureMessage(Details::Direction direction, boost::asio::const_buffer const &apdu) noexcept;
 	boost::asio::const_buffer format(Messages::SessionInitiation const &rsi) noexcept;
 	boost::asio::const_buffer format(Messages::SessionStartRequest const &ssr) noexcept;
-	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::SessionStartResponse const &ssr, boost::asio::const_buffer const &nonce) noexcept;
 	boost::asio::const_buffer format(Messages::SessionKeyChangeRequest const &sk, boost::asio::const_buffer const &wrapped_key_data) noexcept;
-	boost::asio::const_buffer format(std::uint16_t seq, Messages::SessionKeyChangeResponse const &sc, boost::asio::const_buffer const &digest, unsigned int authentication_tag_length) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::SessionKeyChangeResponse const &sc, boost::asio::const_buffer const &digest, unsigned int authentication_tag_length) noexcept;
 	boost::asio::const_buffer format(Messages::Error const &e) noexcept;
-	boost::asio::const_buffer format(std::uint16_t seq, Messages::Error const &e) noexcept;
+	boost::asio::const_buffer format(std::uint32_t seq, Messages::Error const &e) noexcept;
 
 	void incrementStatistic(Statistics statistics) noexcept;
 
@@ -175,7 +175,7 @@ private :
 	boost::asio::steady_timer timeout_;
 
     std::uint16_t association_id_ = 0;
-	std::uint16_t seq_ = 0;
+	std::uint32_t seq_ = 0;
 
 	unsigned int statistics_[static_cast< int >(Statistics::statistics_count__)];
 
