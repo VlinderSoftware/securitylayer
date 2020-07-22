@@ -64,5 +64,8 @@
 #undef OPTION_PERMIT_NO_CERTIFICATE_IN_ASSOCIATION_RESPONSE
 
 #define OPTION_MAX_SESSION_KEY_CHANGE_COUNT 32767
+// WORK-AROUND: This works around OpenSSL issue #8615. If your implementations works with this
+//              value set to 1, it is recommended that you use the value 1.
+#define OPTION_REQUIRE_CURVE_IOD_AND_PARAMETERS_TO_MATCH 0
 
 #endif
