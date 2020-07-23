@@ -32,6 +32,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: build and run tests
+      env:
+        CODECOV_TOKEN: ${{ secrets.CodeCovToken }}
       run: |
         git submodule update --init --recursive
         mkdir .build
