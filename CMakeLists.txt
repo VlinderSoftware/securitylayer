@@ -228,3 +228,4 @@ if (SA_PROFILES)
 		add_test(test_libsecureauthentication-${prof} test_libsecureauthentication-${prof})
 	endforeach(prof)
 endif()
+
