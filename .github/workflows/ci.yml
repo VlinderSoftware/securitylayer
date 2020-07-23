@@ -36,7 +36,7 @@ jobs:
         git submodule update --init --recursive
         mkdir .build
         cd .build
-        cmake .. -DCMAKE_BUILD_TYPE=Debug -DSA_COVERAGE
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DSA_COVERAGE=1
         make
         make secureauthentication_coverage
     - uses: codecov/codecov-action@v1
