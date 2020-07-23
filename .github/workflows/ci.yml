@@ -27,7 +27,7 @@ jobs:
   coverage:
     runs-on: ubuntu-18.04
     container:
-            image: vlinder/build-image:topic-add-lcov
+            image: vlinder/build-image
 
     steps:
     - uses: actions/checkout@v2
