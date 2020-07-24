@@ -300,10 +300,11 @@ Outstation::Outstation(
 		return;
 	}
 	case wait_for_update_key_change_request__ :
-		//TODO re-send the association response
+		//TODO re-send the association response if the sequence number is OK
 		break;
 	case wait_for_session_start_request__ :
 	case wait_for_session_key_change_request__ :
+		//TODO make this dependent on configuration
         response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::unexpected_spdu__));
         setOutgoingSPDU(response_spdu);
         incrementStatistic(Statistics::error_messages_sent__);
