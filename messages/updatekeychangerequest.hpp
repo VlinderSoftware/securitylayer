@@ -19,6 +19,9 @@
 namespace DNP3SAv6 { namespace Messages {
 struct UpdateKeyChangeRequest
 {
+    std::uint8_t mac_algorithm_;
+    std::uint8_t master_random_data_length_;
+    std::uint16_t master_certificate_length_;
 };
 }}
 
