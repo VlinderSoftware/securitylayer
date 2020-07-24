@@ -915,6 +915,8 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 		Messages::AssociationResponse incoming_ar;
 		static_assert(sizeof(incoming_ar) == 4, "Unexpected size for AssociationResponse type");
 		memcpy(&incoming_ar, curr, sizeof(incoming_ar));
+		curr += sizeof(incoming_ar);
+		assert(curr < end);
 		// check that the incoming SPDU is the expected size
 		unsigned int const expected_total_size((10 /* header size */) + sizeof(incoming_ar) + incoming_ar.outstation_certificate_length_ + incoming_ar.outstation_random_data_length_);
 		if (expected_total_size != incoming_spdu_.size())
