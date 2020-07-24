@@ -28,11 +28,6 @@
 #include "constants.hpp"
 #include "ecdhpublickey.hpp"
 
-// NOTE: as there is no consensus within the SATF at the moment to (2020-04-18) encode these ECDH public keys as X.509 extensions, we're using 
-//       a Vlinder Software OID to encode it.
-// DNP3 SAv6 ECDH key { iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) vlinder-software(49974) security(0) protocols(0) dnp3-secure-authentication(2) version(6) ecdh-key(0) }
-#define DNP3_ECDH_EXTENSION_OID "1.3.6.1.4.1.49974.0.0.2.6.0"
-
 using namespace std;
 
 namespace {
@@ -367,12 +362,12 @@ Certificate::Certificate(X509 *x509, EVP_PKEY *signature_private_key, EVP_PKEY *
                     /* If we have curve parameters, we should use them regardless of the algorithm OID. We are required 
                      * to check whether the parameters correspond to the ones used according to the implementation we use 
                      * for the curve: they should. If they don't, we need to bail out now.
-		     * That is all well and good, but OpenSSL's EC_GROUP_cmd has been broken since version 1.0.2a:
-		     * creating a curve from the NID vs. creating it from the parameters, while it renders the same 
-		     * curve functionally, does not give two equal curves for which EC_GROUOP_cmd consistently 
-		     * returns equality. We will therefore obey OPTION_REQUIRE_CURVE_IOD_AND_PARAMETERS_TO_MATCH
-		     * to avoid running into trouble at run-time with well-defined curves. Worst cse, the 
-		     * ECDH fails later. */
+                     * That is all well and good, but OpenSSL's EC_GROUP_cmd has been broken since version 1.0.2a:
+                     * creating a curve from the NID vs. creating it from the parameters, while it renders the same 
+                     * curve functionally, does not give two equal curves for which EC_GROUOP_cmd consistently 
+                     * returns equality. We will therefore obey OPTION_REQUIRE_CURVE_IOD_AND_PARAMETERS_TO_MATCH
+                     * to avoid running into trouble at run-time with well-defined curves. Worst cse, the 
+                     * ECDH fails later. */
                     int curve_nid(OBJ_obj2nid(public_key->algorithm->algorithm));
                     auto ec_group_deleter([](EC_GROUP *key){ EC_GROUP_free(key); });
                     unique_ptr< EC_GROUP, decltype(ec_group_deleter) > ec_group(nullptr, ec_group_deleter);
