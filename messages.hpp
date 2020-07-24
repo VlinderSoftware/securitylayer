@@ -44,6 +44,7 @@ namespace DNP3SAv6 {
         , association_response__                            = 0x09
         , update_key_change_request__                       = 0x0a
 		, update_key_change_response__						= 0x0b
+		, authorization_management_protocol_message__       = 0x0c
 		, error__						                    = 0x20 // must be 0x20 to be able to mimic IIN2.5
 	};
 }
