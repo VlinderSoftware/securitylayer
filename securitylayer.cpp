@@ -687,16 +687,21 @@ void SecurityLayer::parseIncomingSPDU() noexcept
     memcpy(&incoming_association_id, curr, sizeof(incoming_association_id));
     curr += 2;
 
-    if (
-		   ((incoming_association_id != 0) && (incoming_association_id != config_.master_outstation_association_name_.association_id_))
-		|| ((incoming_association_id == 0) && (incoming_function_code != static_cast< uint8_t >(Message::association_request__)))
-		)
-    {
+	if ((incoming_association_id == 0) && (incoming_function_code != static_cast< uint8_t >(Message::association_request__)))
+	{	// got a zero for a message where that is not allowed
 		incrementStatistic(Statistics::wrong_association_id__);
         return;
-    }
-    else
-    { /* all is well */ }
+	}
+	else if ((incoming_association_id != 0) && (incoming_association_id != config_.master_outstation_association_name_.association_id_))
+	{	// got non-zero and doesn't correspond to this stack's AID. May still be OK if the message is an association response
+		if (incoming_function_code != static_cast< uint8_t >(Message::association_response__))
+		{
+			incrementStatistic(Statistics::wrong_association_id__);
+			return;
+		}
+		else
+		{ /* all is well */ }
+	}
 
     unsigned char const *const associated_data_end(curr);
 
