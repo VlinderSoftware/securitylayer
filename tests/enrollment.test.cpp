@@ -31,6 +31,8 @@ SCENARIO( "New Master starts MOA with new Outstation", "[enrollment]" ) {
 	io_context ioc;
 	Config default_config;
 	default_config.master_outstation_association_name_ = moa_name;
+	Config outstation_config(default_config);
+	outstation_config.master_outstation_association_name_.association_id_ = 2;
 	Tests::DeterministicRandomNumberGenerator rng;
     Tests::UpdateKeyStoreStub update_key_store;
 	Tests::CertificateStoreStub certificate_store;
@@ -41,7 +43,7 @@ SCENARIO( "New Master starts MOA with new Outstation", "[enrollment]" ) {
 	certificate_store.setEncodedCertificates(encoded_certificates);
 
 	Master master(ioc, default_config, rng, update_key_store, certificate_store);
-	Outstation outstation(ioc, default_config, rng, update_key_store, certificate_store);
+	Outstation outstation(ioc, outstation_config, rng, update_key_store, certificate_store);
 
 	WHEN( "the Master sends an APDU" ) {
 		master.postAPDU(const_buffer(request_bytes, sizeof(request_bytes)));
@@ -64,7 +66,9 @@ SCENARIO( "New Master starts MOA with new Outstation", "[enrollment]" ) {
 				}
 				THEN( "it will return an AssociationResponse SPDU with an encoded certificate and a nonce" ) {
 					unsigned char const expected[] = {
-						  0xc0, 0x80, 0x40, 0x09, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00
+						  0xc0, 0x80, 0x40, 0x09
+						, 0x02, 0x00
+						, 0x01, 0x00, 0x00, 0x00
 						, 0x40, 0x00
 						, 0x04, 0x00
 						, 0xb6, 0xd9, 0xff, 0x24, 0xec, 0xb2, 0x2c, 0x40, 0x82, 0xff, 0xc0, 0x51, 0xc0, 0x39, 0x22, 0x2c
