@@ -38,7 +38,12 @@ public :
     void setSEQ(std::uint32_t seq) noexcept;
 
 	void setAssociationRequest(boost::asio::const_buffer const &association_request);
+	boost::asio::const_buffer getAssociationRequest() const;
 	void setAssociationResponse(boost::asio::const_buffer const &association_request);
+	boost::asio::const_buffer getAssociationResponse() const;
+
+	void setOutstationCertificate(boost::asio::const_buffer const &incoming_outstation_certificate);
+	void setOutstationRandomData(boost::asio::const_buffer const &incoming_outstation_random_data);
 
 private :
 	std::uint32_t seq_ = 0;
@@ -47,6 +52,10 @@ private :
 	unsigned int association_request_message_size_ = 0;
 	unsigned char association_response_message_[Config::max_spdu_size__];
 	unsigned int association_response_message_size_ = 0;
+	unsigned char master_random_data_[Config::max_nonce_size__];
+	unsigned int master_random_data_size_ = 0;
+	unsigned char outstation_random_data_[Config::max_nonce_size__];
+	unsigned int outstation_random_data_size_ = 0;
 };
 }
 

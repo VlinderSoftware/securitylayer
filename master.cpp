@@ -99,6 +99,59 @@ Master::Master(
 	}
 }
 
+/*virtual */void Master::rxAssociationResponse(
+	  uint32_t incoming_seq
+	, Messages::AssociationResponse const &incoming_ar
+	, boost::asio::const_buffer const &incoming_outstation_certificate
+	, boost::asio::const_buffer const &incoming_outstation_random_data
+	, boost::asio::const_buffer const &incoming_spdu
+	) noexcept/* override*/
+{
+	switch (getState())
+	{
+	case wait_for_association_response__ :
+		if (association_builder_.getSEQ() != incoming_seq)
+		{ // wrong sequence number
+			return; //TODO stats
+		}
+		else
+		{ /* all is well */ }
+		if (incoming_ar.outstation_random_data_length_ > config_.max_nonce_size__)
+		{ // nonce too big
+			return; //TODO stats
+		}
+		else
+		{ /* all is well */ }
+		association_builder_.setAssociationResponse(incoming_spdu);
+		association_builder_.setOutstationCertificate(incoming_outstation_certificate);
+		association_builder_.setOutstationRandomData(incoming_outstation_random_data);
+		break;
+	case wait_for_update_key_change_response__ :
+		if (association_builder_.getSEQ() != incoming_seq)
+		{ // wrong sequence number
+			return; //TODO stats
+		}
+		else
+		{ /* all is well */ }
+		bool const same_size(association_builder_.getAssociationResponse().size() == incoming_spdu.size());
+		bool const same_contents(same_size && (memcpy(incoming_spdu.data(), association_builder_.getAssociationResponse().data(), incoming_spdu.size()) == 0));
+		if (!same_size || !same_contents)
+		{
+			return; //TODO stats
+		}
+		else
+		{ /* all is well */ }
+		break;
+	case normal_operation__ :
+	case wait_for_session_start_response__ :
+	case wait_for_session_key_change_response__ :
+		incrementStatistic(Statistics::unexpected_messages__);
+		break;
+	default :
+		assert(!"Unexpected state");
+	}
+}
+
 /*virtual */void Master::rxSessionInitiation(uint32_t incoming_seq, boost::asio::const_buffer const &spdu) noexcept/* override*/
 {
 	switch (getState())
@@ -171,6 +224,12 @@ Master::Master(
         }
         else
         { /* all is well */ }
+		if (incoming_ssr.challenge_data_length_ > config_.max_nonce_size__)
+		{ //TODO increment statistics
+			return;
+		}
+		else
+		{ /* all is well */ }
 		session_builder_.setSessionStartResponse(spdu, nonce);
 		assert(incoming_ssr.challenge_data_length_ == nonce.size());
 

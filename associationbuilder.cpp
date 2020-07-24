@@ -38,11 +38,29 @@ void AssociationBuilder::setAssociationRequest(boost::asio::const_buffer const& 
     memcpy(association_request_message_, association_request.data(), association_request.size());
     association_request_message_size_ = association_request.size();
 }
+boost::asio::const_buffer AssociationBuilder::getAssociationRequest() const
+{
+    return boost::asio::const_buffer(association_request_message_, association_request_message_size_);
+}
 void AssociationBuilder::setAssociationResponse(boost::asio::const_buffer const& association_response)
 {
     pre_condition(association_response.size() <= sizeof(association_response_message_));
     memcpy(association_response_message_, association_response.data(), association_response.size());
     association_response_message_size_ = association_response.size();
+}
+boost::asio::const_buffer AssociationBuilder::getAssociationResponse() const
+{
+    return boost::asio::const_buffer(association_response_message_, association_response_message_size_);
+}
+void AssociationBuilder::setOutstationCertificate(boost::asio::const_buffer const &incoming_outstation_certificate)
+{
+    //TODO parse!
+}
+void AssociationBuilder::setOutstationRandomData(boost::asio::const_buffer const& incoming_outstation_random_data)
+{
+    pre_condition(incoming_outstation_random_data.size() <= sizeof(outstation_random_data_));
+    memcpy(outstation_random_data_, incoming_outstation_random_data.data(), incoming_outstation_random_data.size());
+    outstation_random_data_size_ = incoming_outstation_random_data.size();
 }
 }
 
