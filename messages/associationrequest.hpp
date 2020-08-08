@@ -30,6 +30,8 @@ struct AssociationRequest
      * and shall be 0. Bit 0 is set to 1 if the Master supports higher versions
      * than what is currently requested, or 0 if not. */
     std::uint8_t flags_ = 0;
+    /* Length of the Master certificate, which follows this header */
+    std::uint16_t master_certificate_length_;
 };
 }}
 

@@ -48,7 +48,7 @@ namespace DNP3SAv6 { namespace Details {
 
     return retval;
 }
-/*virtual */std::vector< unsigned char > CertificateStore::encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/
+/*virtual */boost::asio::const_buffer CertificateStore::encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/
 {
     std::stack< Certificates::const_iterator > certificates;
     std::set< DistinguishedName > names;
@@ -88,7 +88,15 @@ namespace DNP3SAv6 { namespace Details {
     while (!certificates.empty())
     {
         Opaque encoded_certificate(certificates.top()->encode());
+
+        //HERE!!
+        //TODO
     }
+}
+
+/*virtual */void CertificateStore::decode(boost::asio::const_buffer const &encoded_certs, VerificationPolicy verification_policy)/* override = 0*/
+{
+    //TODO
 }
 
 CertificateStore::Certificates::const_iterator CertificateStore::find(DistinguishedName const &name) const

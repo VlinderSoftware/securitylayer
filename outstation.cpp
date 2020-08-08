@@ -234,7 +234,7 @@ Outstation::Outstation(
     //send the response_spdu HERE!!
 }
 
-/*virtual */void Outstation::rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept/* override*/
+/*virtual */void Outstation::rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_certificates, boost::asio::const_buffer const &incoming_spdu) noexcept/* override*/
 {
     const_buffer response_spdu;
 	Messages::AssociationResponse response;
@@ -266,6 +266,16 @@ Outstation::Outstation(
 			incrementStatistic(Statistics::total_messages_sent__);
 			break;
 		}
+		if (!association_builder_.setPeerCertificates(incoming_certificates))
+		{
+			response_spdu = format(session_builder_.getSEQ(), Messages::Error(Messages::Error::invalid_certificates__));
+			setOutgoingSPDU(response_spdu);
+			incrementStatistic(Statistics::error_messages_sent__);
+			incrementStatistic(Statistics::total_messages_sent__);
+			break;
+		}
+		else
+		{ /* all is well */ }
 		association_builder_.setAssociationRequest(incoming_spdu);
 
 		assert(config_.association_handshake_nonce_size_ <= config_.max_nonce_size__);
@@ -273,7 +283,7 @@ Outstation::Outstation(
 		random_number_generator_.generate(nonce_buffer);
 		response.outstation_random_data_length_ = config_.association_handshake_nonce_size_;
 		auto certificates(certificate_store_.encode(config_.certificate_name_, config_.include_certificate_chain_));
-		if (certificates.empty())
+		if (certificates.size() == 0)
 		{
 #if !defined(OPTION_PERMIT_NO_CERTIFICATE_IN_ASSOCIATION_RESPONSE) || !OPTION_PERMIT_NO_CERTIFICATE_IN_ASSOCIATION_RESPONSE
 			//TODO log
@@ -282,16 +292,15 @@ Outstation::Outstation(
 		}
 		else
 		{ /* all is well */ }
-		const_buffer certificates_buffer(certificates.empty() ? nullptr : &certificates[0], certificates.size());
-		if (certificates_buffer.size() > std::numeric_limits< decltype(response.outstation_certificate_length_) >::max())
+		if (certificates.size() > std::numeric_limits< decltype(response.outstation_certificate_length_) >::max())
 		{
 			//TODO log
 			return;
 		}
 		else
 		{ /* all is well */ }
-		response.outstation_certificate_length_ = certificates_buffer.size();
-		response_spdu = format(association_builder_.getSEQ(), response, certificates_buffer, nonce_buffer);
+		response.outstation_certificate_length_ = static_cast< decltype(response.outstation_certificate_length_) >(certificates.size());
+		response_spdu = format(association_builder_.getSEQ(), response, certificates, nonce_buffer);
 		
 		association_builder_.setAssociationResponse(response_spdu);
 		setState(State::wait_for_session_key_change_request__);

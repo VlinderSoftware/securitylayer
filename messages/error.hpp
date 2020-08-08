@@ -27,6 +27,7 @@ struct Error
 		, unsupported_keywrap_algorithm__
         , unexpected_spdu__
         , authentication_failure__
+		, invalid_certificates__
 		};
 
 	Error(ErrorCode error)

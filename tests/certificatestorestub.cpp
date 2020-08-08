@@ -28,9 +28,15 @@ namespace DNP3SAv6 { namespace Tests {
 {
     return false;
 }
-/*virtual */std::vector< unsigned char > CertificateStoreStub::encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/
+/*virtual */boost::asio::const_buffer CertificateStoreStub::encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/
 {
-    return encoded_certificates_;
+    boost::asio::const_buffer retval(&encoded_certificates_[0], encoded_certificates_.size());
+    return retval;
+}
+
+/*virtual */void CertificateStoreStub::decode(boost::asio::const_buffer const& encoded_certs, VerificationPolicy verification_policy)/* override = 0*/
+{
+    //TODO
 }
 
 void CertificateStoreStub::setEncodedCertificates(std::vector< unsigned char > const &encoded_certificates)

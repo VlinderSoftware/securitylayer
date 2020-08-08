@@ -147,7 +147,7 @@ protected :
 
 	boost::asio::const_buffer formatSecureMessage(Details::Direction direction, boost::asio::const_buffer const &apdu) noexcept;
 	boost::asio::const_buffer format(Messages::AssociationInitiation const &message) noexcept;
-	boost::asio::const_buffer format(Messages::AssociationRequest const &message) noexcept;
+	boost::asio::const_buffer format(Messages::AssociationRequest const &message, boost::asio::const_buffer const &encoded_certificates) noexcept;
 	boost::asio::const_buffer format(std::uint32_t seq, Messages::AssociationResponse const &message, boost::asio::const_buffer const &certificates, boost::asio::const_buffer const &nonce) noexcept;
 	boost::asio::const_buffer format(Messages::UpdateKeyChangeRequest const &message) noexcept;
 	boost::asio::const_buffer format(Messages::UpdateKeyChangeResponse const &message) noexcept;
@@ -162,7 +162,7 @@ protected :
 	void incrementStatistic(Statistics statistics) noexcept;
 
 	virtual void rxAssociationInitiation(std::uint32_t incoming_seq, boost::asio::const_buffer const &incoming_spdu) noexcept;
-	virtual void rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept;
+	virtual void rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_certificates, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxAssociationResponse(std::uint32_t incoming_seq, Messages::AssociationResponse const &incoming_ar, boost::asio::const_buffer const &incoming_outstation_certificate, boost::asio::const_buffer const &incoming_outstation_random_data, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxUpdateKeyChangeRequest(std::uint32_t incoming_seq, Messages::UpdateKeyChangeRequest const &incoming_ukcr, boost::asio::const_buffer const &incoming_spdu) noexcept;
 	virtual void rxUpdateKeyChangeResponse(std::uint32_t incoming_seq, Messages::UpdateKeyChangeResponse const &incoming_ukcr, boost::asio::const_buffer const &incoming_spdu) noexcept;

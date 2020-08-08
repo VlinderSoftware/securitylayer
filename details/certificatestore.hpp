@@ -36,7 +36,8 @@ namespace DNP3SAv6 { namespace Details {
         /*virtual */void remove(std::string const &name) override/* = 0*/;
         /*virtual */bool verify(Certificate const &certificate) const override/* = 0*/;
 
-		/*virtual */std::vector< unsigned char > encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/;
+		/*virtual */boost::asio::const_buffer encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const override/* = 0*/;
+		/*virtual */void decode(boost::asio::const_buffer const &encoded_certs, VerificationPolicy verification_policy) override/* = 0*/;
 
 	private :
         typedef std::vector< Certificate > Certificates;

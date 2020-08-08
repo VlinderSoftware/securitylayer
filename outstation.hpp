@@ -49,7 +49,7 @@ protected :
 
 	virtual void rxSessionStartRequest(std::uint32_t incoming_seq, Messages::SessionStartRequest const &incoming_ssr, boost::asio::const_buffer const &spdu) noexcept override;
     virtual void rxSessionKeyChangeRequest(std::uint32_t incoming_seq, Messages::SessionKeyChangeRequest const& incoming_skcr, boost::asio::const_buffer const& incoming_key_wrap_data, boost::asio::const_buffer const& spdu) noexcept override;
-	virtual void rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept override;
+	virtual void rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_certificates, boost::asio::const_buffer const &incoming_spdu) noexcept override;
 
 private :
 	void sendSessionInitiation() noexcept;

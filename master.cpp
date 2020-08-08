@@ -16,6 +16,7 @@
 #include <chrono>
 #include "exceptions/contract.hpp"
 #include <openssl/crypto.h>
+#include "details/icertificatestore.hpp"
 
 static_assert(DNP3SAV6_PROFILE_HPP_INCLUDED, "profile.hpp should be pre-included in CMakeLists.txt");
 
@@ -123,10 +124,17 @@ Master::Master(
 		else
 		{ /* all is well */ }
 		association_builder_.setAssociationResponse(incoming_spdu);
-		association_builder_.setOutstationCertificate(incoming_outstation_certificate);
+		if (!association_builder_.setPeerCertificates(incoming_outstation_certificate))
+		{
+			//TODO log, stats
+			return;
+		}
+		else
+		{ /* asll is well */ }
 		association_builder_.setOutstationRandomData(incoming_outstation_random_data);
 		break;
 	case wait_for_update_key_change_response__ :
+	{
 		if (association_builder_.getSEQ() != incoming_seq)
 		{ // wrong sequence number
 			return; //TODO stats
@@ -134,7 +142,7 @@ Master::Master(
 		else
 		{ /* all is well */ }
 		bool const same_size(association_builder_.getAssociationResponse().size() == incoming_spdu.size());
-		bool const same_contents(same_size && (memcpy(incoming_spdu.data(), association_builder_.getAssociationResponse().data(), incoming_spdu.size()) == 0));
+		bool const same_contents(same_size && (memcmp(incoming_spdu.data(), association_builder_.getAssociationResponse().data(), incoming_spdu.size()) == 0));
 		if (!same_size || !same_contents)
 		{
 			return; //TODO stats
@@ -142,6 +150,7 @@ Master::Master(
 		else
 		{ /* all is well */ }
 		break;
+	}
 	case normal_operation__ :
 	case wait_for_session_start_response__ :
 	case wait_for_session_key_change_response__ :
@@ -315,7 +324,11 @@ void Master::sendAssociationRequest() noexcept
 	assert(ar.version_ == 6);
 	assert(ar.flags_ == 0);
 
-	const_buffer const spdu(format(ar));
+	auto encoded_certificates(certificate_store_.encode(config_.certificate_name_, config_.include_certificate_chain_));
+	assert(encoded_certificates.size() < std::numeric_limits< decltype(ar.master_certificate_length_) >::max());
+	ar.master_certificate_length_ = static_cast< decltype(ar.master_certificate_length_) >(encoded_certificates.size());
+
+	const_buffer const spdu(format(ar, encoded_certificates));
 	setOutgoingSPDU(spdu, std::chrono::milliseconds(config_.association_request_timeout_));
     association_builder_.setSEQ(getSEQ());
 	association_builder_.setAssociationRequest(spdu);

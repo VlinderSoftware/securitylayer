@@ -38,7 +38,8 @@ public :
     /*virtual */void remove(Details::DistinguishedName const &name)/* = 0*/;
     /*virtual */bool verify(Details::Certificate const &certificate) const/* = 0*/;
 
-	/*virtual */std::vector< unsigned char > encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/;
+	/*virtual */boost::asio::const_buffer encode(Details::DistinguishedName const &certificate_name, bool encode_chain) const/* = 0*/;
+	/*virtual */void decode(boost::asio::const_buffer const &encoded_certs, VerificationPolicy verification_policy) override/* = 0*/;
 
 	void setEncodedCertificates(std::vector< unsigned char > const &encoded_certificates);
 

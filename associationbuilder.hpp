@@ -42,7 +42,7 @@ public :
 	void setAssociationResponse(boost::asio::const_buffer const &association_request);
 	boost::asio::const_buffer getAssociationResponse() const;
 
-	void setOutstationCertificate(boost::asio::const_buffer const &incoming_outstation_certificate);
+	bool setPeerCertificates(boost::asio::const_buffer const &incoming_outstation_certificate);
 	void setOutstationRandomData(boost::asio::const_buffer const &incoming_outstation_random_data);
 
 private :

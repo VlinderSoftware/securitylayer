@@ -52,9 +52,11 @@ boost::asio::const_buffer AssociationBuilder::getAssociationResponse() const
 {
     return boost::asio::const_buffer(association_response_message_, association_response_message_size_);
 }
-void AssociationBuilder::setOutstationCertificate(boost::asio::const_buffer const &incoming_outstation_certificate)
+bool AssociationBuilder::setPeerCertificates(boost::asio::const_buffer const &incoming_outstation_certificate)
 {
     //TODO parse!
+
+    return true;
 }
 void AssociationBuilder::setOutstationRandomData(boost::asio::const_buffer const& incoming_outstation_random_data)
 {

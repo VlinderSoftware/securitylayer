@@ -267,7 +267,7 @@ const_buffer SecurityLayer::format(Messages::AssociationInitiation const &messag
 	return const_buffer();
 }
 
-boost::asio::const_buffer SecurityLayer::format(Messages::AssociationRequest const &message) noexcept
+boost::asio::const_buffer SecurityLayer::format(Messages::AssociationRequest const &message, boost::asio::const_buffer const &encoded_certificates) noexcept
 {
 	static_assert(sizeof(outgoing_spdu_buffer_) >= (10/*SPDU header size*/) + sizeof(message), "buffer too small");
 	outgoing_spdu_size_ = 0;
@@ -289,6 +289,16 @@ boost::asio::const_buffer SecurityLayer::format(Messages::AssociationRequest con
 	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, &message, sizeof(message));
 	outgoing_spdu_size_ += sizeof(message);
 	assert(outgoing_spdu_size_ == (10/*SPDU header size*/) + sizeof(message));
+
+	if (sizeof(outgoing_spdu_buffer_) < outgoing_spdu_size_ + encoded_certificates.size())
+	{
+		//TODO log, stats
+		return boost::asio::const_buffer();
+	}
+	else
+	{ /* we have enough space to encode */ }
+	memcpy(outgoing_spdu_buffer_ + outgoing_spdu_size_, encoded_certificates.data(), encoded_certificates.size());
+	outgoing_spdu_size_ += encoded_certificates.size();
 
 	return const_buffer(outgoing_spdu_buffer_, outgoing_spdu_size_);
 }
@@ -527,7 +537,7 @@ unsigned int SecurityLayer::getStatistic(Statistics statistic) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
 }
-/*virtual */void SecurityLayer::rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_spdu) noexcept
+/*virtual */void SecurityLayer::rxAssociationRequest(std::uint32_t incoming_seq, Messages::AssociationRequest const &incoming_ar, boost::asio::const_buffer const &incoming_certificates, boost::asio::const_buffer const &incoming_spdu) noexcept
 {
 	incrementStatistic(Statistics::unexpected_messages__);
 }
@@ -869,10 +879,9 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 	{
 		// check the SPDU size to see if it's big enough to hold a SessionStartRequest message
 		// if so, parse into a SessionStartRequest object and call rxSessionStartRequest(incoming_seq, incoming_ssr);
-		if (incoming_spdu_.size() == sizeof(Messages::AssociationRequest) + (10/*header size*/))
+		if (incoming_spdu_.size() > sizeof(Messages::AssociationRequest) + (10/*header size*/))
 		{
 			Messages::AssociationRequest incoming_ar;
-			assert(distance(curr, end) == sizeof(incoming_ar));
 			incoming_ar.version_ = *curr++;
 			if (incoming_ar.version_ != 6)
 			{
@@ -885,8 +894,21 @@ void SecurityLayer::parseIncomingSPDU() noexcept
 			else
 			{ /* all is well as far as the version is concerned */ }
  			incoming_ar.flags_ = *curr++;
+			memcpy(&incoming_ar.master_certificate_length_, curr, sizeof(incoming_ar.master_certificate_length_));
+			curr += sizeof(incoming_ar.master_certificate_length_);
+			if (incoming_ar.master_certificate_length_ != distance(curr, end))
+			{
+				const_buffer response_spdu(format(Messages::Error(Messages::Error::invalid_spdu__)));
+				setOutgoingSPDU(response_spdu);
+				incrementStatistic(Statistics::error_messages_sent__);
+				incrementStatistic(Statistics::total_messages_sent__);
+			}
+			else
+			{ /* length is OK */ }
+			const_buffer incoming_certificates(curr, incoming_ar.master_certificate_length_);
+			curr += incoming_ar.master_certificate_length_;
    			assert(curr == end);
-			rxAssociationRequest(incoming_seq, incoming_ar, incoming_spdu_);
+			rxAssociationRequest(incoming_seq, incoming_ar, incoming_certificates, incoming_spdu_);
 		}
 		else
 		{
