@@ -161,7 +161,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 set_target_properties(secureauthentication PROPERTIES
-	PUBLIC_HEADER "${FRAM_PUBLIC_HEADERS}"
+	PUBLIC_HEADER "${LAYER_PUBLIC_HEADERS}"
 	)
 install(TARGETS secureauthentication
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -197,10 +197,10 @@ set(GENCERTS_SRC
 add_executable(gencerts ${GENCERTS_SRC})
 target_link_libraries(gencerts OpenSSL::Crypto exceptions)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(less PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
+	target_compile_options(gencerts PRIVATE -Wno-psabi -include ${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp)
 endif()
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	target_compile_options(less PRIVATE -D_WIN32_WINNT=0x0601 /FI "${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp" /wd4996)
+	target_compile_options(gencerts PRIVATE -D_WIN32_WINNT=0x0601 /FI "${CMAKE_CURRENT_SOURCE_DIR}/profile.hpp" /wd4996)
 endif()
 
 file(GLOB TEST_LIBLAYER_SOURCES tests/*.test.cpp)
